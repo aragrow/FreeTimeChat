@@ -48,14 +48,14 @@ This document breaks down the entire FreeTimeChat application into small, manage
 
 ### 1.2 Next.js Frontend Setup
 
-- [ ] **Task 1.2.1**: Create Next.js app in apps/web
+- [x] **Task 1.2.1**: Create Next.js app in apps/web
   - Initialize Next.js 14+ with App Router
   - Configure TypeScript with strict mode
   - Set up Tailwind CSS
   - **User Story**: US-001
   - **Complexity**: Low (3 hours)
 
-- [ ] **Task 1.2.2**: Configure Next.js project structure
+- [x] **Task 1.2.2**: Configure Next.js project structure
   - Create folder structure (app/, components/, lib/, hooks/)
   - Set up route groups ((auth), (dashboard), (admin))
   - Configure environment variables
