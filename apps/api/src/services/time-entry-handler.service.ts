@@ -23,10 +23,7 @@ export class TimeEntryHandlerService {
   private projectService: ProjectService;
   private timeEntryService: TimeEntryService;
 
-  constructor(
-    private clientPrisma: ClientPrismaClient,
-    private mainPrisma: MainPrismaClient
-  ) {
+  constructor(clientPrisma: ClientPrismaClient, mainPrisma: MainPrismaClient) {
     this.intentParser = new IntentParserService();
     this.projectService = new ProjectService(clientPrisma);
     this.timeEntryService = new TimeEntryService(clientPrisma, mainPrisma);
@@ -162,7 +159,7 @@ export class TimeEntryHandlerService {
       if (overlap) {
         return {
           success: false,
-          message: `This time entry overlaps with an existing entry for project "${overlap.project.name}" from ${this.formatTime(overlap.startTime)} to ${overlap.endTime ? this.formatTime(overlap.endTime) : 'ongoing'}.`,
+          message: `This time entry overlaps with an existing entry from ${this.formatTime(overlap.startTime)} to ${overlap.endTime ? this.formatTime(overlap.endTime) : 'ongoing'}.`,
         };
       }
 
@@ -188,7 +185,7 @@ export class TimeEntryHandlerService {
         ? 'today'
         : targetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-      const message = `✓ Logged ${hours.toFixed(2)} hours on "${timeEntry.project.name}" for ${dateStr} (${this.formatTime(startTime)} - ${this.formatTime(endTime)})`;
+      const message = `✓ Logged ${hours.toFixed(2)} hours for ${dateStr} (${this.formatTime(startTime)} - ${this.formatTime(endTime)})`;
 
       return {
         success: true,

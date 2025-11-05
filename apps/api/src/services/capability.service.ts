@@ -44,6 +44,20 @@ export class CapabilityService {
   }
 
   /**
+   * Alias for list() - used by tests
+   */
+  async getAll(): Promise<Capability[]> {
+    return this.list();
+  }
+
+  /**
+   * Alias for findByName() - used by tests
+   */
+  async getByName(name: string): Promise<Capability | null> {
+    return this.findByName(name);
+  }
+
+  /**
    * Create a new capability
    */
   async create(data: { name: string; description?: string }): Promise<Capability> {
@@ -167,6 +181,32 @@ export class CapabilityService {
         capability: {
           name: capabilityName,
         },
+      },
+    });
+
+    if (roleCapabilities.length === 0) {
+      return false; // No capability assigned
+    }
+
+    // If any role explicitly denies, return false
+    const hasExplicitDeny = roleCapabilities.some((rc) => !rc.isAllowed);
+    if (hasExplicitDeny) {
+      return false;
+    }
+
+    // If at least one role allows and no explicit denies, return true
+    return roleCapabilities.some((rc) => rc.isAllowed);
+  }
+
+  /**
+   * Check if roles have permission for a capability (by capability ID)
+   * Used by tests - checks role-capability assignments directly
+   */
+  async checkPermission(roleIds: string[], capabilityId: string): Promise<boolean> {
+    const roleCapabilities = await this.prisma.roleCapability.findMany({
+      where: {
+        roleId: { in: roleIds },
+        capabilityId,
       },
     });
 

@@ -39,10 +39,7 @@ export class QueryHandlerService {
     list: /(?:show|list|display|get)\s+(?:my\s+)?(?:time|entries|hours)/i,
   };
 
-  constructor(
-    private clientPrisma: ClientPrismaClient,
-    private mainPrisma: MainPrismaClient
-  ) {
+  constructor(clientPrisma: ClientPrismaClient, mainPrisma: MainPrismaClient) {
     this.intentParser = new IntentParserService();
     this.projectService = new ProjectService(clientPrisma);
     this.timeEntryService = new TimeEntryService(clientPrisma, mainPrisma);
@@ -104,7 +101,7 @@ export class QueryHandlerService {
       if (timeEntries.length === 0) {
         return {
           success: true,
-          message: `No time entries found ${this.formatDateRangeDescription(queryParams)}${projectId ? ` for project "${timeEntries[0]?.project.name || 'unknown'}"` : ''}.`,
+          message: `No time entries found ${this.formatDateRangeDescription(queryParams)}${projectId ? ` for the specified project` : ''}.`,
           data: {
             timeEntries: [],
             totalHours: 0,
@@ -131,7 +128,7 @@ export class QueryHandlerService {
                 .join('\n')}`
             : '';
 
-        const message = `You logged ${totalHours.toFixed(2)} hours ${this.formatDateRangeDescription(queryParams)}${projectId ? ` on "${timeEntries[0].project.name}"` : ''}.${breakdownText}`;
+        const message = `You logged ${totalHours.toFixed(2)} hours ${this.formatDateRangeDescription(queryParams)}${projectId ? ` on the specified project` : ''}.${breakdownText}`;
 
         return {
           success: true,
@@ -151,7 +148,7 @@ export class QueryHandlerService {
             const entriesText = entries
               .map(
                 (e) =>
-                  `  • ${e.project.name}: ${((e.duration || 0) / 3600).toFixed(2)}h - ${e.description || 'No description'}`
+                  `  • ${((e.duration || 0) / 3600).toFixed(2)}h - ${e.description || 'No description'}`
               )
               .join('\n');
             return `${date} (${dateTotal.toFixed(2)}h):\n${entriesText}`;
@@ -174,7 +171,7 @@ export class QueryHandlerService {
         const recentText = recentEntries
           .map(
             (e) =>
-              `  • ${this.formatDate(e.startTime)}: ${e.project.name} - ${((e.duration || 0) / 3600).toFixed(2)}h`
+              `  • ${this.formatDate(e.startTime)}: ${((e.duration || 0) / 3600).toFixed(2)}h - ${e.description || 'No description'}`
           )
           .join('\n');
 
@@ -300,7 +297,7 @@ export class QueryHandlerService {
     const breakdown: Record<string, number> = {};
 
     for (const entry of timeEntries) {
-      const projectName = entry.project.name;
+      const projectName = entry.projectId || 'Unknown';
       const hours = (entry.duration || 0) / 3600;
       breakdown[projectName] = (breakdown[projectName] || 0) + hours;
     }

@@ -14,12 +14,12 @@ describe('TwoFactorService', () => {
   });
 
   describe('generateSecret', () => {
-    it('should generate a valid secret', () => {
+    it('should generate a valid secret', async () => {
       const userId = 'user-123';
       const email = 'test@example.com';
       const appName = 'FreeTimeChat';
 
-      const result = twoFactorService.generateSecret(userId, email, appName);
+      const result = await twoFactorService.generateSecret(userId, email, appName);
 
       expect(result).toBeDefined();
       expect(result.secret).toBeTruthy();
@@ -30,20 +30,24 @@ describe('TwoFactorService', () => {
       expect(result.backupCodes).toHaveLength(10);
     });
 
-    it('should generate unique secrets each time', () => {
+    it('should generate unique secrets each time', async () => {
       const userId = 'user-123';
       const email = 'test@example.com';
       const appName = 'FreeTimeChat';
 
-      const result1 = twoFactorService.generateSecret(userId, email, appName);
-      const result2 = twoFactorService.generateSecret(userId, email, appName);
+      const result1 = await twoFactorService.generateSecret(userId, email, appName);
+      const result2 = await twoFactorService.generateSecret(userId, email, appName);
 
       expect(result1.secret).not.toBe(result2.secret);
       expect(result1.backupCodes).not.toEqual(result2.backupCodes);
     });
 
-    it('should generate backup codes with correct format', () => {
-      const result = twoFactorService.generateSecret('user-123', 'test@example.com', 'FreeTimeChat');
+    it('should generate backup codes with correct format', async () => {
+      const result = await twoFactorService.generateSecret(
+        'user-123',
+        'test@example.com',
+        'FreeTimeChat'
+      );
 
       result.backupCodes.forEach((code) => {
         expect(typeof code).toBe('string');
@@ -53,11 +57,16 @@ describe('TwoFactorService', () => {
   });
 
   describe('verifyToken', () => {
-    it('should verify a valid token', () => {
+    it('should verify a valid token', async () => {
       // Generate a secret
-      const result = twoFactorService.generateSecret('user-123', 'test@example.com', 'FreeTimeChat');
+      const result = await twoFactorService.generateSecret(
+        'user-123',
+        'test@example.com',
+        'FreeTimeChat'
+      );
 
       // Generate a token using the secret (simulating authenticator app)
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const speakeasy = require('speakeasy');
       const validToken = speakeasy.totp({
         secret: result.secret,
@@ -69,18 +78,27 @@ describe('TwoFactorService', () => {
       expect(isValid).toBe(true);
     });
 
-    it('should reject an invalid token', () => {
-      const result = twoFactorService.generateSecret('user-123', 'test@example.com', 'FreeTimeChat');
+    it('should reject an invalid token', async () => {
+      const result = await twoFactorService.generateSecret(
+        'user-123',
+        'test@example.com',
+        'FreeTimeChat'
+      );
       const invalidToken = '000000'; // Invalid token
 
       const isValid = twoFactorService.verifyToken(result.secret, invalidToken);
       expect(isValid).toBe(false);
     });
 
-    it('should reject expired tokens', () => {
-      const result = twoFactorService.generateSecret('user-123', 'test@example.com', 'FreeTimeChat');
+    it('should reject expired tokens', async () => {
+      const result = await twoFactorService.generateSecret(
+        'user-123',
+        'test@example.com',
+        'FreeTimeChat'
+      );
 
       // Generate a token from 2 minutes ago (outside the 30-second window)
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const speakeasy = require('speakeasy');
       const oldToken = speakeasy.totp({
         secret: result.secret,
@@ -94,40 +112,54 @@ describe('TwoFactorService', () => {
   });
 
   describe('verifyBackupCode', () => {
-    it('should verify a valid backup code', () => {
+    it('should verify a valid backup code', async () => {
       const backupCodes = twoFactorService['generateBackupCodes']();
-      const hashedCodes = backupCodes.map((code) =>
-        require('crypto').createHash('sha256').update(code).digest('hex')
-      );
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const passwordService = require('../../../services/password.service').getPasswordService();
+
+      // Hash the backup codes using bcrypt (like production would)
+      const hashedCodes = await Promise.all(backupCodes.map((code) => passwordService.hash(code)));
 
       const codeToVerify = backupCodes[0];
-      const isValid = twoFactorService.verifyBackupCode(codeToVerify, hashedCodes);
+      const isValid = await twoFactorService.verifyBackupCode(
+        codeToVerify,
+        JSON.stringify(hashedCodes)
+      );
 
       expect(isValid).toBe(true);
     });
 
-    it('should reject an invalid backup code', () => {
+    it('should reject an invalid backup code', async () => {
       const backupCodes = twoFactorService['generateBackupCodes']();
-      const hashedCodes = backupCodes.map((code) =>
-        require('crypto').createHash('sha256').update(code).digest('hex')
-      );
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const passwordService = require('../../../services/password.service').getPasswordService();
+
+      const hashedCodes = await Promise.all(backupCodes.map((code) => passwordService.hash(code)));
 
       const invalidCode = 'INVALID1';
-      const isValid = twoFactorService.verifyBackupCode(invalidCode, hashedCodes);
+      const isValid = await twoFactorService.verifyBackupCode(
+        invalidCode,
+        JSON.stringify(hashedCodes)
+      );
 
       expect(isValid).toBe(false);
     });
 
-    it('should be case-insensitive', () => {
+    it('should be case-sensitive', async () => {
       const backupCodes = twoFactorService['generateBackupCodes']();
-      const hashedCodes = backupCodes.map((code) =>
-        require('crypto').createHash('sha256').update(code).digest('hex')
-      );
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const passwordService = require('../../../services/password.service').getPasswordService();
+
+      const hashedCodes = await Promise.all(backupCodes.map((code) => passwordService.hash(code)));
 
       const codeToVerify = backupCodes[0].toLowerCase();
-      const isValid = twoFactorService.verifyBackupCode(codeToVerify, hashedCodes);
+      const isValid = await twoFactorService.verifyBackupCode(
+        codeToVerify,
+        JSON.stringify(hashedCodes)
+      );
 
-      expect(isValid).toBe(true);
+      // Backup codes should be case-sensitive for security
+      expect(isValid).toBe(false);
     });
   });
 

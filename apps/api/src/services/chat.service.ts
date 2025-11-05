@@ -46,10 +46,7 @@ export class ChatService {
   private messageService: MessageService;
   private memoryService: UserMemoryService;
 
-  constructor(
-    private clientPrisma: ClientPrismaClient,
-    private mainPrisma: MainPrismaClient
-  ) {
+  constructor(clientPrisma: ClientPrismaClient, mainPrisma: MainPrismaClient) {
     this.intentParser = new IntentParserService();
     this.timeEntryHandler = new TimeEntryHandlerService(clientPrisma, mainPrisma);
     this.queryHandler = new QueryHandlerService(clientPrisma, mainPrisma);

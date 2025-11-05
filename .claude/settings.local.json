@@ -43,7 +43,10 @@
       "Bash(curl:*)",
       "Bash(git push:*)",
       "Bash(pnpm --filter=api test:unit:*)",
-      "Bash(__NEW_LINE__ sed -i '' 's/\"\"jest --testPathPattern=__tests__\\/integration\"\"/\"\"jest __tests__\\/integration\"\"/g' /Users/david/Documents/nextjs/FreeTimeChat/apps/api/package.json)"
+      "Bash(__NEW_LINE__ sed -i '' 's/\"\"jest --testPathPattern=__tests__\\/integration\"\"/\"\"jest __tests__\\/integration\"\"/g' /Users/david/Documents/nextjs/FreeTimeChat/apps/api/package.json)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm --filter @freetimechat/api test)",
+      "Bash(pnpm --filter @freetimechat/api test auth-flow)"
     ],
     "deny": [],
     "ask": []

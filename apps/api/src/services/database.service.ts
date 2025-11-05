@@ -64,15 +64,18 @@ export class DatabaseService {
       throw new Error(`Client not found: ${clientId}`);
     }
 
-    if (!client.databaseUrl) {
-      throw new Error(`Client ${clientId} does not have a database URL configured`);
+    if (!client.databaseName) {
+      throw new Error(`Client ${clientId} does not have a database name configured`);
     }
+
+    // Construct database URL from client configuration
+    const databaseUrl = `postgresql://${process.env.POSTGRES_USER || 'postgres'}:${process.env.POSTGRES_PASSWORD || 'postgres'}@${client.databaseHost}:${process.env.POSTGRES_PORT || '5432'}/${client.databaseName}`;
 
     // Create new Prisma client for this client database
     const prisma = new ClientPrismaClient({
       datasources: {
         db: {
-          url: client.databaseUrl,
+          url: databaseUrl,
         },
       },
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
@@ -166,11 +169,10 @@ export class DatabaseService {
       );
     }
 
-    // Update client record with database URL
+    // Update client record with database name
     await this.mainPrisma.client.update({
       where: { id: clientId },
       data: {
-        databaseUrl: clientDatabaseUrl,
         databaseName: dbName,
       },
     });
@@ -236,12 +238,11 @@ export class DatabaseService {
       );
     }
 
-    // Clear database URL from client record
+    // Clear database name from client record
     await this.mainPrisma.client.update({
       where: { id: clientId },
       data: {
-        databaseUrl: null,
-        databaseName: null,
+        databaseName: undefined,
       },
     });
   }

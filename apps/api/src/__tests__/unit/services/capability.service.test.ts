@@ -33,6 +33,7 @@ describe('CapabilityService', () => {
   let mockPrisma: jest.Mocked<MainPrismaClient>;
 
   beforeEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { PrismaClient } = require('../../../generated/prisma-main');
     mockPrisma = new PrismaClient() as jest.Mocked<MainPrismaClient>;
     capabilityService = new CapabilityService(mockPrisma);
@@ -96,7 +97,10 @@ describe('CapabilityService', () => {
 
       (mockPrisma.capability.create as jest.Mock).mockResolvedValue(mockCapability);
 
-      const result = await capabilityService.create('users:read', 'View users');
+      const result = await capabilityService.create({
+        name: 'users:read',
+        description: 'View users',
+      });
 
       expect(result).toEqual(mockCapability);
       expect(mockPrisma.capability.create).toHaveBeenCalledWith({
@@ -230,7 +234,7 @@ describe('CapabilityService', () => {
       expect(result).toEqual(mockRoleCapabilities);
       expect(mockPrisma.roleCapability.findMany).toHaveBeenCalledWith({
         where: { roleId: 'role-123' },
-        include: { capability: true },
+        include: { capability: true, role: true },
       });
     });
   });
@@ -292,10 +296,7 @@ describe('CapabilityService', () => {
 
       (mockPrisma.roleCapability.findMany as jest.Mock).mockResolvedValue(mockRoleCapabilities);
 
-      const result = await capabilityService.checkPermission(
-        ['role-allow', 'role-deny'],
-        'cap-1'
-      );
+      const result = await capabilityService.checkPermission(['role-allow', 'role-deny'], 'cap-1');
 
       expect(result).toBe(false); // Explicit deny overrides allow
     });

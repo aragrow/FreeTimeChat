@@ -39,7 +39,7 @@ export interface SemanticSearchResult {
 
 export class SemanticMemoryService {
   private readonly EMBEDDING_DIMENSION = 1536; // OpenAI ada-002 dimension
-  private readonly TOP_K_RESULTS = 5;
+  private readonly _TOP_K_RESULTS = 5;
 
   constructor(private prisma: ClientPrismaClient) {}
 
@@ -129,7 +129,7 @@ export class SemanticMemoryService {
           conversation: { userId },
           metadata: {
             path: ['embedding'],
-            not: null,
+            not: undefined,
           },
         },
         take: 100, // Limit for performance
@@ -208,7 +208,7 @@ export class SemanticMemoryService {
           id: { not: messageId },
           metadata: {
             path: ['embedding'],
-            not: null,
+            not: undefined,
           },
         },
         take: 100,
@@ -299,7 +299,7 @@ export class SemanticMemoryService {
           conversationId,
           metadata: {
             path: ['embedding'],
-            equals: null,
+            equals: undefined,
           },
         },
       });

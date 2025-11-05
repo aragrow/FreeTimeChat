@@ -10,6 +10,9 @@ import type { JWTPayload } from '@freetimechat/types';
 
 declare global {
   namespace Express {
+    // Override Passport's User type with our JWTPayload
+    interface User extends JWTPayload {}
+
     interface Request {
       user?: JWTPayload;
       clientDatabaseUrl?: string;

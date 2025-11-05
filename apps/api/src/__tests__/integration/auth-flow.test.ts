@@ -5,7 +5,7 @@
  */
 
 import request from 'supertest';
-import { app } from '../../../app';
+import { app } from '../../app';
 
 describe('Authentication Flow Integration Tests', () => {
   const testUser = {
@@ -19,10 +19,7 @@ describe('Authentication Flow Integration Tests', () => {
 
   describe('POST /api/v1/auth/register', () => {
     it('should register a new user', async () => {
-      const response = await request(app)
-        .post('/api/v1/auth/register')
-        .send(testUser)
-        .expect(201);
+      const response = await request(app).post('/api/v1/auth/register').send(testUser).expect(201);
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.accessToken).toBeDefined();
@@ -36,10 +33,7 @@ describe('Authentication Flow Integration Tests', () => {
     });
 
     it('should reject duplicate email registration', async () => {
-      const response = await request(app)
-        .post('/api/v1/auth/register')
-        .send(testUser)
-        .expect(409);
+      const response = await request(app).post('/api/v1/auth/register').send(testUser).expect(409);
 
       expect(response.body.status).toBe('error');
       expect(response.body.message).toContain('already exists');
@@ -158,9 +152,7 @@ describe('Authentication Flow Integration Tests', () => {
     });
 
     it('should reject request without token', async () => {
-      const response = await request(app)
-        .get('/api/v1/auth/me')
-        .expect(401);
+      const response = await request(app).get('/api/v1/auth/me').expect(401);
 
       expect(response.body.status).toBe('error');
       expect(response.body.message).toContain('No authorization header');

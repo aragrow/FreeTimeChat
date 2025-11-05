@@ -196,7 +196,7 @@ export class UserMemoryService {
   async learnFromInteraction(
     userId: string,
     message: string,
-    response: string,
+    _response: string,
     success: boolean
   ): Promise<void> {
     if (!success) {
@@ -312,7 +312,7 @@ export class UserMemoryService {
         conversation: { userId },
         metadata: {
           path: ['embedding'],
-          not: null,
+          not: undefined,
         },
       },
     });

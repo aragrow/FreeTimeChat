@@ -6,14 +6,23 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
+  testMatch: [
+    '**/__tests__/**/*.test.ts',
+    '**/__tests__/**/*.spec.ts',
+    '**/*.test.ts',
+    '**/*.spec.ts',
+  ],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/', 'setup.ts', 'test-data.ts', 'helpers/'],
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
-      tsconfig: {
-        ...require('./tsconfig.json').compilerOptions,
-        esModuleInterop: true,
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          ...require('./tsconfig.json').compilerOptions,
+          esModuleInterop: true,
+        },
       },
-    }],
+    ],
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

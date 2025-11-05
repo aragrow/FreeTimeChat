@@ -46,7 +46,8 @@ export class MessageService {
         conversationId: data.conversationId,
         role: data.role,
         content: data.content,
-        metadata: data.metadata,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        metadata: data.metadata as any,
       },
     });
   }
@@ -140,7 +141,8 @@ export class MessageService {
 
     return this.prisma.message.update({
       where: { id },
-      data: { metadata: updatedMetadata },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data: { metadata: updatedMetadata as any },
     });
   }
 

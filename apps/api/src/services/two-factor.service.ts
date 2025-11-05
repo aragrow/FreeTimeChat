@@ -173,40 +173,102 @@ export class TwoFactorService {
     // Disable 2FA
     await this.userService.update(userId, {
       twoFactorEnabled: false,
-      twoFactorSecret: null,
+      twoFactorSecret: undefined,
     });
+  }
+
+  /**
+   * Generate a 2FA secret (utility method for testing)
+   */
+  async generateSecret(
+    _userId: string,
+    email: string,
+    appName?: string
+  ): Promise<{ secret: string; qrCode: string; backupCodes: string[] }> {
+    const name = appName || this.appName;
+
+    const secret = speakeasy.generateSecret({
+      name: `${name} (${email})`,
+      issuer: this.issuer,
+      length: 32,
+    });
+
+    if (!secret.base32) {
+      throw new Error('Failed to generate 2FA secret');
+    }
+
+    const qrCode = await this.generateQRCode(secret.base32, email, name);
+    const backupCodes = this.generateBackupCodes(10);
+
+    return {
+      secret: secret.base32,
+      qrCode,
+      backupCodes,
+    };
+  }
+
+  /**
+   * Verify a TOTP token against a secret (utility method for testing)
+   */
+  verifyToken(secret: string, token: string): boolean {
+    return speakeasy.totp.verify({
+      secret,
+      encoding: 'base32',
+      token,
+      window: 2,
+    });
+  }
+
+  /**
+   * Generate QR code for a secret (utility method for testing)
+   */
+  async generateQRCode(secret: string, email: string, appName?: string): Promise<string> {
+    const name = appName || this.appName;
+    const otpauthUrl = speakeasy.otpauthURL({
+      secret,
+      label: email,
+      issuer: name,
+      encoding: 'base32',
+    });
+
+    return qrcode.toDataURL(otpauthUrl);
   }
 
   /**
    * Generate backup codes
    */
-  private generateBackupCodes(count: number = 10): string[] {
+  generateBackupCodes(count: number = 10): string[] {
     const codes: string[] = [];
 
     for (let i = 0; i < count; i++) {
       // Generate 8-character alphanumeric code
       const code = crypto.randomBytes(4).toString('hex').toUpperCase();
-      // Format as XXXX-XXXX
-      const formatted = `${code.slice(0, 4)}-${code.slice(4, 8)}`;
-      codes.push(formatted);
+      codes.push(code);
     }
 
     return codes;
   }
 
   /**
-   * Verify backup code
-   * Note: In production, backup codes should be hashed and stored in database
-   * This is a simplified implementation
+   * Verify backup code against a list of hashed codes (utility method for testing)
    */
-  verifyBackupCode(_userId: string, _code: string): boolean {
-    // TODO: Implement backup code verification with database storage
-    // For now, this is a placeholder that always returns false
-    // In production, you would:
-    // 1. Hash the provided code
-    // 2. Check if it exists in the user's backup codes
-    // 3. Mark it as used
-    // 4. Return true if valid and not used
+  async verifyBackupCode(code: string, hashedCodes: string): Promise<boolean> {
+    // hashedCodes is expected to be a JSON string containing an array of hashed codes
+    let codes: string[];
+    try {
+      codes = JSON.parse(hashedCodes);
+    } catch {
+      return false;
+    }
+
+    // Check each hashed code
+    for (const hashedCode of codes) {
+      const isValid = await this.passwordService.verify(code, hashedCode);
+      if (isValid) {
+        return true;
+      }
+    }
+
     return false;
   }
 
