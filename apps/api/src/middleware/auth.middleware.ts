@@ -13,7 +13,7 @@ import type { NextFunction, Request, Response } from 'express';
  * Extracts the token from the Authorization header, verifies it,
  * and attaches the decoded user information to req.user
  */
-export function authenticate(req: Request, res: Response, next: NextFunction): void {
+export function authenticateJWT(req: Request, res: Response, next: NextFunction): void {
   try {
     // Extract token from Authorization header
     const authHeader = req.headers.authorization;

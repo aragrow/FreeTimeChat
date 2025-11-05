@@ -83,6 +83,9 @@ importers:
       speakeasy:
         specifier: ^2.0.0
         version: 2.0.0
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
     devDependencies:
       '@types/bcrypt':
         specifier: ^6.0.0

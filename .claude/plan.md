@@ -9,12 +9,13 @@ manageable tasks organized by implementation phase.
 2. [Phase 2: Authentication & Authorization](#phase-2-authentication--authorization)
 3. [Phase 3: Database & Multi-Tenancy](#phase-3-database--multi-tenancy)
 4. [Phase 4: Backend Core Services](#phase-4-backend-core-services)
-5. [Phase 5: Chat Processing & Memory](#phase-5-chat-processing--memory)
-6. [Phase 6: Frontend Foundation](#phase-6-frontend-foundation)
-7. [Phase 7: Admin Interface](#phase-7-admin-interface)
-8. [Phase 8: Reporting & Analytics](#phase-8-reporting--analytics)
-9. [Phase 9: Testing & Quality Assurance](#phase-9-testing--quality-assurance)
-10. [Phase 10: Deployment & DevOps](#phase-10-deployment--devops)
+5. [Phase 5: Billing & Compensation Configuration](#phase-5-billing--compensation-configuration)
+6. [Phase 6: Chat Processing & Memory](#phase-6-chat-processing--memory)
+7. [Phase 7: Frontend Foundation](#phase-7-frontend-foundation)
+8. [Phase 8: Admin Interface](#phase-8-admin-interface)
+9. [Phase 9: Reporting & Analytics](#phase-9-reporting--analytics)
+10. [Phase 10: Testing & Quality Assurance](#phase-10-testing--quality-assurance)
+11. [Phase 11: Deployment & DevOps](#phase-11-deployment--devops)
 
 ---
 
@@ -378,7 +379,7 @@ manageable tasks organized by implementation phase.
 
 ### 3.1 Client Database Infrastructure
 
-- [ ] **Task 3.1.1**: Create DatabaseService
+- [x] **Task 3.1.1**: Create DatabaseService
   - Implement getMainDatabase()
   - Implement getClientDatabase()
   - Add connection pooling
@@ -386,21 +387,21 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-004
   - **Complexity**: High (10 hours)
 
-- [ ] **Task 3.1.2**: Implement client database provisioning
+- [x] **Task 3.1.2**: Implement client database provisioning
   - Create createClientDatabase()
   - Generate UUID-based database name
   - Execute CREATE DATABASE command
   - **User Story**: US-004
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 3.1.3**: Create client database schema
+- [x] **Task 3.1.3**: Create client database schema
   - Define Project, TimeEntry, Task models
   - Define Conversation, Message models
   - Create client schema migration
   - **User Story**: US-012, US-013, US-014
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 3.1.4**: Implement database migration script
+- [x] **Task 3.1.4**: Implement database migration script
   - Create migrate-all-clients.js script
   - Migrate all active client databases
   - Handle migration errors gracefully
@@ -409,14 +410,14 @@ manageable tasks organized by implementation phase.
 
 ### 3.2 Client Database Middleware
 
-- [ ] **Task 3.2.1**: Create attachClientDatabase middleware
+- [x] **Task 3.2.1**: Create attachClientDatabase middleware
   - Get user's clientId from JWT
   - Fetch client database connection
   - Attach to request object
   - **User Story**: US-004
   - **Complexity**: Medium (3 hours)
 
-- [ ] **Task 3.2.2**: Test multi-tenant isolation
+- [x] **Task 3.2.2**: Test multi-tenant isolation
   - Create test clients
   - Verify data isolation
   - Test connection management
@@ -425,7 +426,7 @@ manageable tasks organized by implementation phase.
 
 ### 3.3 Client Onboarding
 
-- [ ] **Task 3.3.1**: Create client onboarding endpoint
+- [x] **Task 3.3.1**: Create client onboarding endpoint
   - Create POST /admin/clients
   - Generate client database
   - Create admin user for client
@@ -433,7 +434,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-015
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 3.3.2**: Create client management endpoints
+- [x] **Task 3.3.2**: Create client management endpoints
   - Create GET /admin/clients (list)
   - Create GET /admin/clients/:id
   - Create PATCH /admin/clients/:id
@@ -564,14 +565,205 @@ manageable tasks organized by implementation phase.
 
 ---
 
-## Phase 5: Chat Processing & Memory
+## Phase 5: Billing & Compensation Configuration
+
+**Duration**: 1 week **Dependencies**: Phase 4 **Related Docs**:
+[code.md](./code.md), [database.md](./database.md)
+
+### 5.1 User Compensation Types
+
+- [ ] **Task 5.1.1**: Extend User model with compensation fields
+  - Add compensationType enum (SALARY_HCE, SALARY_WITH_OT, HOURLY)
+  - Add hourlyRate decimal field
+  - Create migration for new fields
+  - **User Story**: US-039
+  - **Complexity**: Low (2 hours)
+
+- [ ] **Task 5.1.2**: Create CompensationService
+  - Implement setCompensationType()
+  - Implement setHourlyRate()
+  - Implement getCompensationInfo()
+  - Add validation for rate values
+  - **User Story**: US-039
+  - **Complexity**: Medium (4 hours)
+
+- [ ] **Task 5.1.3**: Create compensation endpoints
+  - Create PATCH /users/:id/compensation
+  - Create GET /users/:id/compensation
+  - Restrict access to admin only
+  - **User Story**: US-039
+  - **Complexity**: Low (3 hours)
+
+### 5.2 Project Billability Configuration
+
+- [ ] **Task 5.2.1**: Extend Project model
+  - Add defaultBillable boolean field
+  - Add isBillableProject boolean field
+  - Create migration
+  - **User Story**: US-040
+  - **Complexity**: Low (2 hours)
+
+- [ ] **Task 5.2.2**: Update ProjectService
+  - Add billability to create/update
+  - Implement setBillability()
+  - Add billability to project queries
+  - **User Story**: US-040
+  - **Complexity**: Low (3 hours)
+
+- [ ] **Task 5.2.3**: Create ProjectMember junction table
+  - Define ProjectMember schema
+  - Add userId and projectId foreign keys
+  - Add isBillable boolean (overrides project default)
+  - Add role field (optional: lead, member, etc.)
+  - Create migration
+  - **User Story**: US-040
+  - **Complexity**: Medium (4 hours)
+
+- [ ] **Task 5.2.4**: Create ProjectMemberService
+  - Implement assignUserToProject()
+  - Implement setUserBillability()
+  - Implement getUserProjects()
+  - Implement getProjectMembers()
+  - **User Story**: US-040
+  - **Complexity**: Medium (5 hours)
+
+- [ ] **Task 5.2.5**: Create project member endpoints
+  - Create POST /projects/:id/members
+  - Create PATCH /projects/:id/members/:userId
+  - Create DELETE /projects/:id/members/:userId
+  - Create GET /projects/:id/members
+  - **User Story**: US-040
+  - **Complexity**: Medium (5 hours)
+
+### 5.3 Overtime Calculation
+
+- [ ] **Task 5.3.1**: Extend TimeEntry model
+  - Add regularHours decimal field
+  - Add overtimeHours decimal field
+  - Add weekStartDate date field (for grouping)
+  - Update duration calculation logic
+  - Create migration
+  - **User Story**: US-041
+  - **Complexity**: Medium (4 hours)
+
+- [ ] **Task 5.3.2**: Create OvertimeCalculationService
+  - Implement calculateWeeklyHours()
+  - Implement splitRegularAndOvertime()
+  - Handle 40-hour threshold
+  - Support different week start days
+  - **User Story**: US-041
+  - **Complexity**: High (8 hours)
+
+- [ ] **Task 5.3.3**: Update TimeEntryService with overtime
+  - Auto-calculate overtime on create
+  - Recalculate overtime on update
+  - Batch recalculate for week changes
+  - Handle compensation type logic:
+    - SALARY_HCE: No overtime calculation
+    - SALARY_WITH_OT: Calculate after 40 hrs/week
+    - HOURLY: Calculate after 40 hrs/week
+  - **User Story**: US-041
+  - **Complexity**: High (8 hours)
+
+- [ ] **Task 5.3.4**: Create overtime recalculation endpoint
+  - Create POST /admin/time-entries/recalculate-overtime
+  - Support date range parameter
+  - Support user filter
+  - Return recalculation summary
+  - **User Story**: US-041
+  - **Complexity**: Medium (4 hours)
+
+### 5.4 Billable Hours Tracking
+
+- [ ] **Task 5.4.1**: Add billability tracking to TimeEntry
+  - Add isBillable boolean field
+  - Auto-set from project member assignment
+  - Allow manual override
+  - Create migration
+  - **User Story**: US-042
+  - **Complexity**: Low (2 hours)
+
+- [ ] **Task 5.4.2**: Update TimeEntryService with billability
+  - Determine billability on create:
+    1. Check ProjectMember.isBillable
+    2. Fallback to Project.defaultBillable
+    3. Fallback to Project.isBillableProject
+  - Allow admin to override billability
+  - Track billability changes in audit log
+  - **User Story**: US-042
+  - **Complexity**: Medium (5 hours)
+
+- [ ] **Task 5.4.3**: Create billable hours summary endpoint
+  - Create GET /users/:id/billable-hours
+  - Support date range filter
+  - Return total billable vs non-billable hours
+  - Separate regular and overtime hours
+  - **User Story**: US-042
+  - **Complexity**: Medium (4 hours)
+
+### 5.5 Compensation Reports
+
+- [ ] **Task 5.5.1**: Create CompensationReportService
+  - Implement getUserCompensationReport()
+  - Calculate estimated cost:
+    - HOURLY: (regularHours × hourlyRate) + (overtimeHours × hourlyRate × 1.5)
+    - SALARY_WITH_OT: Track overtime hours for payroll
+    - SALARY_HCE: Track hours for reporting only
+  - Generate billable vs non-billable breakdown
+  - **User Story**: US-043
+  - **Complexity**: High (8 hours)
+
+- [ ] **Task 5.5.2**: Create compensation report endpoints
+  - Create GET /reports/compensation/by-user
+  - Create GET /reports/compensation/by-project
+  - Create GET /reports/billable-summary
+  - Support CSV export
+  - **User Story**: US-043
+  - **Complexity**: Medium (6 hours)
+
+- [ ] **Task 5.5.3**: Add compensation to existing reports
+  - Update time-by-user report with compensation
+  - Update time-by-project report with billability
+  - Add cost calculations to summaries
+  - **User Story**: US-043
+  - **Complexity**: Medium (4 hours)
+
+### 5.6 Validation & Business Rules
+
+- [ ] **Task 5.6.1**: Implement compensation validation
+  - Hourly rate must be > 0
+  - Compensation type required for all users
+  - Rate changes require admin approval
+  - Track rate history (optional)
+  - **User Story**: US-039
+  - **Complexity**: Low (3 hours)
+
+- [ ] **Task 5.6.2**: Implement billability business rules
+  - Non-billable projects can't have billable members
+  - Billable time entries require project assignment
+  - Overtime only for SALARY_WITH_OT and HOURLY
+  - Validate weekly hour calculations
+  - **User Story**: US-040, US-041
+  - **Complexity**: Medium (5 hours)
+
+- [ ] **Task 5.6.3**: Add compensation to audit trail
+  - Log all compensation changes
+  - Log billability changes
+  - Log overtime recalculations
+  - Track admin who made changes
+  - **User Story**: US-019
+  - **Complexity**: Low (3 hours)
+
+---
+
+## Phase 6: Chat Processing & Memory
 
 **Duration**: 2 weeks **Dependencies**: Phase 4 **Related Docs**:
 [memory.md](./memory.md)
 
-### 5.1 Conversation Management
+### 6.1 Conversation Management
 
-- [ ] **Task 5.1.1**: Create ConversationService
+- [ ] **Task 6.1.1**: Create ConversationService
   - Implement startConversation() with UUID v4
   - Implement getConversation()
   - Implement listConversations()
@@ -579,14 +771,14 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-021
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 5.1.2**: Create MessageService
+- [ ] **Task 6.1.2**: Create MessageService
   - Implement addMessage()
   - Implement getMessages() with pagination
   - Store message embeddings
   - **User Story**: US-021
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 5.1.3**: Create conversation endpoints
+- [ ] **Task 6.1.3**: Create conversation endpoints
   - Create POST /conversations
   - Create GET /conversations
   - Create GET /conversations/:id
@@ -594,9 +786,9 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-021
   - **Complexity**: Medium (5 hours)
 
-### 5.2 Natural Language Processing
+### 6.2 Natural Language Processing
 
-- [ ] **Task 5.2.1**: Create IntentParser
+- [ ] **Task 6.2.1**: Create IntentParser
   - Identify time entry intent
   - Extract hours/duration
   - Extract project references
@@ -604,7 +796,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-022
   - **Complexity**: High (12 hours)
 
-- [ ] **Task 5.2.2**: Create TimeEntryHandler
+- [ ] **Task 6.2.2**: Create TimeEntryHandler
   - Parse natural language time entries
   - Create time entries from chat
   - Handle ambiguous requests
@@ -612,30 +804,30 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-022
   - **Complexity**: High (10 hours)
 
-- [ ] **Task 5.2.3**: Create QueryHandler
+- [ ] **Task 6.2.3**: Create QueryHandler
   - Handle "show my time" queries
   - Handle project queries
   - Format responses in natural language
   - **User Story**: US-023
   - **Complexity**: Medium (8 hours)
 
-### 5.3 Memory System
+### 6.3 Memory System
 
-- [ ] **Task 5.3.1**: Implement short-term memory (Redis)
+- [ ] **Task 6.3.1**: Implement short-term memory (Redis)
   - Store active conversation context
   - Store recent messages
   - Set appropriate TTL
   - **User Story**: US-024
   - **Complexity**: Medium (4 hours)
 
-- [ ] **Task 5.3.2**: Implement long-term memory (PostgreSQL)
+- [ ] **Task 6.3.2**: Implement long-term memory (PostgreSQL)
   - Store all conversation history
   - Create conversation_context table
   - Track conversation stages
   - **User Story**: US-024
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 5.3.3**: Implement semantic memory (embeddings)
+- [ ] **Task 6.3.3**: Implement semantic memory (embeddings)
   - Set up OpenAI API or alternative
   - Generate message embeddings
   - Store embeddings in PostgreSQL
@@ -643,16 +835,16 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-024
   - **Complexity**: High (10 hours)
 
-- [ ] **Task 5.3.4**: Create user memory system
+- [ ] **Task 6.3.4**: Create user memory system
   - Track user preferences
   - Store common patterns
   - Personalize responses
   - **User Story**: US-024
   - **Complexity**: Medium (6 hours)
 
-### 5.4 Chat API
+### 6.4 Chat API
 
-- [ ] **Task 5.4.1**: Create chat endpoint
+- [ ] **Task 6.4.1**: Create chat endpoint
   - Create POST /chat
   - Parse user message
   - Determine intent
@@ -661,14 +853,14 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-025
   - **Complexity**: High (10 hours)
 
-- [ ] **Task 5.4.2**: Implement conversation context
+- [ ] **Task 6.4.2**: Implement conversation context
   - Maintain conversation state
   - Load relevant memory
   - Inject context into responses
   - **User Story**: US-025
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 5.4.3**: Add error handling and fallbacks
+- [ ] **Task 6.4.3**: Add error handling and fallbacks
   - Handle unrecognized intents
   - Provide helpful suggestions
   - Escalate to human support option
@@ -677,14 +869,14 @@ manageable tasks organized by implementation phase.
 
 ---
 
-## Phase 6: Frontend Foundation
+## Phase 7: Frontend Foundation
 
-**Duration**: 2 weeks **Dependencies**: Phase 2, Phase 5 **Related Docs**:
+**Duration**: 2 weeks **Dependencies**: Phase 2, Phase 6 **Related Docs**:
 [code.md](./code.md)
 
-### 6.1 Authentication UI
+### 7.1 Authentication UI
 
-- [ ] **Task 6.1.1**: Create login page
+- [ ] **Task 7.1.1**: Create login page
   - Create app/(auth)/login/page.tsx
   - Build login form component
   - Handle email/password login
@@ -692,7 +884,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-008
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 6.1.2**: Create registration page
+- [ ] **Task 7.1.2**: Create registration page
   - Create app/(auth)/register/page.tsx
   - Build registration form
   - Validate password strength
@@ -700,7 +892,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-007
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 6.1.3**: Create 2FA setup page
+- [ ] **Task 7.1.3**: Create 2FA setup page
   - Create app/(auth)/2fa/setup/page.tsx
   - Display QR code
   - Verify TOTP code
@@ -708,16 +900,16 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-010
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 6.1.4**: Create 2FA verification page
+- [ ] **Task 7.1.4**: Create 2FA verification page
   - Create app/(auth)/2fa/verify/page.tsx
   - Input for TOTP code
   - Handle verification
   - **User Story**: US-010
   - **Complexity**: Low (3 hours)
 
-### 6.2 Authentication Context
+### 7.2 Authentication Context
 
-- [ ] **Task 6.2.1**: Create AuthContext
+- [ ] **Task 7.2.1**: Create AuthContext
   - Implement login(), logout()
   - Implement verify2FA()
   - Store user state
@@ -725,23 +917,23 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-008
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 6.2.2**: Create useAuth hook
+- [ ] **Task 7.2.2**: Create useAuth hook
   - Expose auth methods
   - Provide user data
   - Handle loading states
   - **User Story**: US-008
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 6.2.3**: Create ProtectedRoute component
+- [ ] **Task 7.2.3**: Create ProtectedRoute component
   - Check authentication
   - Redirect to login if needed
   - Show loading state
   - **User Story**: US-008
   - **Complexity**: Medium (3 hours)
 
-### 6.3 Chat Interface
+### 7.3 Chat Interface
 
-- [ ] **Task 6.3.1**: Create chat layout
+- [ ] **Task 7.3.1**: Create chat layout
   - Create app/chat/layout.tsx
   - Design sidebar for conversations
   - Create main chat area
@@ -749,7 +941,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-026
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 6.3.2**: Create ChatMessages component
+- [ ] **Task 7.3.2**: Create ChatMessages component
   - Display message history
   - Style user vs assistant messages
   - Auto-scroll to bottom
@@ -757,7 +949,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-026
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 6.3.3**: Create ChatInput component
+- [ ] **Task 7.3.3**: Create ChatInput component
   - Text input with send button
   - Handle Enter key
   - Show loading state
@@ -765,7 +957,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-026
   - **Complexity**: Low (3 hours)
 
-- [ ] **Task 6.3.4**: Create ConversationList component
+- [ ] **Task 7.3.4**: Create ConversationList component
   - List user conversations
   - Show conversation titles
   - Highlight active conversation
@@ -773,37 +965,37 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-026
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 6.3.5**: Integrate chat API
+- [ ] **Task 7.3.5**: Integrate chat API
   - Connect to POST /chat endpoint
   - Handle streaming responses (optional)
   - Update conversation in real-time
   - **User Story**: US-026
   - **Complexity**: Medium (6 hours)
 
-### 6.4 Shared Components
+### 7.4 Shared Components
 
-- [ ] **Task 6.4.1**: Create Button component
+- [ ] **Task 7.4.1**: Create Button component
   - Support variants (primary, secondary, danger)
   - Support sizes (sm, md, lg)
   - Handle loading state
   - **User Story**: All
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 6.4.2**: Create Input component
+- [ ] **Task 7.4.2**: Create Input component
   - Support different types
   - Show validation errors
   - Support icons
   - **User Story**: All
   - **Complexity**: Low (3 hours)
 
-- [ ] **Task 6.4.3**: Create Modal component
+- [ ] **Task 7.4.3**: Create Modal component
   - Support different sizes
   - Handle close on overlay click
   - Add animation
   - **User Story**: All
   - **Complexity**: Medium (4 hours)
 
-- [ ] **Task 6.4.4**: Create Table component
+- [ ] **Task 7.4.4**: Create Table component
   - Support sorting
   - Support pagination
   - Make responsive
@@ -812,14 +1004,14 @@ manageable tasks organized by implementation phase.
 
 ---
 
-## Phase 7: Admin Interface
+## Phase 8: Admin Interface
 
-**Duration**: 3 weeks **Dependencies**: Phase 6 **Related Docs**:
+**Duration**: 3 weeks **Dependencies**: Phase 7 **Related Docs**:
 [code.md](./code.md), [authentication.md](./authentication.md)
 
-### 7.1 Admin Layout
+### 8.1 Admin Layout
 
-- [ ] **Task 7.1.1**: Create admin layout
+- [ ] **Task 8.1.1**: Create admin layout
   - Create app/(admin)/layout.tsx
   - Add navigation sidebar
   - Add header with user menu
@@ -827,7 +1019,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-027
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 7.1.2**: Create admin dashboard
+- [ ] **Task 8.1.2**: Create admin dashboard
   - Create app/(admin)/dashboard/page.tsx
   - Show key metrics (users, projects, time entries)
   - Add charts for time tracking
@@ -835,9 +1027,9 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-027
   - **Complexity**: High (10 hours)
 
-### 7.2 User Management
+### 8.2 User Management
 
-- [ ] **Task 7.2.1**: Create user list page
+- [ ] **Task 8.2.1**: Create user list page
   - Create app/(admin)/users/page.tsx
   - Display users in table
   - Add search and filters
@@ -845,7 +1037,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-028
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 7.2.2**: Create user detail page
+- [ ] **Task 8.2.2**: Create user detail page
   - Create app/(admin)/users/[id]/page.tsx
   - Show user information
   - Display user roles
@@ -853,30 +1045,30 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-028
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 7.2.3**: Create user form components
+- [ ] **Task 8.2.3**: Create user form components
   - Create AddUserForm component
   - Create EditUserForm component
   - Handle role assignment
   - **User Story**: US-028
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 7.2.4**: Add impersonation button
+- [ ] **Task 8.2.4**: Add impersonation button
   - Add "Sign in as" button to user list
   - Implement impersonation flow
   - Show confirmation dialog
   - **User Story**: US-006
   - **Complexity**: Medium (4 hours)
 
-### 7.3 Impersonation UI
+### 8.3 Impersonation UI
 
-- [ ] **Task 7.3.1**: Create ImpersonationContext
+- [ ] **Task 8.3.1**: Create ImpersonationContext
   - Implement startImpersonation()
   - Implement endImpersonation()
   - Manage impersonation state
   - **User Story**: US-006
   - **Complexity**: Medium (4 hours)
 
-- [ ] **Task 7.3.2**: Create ImpersonationBanner
+- [ ] **Task 8.3.2**: Create ImpersonationBanner
   - Show yellow warning banner
   - Display target user email
   - Add "Exit Impersonation" button
@@ -884,9 +1076,9 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-006
   - **Complexity**: Low (3 hours)
 
-### 7.4 Role & Capability Management
+### 8.4 Role & Capability Management
 
-- [ ] **Task 7.4.1**: Create roles list page
+- [ ] **Task 8.4.1**: Create roles list page
   - Create app/(admin)/roles/page.tsx
   - Display roles in table
   - Show capability count
@@ -894,7 +1086,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-029
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 7.4.2**: Create role detail page
+- [ ] **Task 8.4.2**: Create role detail page
   - Create app/(admin)/roles/[id]/page.tsx
   - Show role information
   - List assigned capabilities
@@ -902,7 +1094,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-029
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 7.4.3**: Create capability management UI
+- [ ] **Task 8.4.3**: Create capability management UI
   - Create CapabilityList component
   - Show allow/deny status
   - Toggle capability assignment
@@ -910,9 +1102,9 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-029
   - **Complexity**: Medium (6 hours)
 
-### 7.5 Project Management (Admin)
+### 8.5 Project Management (Admin)
 
-- [ ] **Task 7.5.1**: Create projects list page
+- [ ] **Task 8.5.1**: Create projects list page
   - Create app/(admin)/projects/page.tsx
   - Display all projects across clients
   - Add filters (client, status, date)
@@ -920,7 +1112,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-030
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 7.5.2**: Create project detail page
+- [ ] **Task 8.5.2**: Create project detail page
   - Create app/(admin)/projects/[id]/page.tsx
   - Show project information
   - Display team members
@@ -929,9 +1121,9 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-030
   - **Complexity**: High (8 hours)
 
-### 7.6 Time Entry Management (Admin)
+### 8.6 Time Entry Management (Admin)
 
-- [ ] **Task 7.6.1**: Create time entries list page
+- [ ] **Task 8.6.1**: Create time entries list page
   - Create app/(admin)/time-entries/page.tsx
   - Display all time entries
   - Add filters (user, project, date range)
@@ -939,16 +1131,16 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-031
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 7.6.2**: Add bulk operations
+- [ ] **Task 8.6.2**: Add bulk operations
   - Select multiple entries
   - Bulk approve/reject
   - Bulk export
   - **User Story**: US-031
   - **Complexity**: Medium (5 hours)
 
-### 7.7 Audit Log Viewer
+### 8.7 Audit Log Viewer
 
-- [ ] **Task 7.7.1**: Create audit logs page
+- [ ] **Task 8.7.1**: Create audit logs page
   - Create app/(admin)/audit/page.tsx
   - Display audit trail
   - Add filters (user, action, date)
@@ -959,14 +1151,14 @@ manageable tasks organized by implementation phase.
 
 ---
 
-## Phase 8: Reporting & Analytics
+## Phase 9: Reporting & Analytics
 
-**Duration**: 1.5 weeks **Dependencies**: Phase 7 **Related Docs**:
+**Duration**: 1.5 weeks **Dependencies**: Phase 8 **Related Docs**:
 [instructions.md](./instructions.md)
 
-### 8.1 Reporting Backend
+### 9.1 Reporting Backend
 
-- [ ] **Task 8.1.1**: Create ReportService
+- [ ] **Task 9.1.1**: Create ReportService
   - Implement time by user report
   - Implement time by project report
   - Implement time by date range report
@@ -974,7 +1166,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-033
   - **Complexity**: High (10 hours)
 
-- [ ] **Task 8.1.2**: Create report endpoints
+- [ ] **Task 9.1.2**: Create report endpoints
   - Create GET /reports/time-by-user
   - Create GET /reports/time-by-project
   - Create GET /reports/time-by-date
@@ -982,9 +1174,9 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-033
   - **Complexity**: Medium (6 hours)
 
-### 8.2 Reporting Frontend
+### 9.2 Reporting Frontend
 
-- [ ] **Task 8.2.1**: Create reports page
+- [ ] **Task 9.2.1**: Create reports page
   - Create app/(admin)/reports/page.tsx
   - Add report type selector
   - Add date range picker
@@ -992,7 +1184,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-034
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 8.2.2**: Create chart components
+- [ ] **Task 9.2.2**: Create chart components
   - Install chart library (Chart.js or Recharts)
   - Create TimeChart component
   - Create ProjectChart component
@@ -1000,16 +1192,16 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-034
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 8.2.3**: Implement export functionality
+- [ ] **Task 9.2.3**: Implement export functionality
   - Add export to CSV button
   - Add export to PDF button
   - Format exports properly
   - **User Story**: US-034
   - **Complexity**: Medium (5 hours)
 
-### 8.3 Dashboard Widgets
+### 9.3 Dashboard Widgets
 
-- [ ] **Task 8.3.1**: Create StatsCards component
+- [ ] **Task 9.3.1**: Create StatsCards component
   - Show total time tracked
   - Show active projects count
   - Show active users count
@@ -1017,7 +1209,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-027
   - **Complexity**: Low (3 hours)
 
-- [ ] **Task 8.3.2**: Create RecentActivity widget
+- [ ] **Task 9.3.2**: Create RecentActivity widget
   - Show recent time entries
   - Show recent user logins
   - Show recent projects
@@ -1026,118 +1218,118 @@ manageable tasks organized by implementation phase.
 
 ---
 
-## Phase 9: Testing & Quality Assurance
+## Phase 10: Testing & Quality Assurance
 
 **Duration**: 2 weeks **Dependencies**: All previous phases **Related Docs**:
 [test.md](./test.md)
 
-### 9.1 Unit Tests
+### 10.1 Unit Tests
 
-- [ ] **Task 9.1.1**: Test authentication services
+- [ ] **Task 10.1.1**: Test authentication services
   - Test JWTService
   - Test TwoFactorService
   - Test GoogleAuthService
   - **User Story**: All
   - **Complexity**: High (12 hours)
 
-- [ ] **Task 9.1.2**: Test authorization service
+- [ ] **Task 10.1.2**: Test authorization service
   - Test permission checking
   - Test explicit deny logic
   - Test caching
   - **User Story**: US-005
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 9.1.3**: Test database services
+- [ ] **Task 10.1.3**: Test database services
   - Test DatabaseService
   - Test multi-tenant isolation
   - Test connection management
   - **User Story**: US-004
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 9.1.4**: Test business logic services
+- [ ] **Task 10.1.4**: Test business logic services
   - Test ProjectService
   - Test TimeEntryService
   - Test TaskService
   - **User Story**: US-016, US-017, US-018
   - **Complexity**: High (10 hours)
 
-### 9.2 Integration Tests
+### 10.2 Integration Tests
 
-- [ ] **Task 9.2.1**: Test authentication flow
+- [ ] **Task 10.2.1**: Test authentication flow
   - Test registration → login → 2FA
   - Test token refresh
   - Test Google OAuth
   - **User Story**: US-007, US-008, US-010, US-011
   - **Complexity**: High (10 hours)
 
-- [ ] **Task 9.2.2**: Test authorization flow
+- [ ] **Task 10.2.2**: Test authorization flow
   - Test role assignment
   - Test permission checking
   - Test explicit deny
   - **User Story**: US-005
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 9.2.3**: Test impersonation flow
+- [ ] **Task 10.2.3**: Test impersonation flow
   - Test start impersonation
   - Test actions during impersonation
   - Test exit impersonation
   - **User Story**: US-006
   - **Complexity**: Medium (6 hours)
 
-### 9.3 E2E Tests
+### 10.3 E2E Tests
 
-- [ ] **Task 9.3.1**: Test user chat flow
+- [ ] **Task 10.3.1**: Test user chat flow
   - Test login
   - Test creating time entry via chat
   - Test querying time
   - **User Story**: US-026
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 9.3.2**: Test admin user management
+- [ ] **Task 10.3.2**: Test admin user management
   - Test creating user
   - Test assigning roles
   - Test impersonation
   - **User Story**: US-028, US-006
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 9.3.3**: Test reporting flow
+- [ ] **Task 10.3.3**: Test reporting flow
   - Test generating reports
   - Test exporting data
   - **User Story**: US-034
   - **Complexity**: Medium (5 hours)
 
-### 9.4 Security Testing
+### 10.4 Security Testing
 
-- [ ] **Task 9.4.1**: Test authentication security
+- [ ] **Task 10.4.1**: Test authentication security
   - Test password hashing
   - Test token rotation
   - Test 2FA bypass attempts
   - **User Story**: US-003, US-010
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 9.4.2**: Test authorization security
+- [ ] **Task 10.4.2**: Test authorization security
   - Test permission bypasses
   - Test explicit deny enforcement
   - Test impersonation restrictions
   - **User Story**: US-005, US-006
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 9.4.3**: Test multi-tenant isolation
+- [ ] **Task 10.4.3**: Test multi-tenant isolation
   - Verify data separation
   - Test cross-tenant access attempts
   - **User Story**: US-004
   - **Complexity**: High (6 hours)
 
-### 9.5 Performance Testing
+### 10.5 Performance Testing
 
-- [ ] **Task 9.5.1**: Load test API endpoints
+- [ ] **Task 10.5.1**: Load test API endpoints
   - Test concurrent requests
   - Measure response times
   - Identify bottlenecks
   - **User Story**: All
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 9.5.2**: Test database performance
+- [ ] **Task 10.5.2**: Test database performance
   - Test query performance
   - Test connection pool limits
   - Optimize slow queries
@@ -1146,14 +1338,14 @@ manageable tasks organized by implementation phase.
 
 ---
 
-## Phase 10: Deployment & DevOps
+## Phase 11: Deployment & DevOps
 
-**Duration**: 1 week **Dependencies**: Phase 9 **Related Docs**:
+**Duration**: 1 week **Dependencies**: Phase 10 **Related Docs**:
 [instructions.md](./instructions.md)
 
-### 10.1 Production Setup
+### 11.1 Production Setup
 
-- [ ] **Task 10.1.1**: Set up production database
+- [ ] **Task 11.1.1**: Set up production database
   - Choose cloud provider (Supabase/Railway/Neon)
   - Create main database
   - Configure connection pooling
@@ -1161,23 +1353,23 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-035
   - **Complexity**: Medium (4 hours)
 
-- [ ] **Task 10.1.2**: Set up Redis
+- [ ] **Task 11.1.2**: Set up Redis
   - Deploy Redis instance
   - Configure connection
   - Test caching
   - **User Story**: US-035
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 10.1.3**: Configure environment variables
+- [ ] **Task 11.1.3**: Configure environment variables
   - Set all production env vars
   - Generate production RSA keys
   - Configure OAuth credentials
   - **User Story**: US-035
   - **Complexity**: Low (2 hours)
 
-### 10.2 Backend Deployment
+### 11.2 Backend Deployment
 
-- [ ] **Task 10.2.1**: Deploy backend to Railway/Render
+- [ ] **Task 11.2.1**: Deploy backend to Railway/Render
   - Create deployment configuration
   - Set up environment variables
   - Configure health check
@@ -1185,39 +1377,39 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-036
   - **Complexity**: Medium (4 hours)
 
-- [ ] **Task 10.2.2**: Set up monitoring
+- [ ] **Task 11.2.2**: Set up monitoring
   - Configure error tracking (Sentry)
   - Set up logging
   - Create alerts
   - **User Story**: US-036
   - **Complexity**: Medium (4 hours)
 
-### 10.3 Frontend Deployment
+### 11.3 Frontend Deployment
 
-- [ ] **Task 10.3.1**: Deploy frontend to Vercel
+- [ ] **Task 11.3.1**: Deploy frontend to Vercel
   - Connect GitHub repository
   - Configure environment variables
   - Set up preview deployments
   - **User Story**: US-037
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 10.3.2**: Configure custom domain
+- [ ] **Task 11.3.2**: Configure custom domain
   - Set up DNS records
   - Configure SSL certificates
   - Test production URL
   - **User Story**: US-037
   - **Complexity**: Low (2 hours)
 
-### 10.4 CI/CD Pipeline
+### 11.4 CI/CD Pipeline
 
-- [ ] **Task 10.4.1**: Set up GitHub Actions
+- [ ] **Task 11.4.1**: Set up GitHub Actions
   - Create workflow for tests
   - Create workflow for linting
   - Create workflow for deployment
   - **User Story**: US-038
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 10.4.2**: Configure automated migrations
+- [ ] **Task 11.4.2**: Configure automated migrations
   - Run migrations on deploy
   - Handle migration failures
   - Set up rollback strategy
@@ -1236,12 +1428,13 @@ manageable tasks organized by implementation phase.
 - Phase 2: Authentication & Authorization - 2 weeks
 - Phase 3: Database & Multi-Tenancy - 1 week
 - Phase 4: Backend Core Services - 2 weeks
-- Phase 5: Chat Processing & Memory - 2 weeks
-- Phase 6: Frontend Foundation - 2 weeks
-- Phase 7: Admin Interface - 3 weeks
-- Phase 8: Reporting & Analytics - 1.5 weeks
-- Phase 9: Testing & QA - 2 weeks
-- Phase 10: Deployment & DevOps - 1 week
+- Phase 5: Billing & Compensation Configuration - 1 week
+- Phase 6: Chat Processing & Memory - 2 weeks
+- Phase 7: Frontend Foundation - 2 weeks
+- Phase 8: Admin Interface - 3 weeks
+- Phase 9: Reporting & Analytics - 1.5 weeks
+- Phase 10: Testing & QA - 2 weeks
+- Phase 11: Deployment & DevOps - 1 week
 
 **Total Tasks**: 200+ granular tasks
 
@@ -1249,10 +1442,11 @@ manageable tasks organized by implementation phase.
 
 1. Week 3: Authentication & authorization complete
 2. Week 6: Backend core services functional
-3. Week 10: Chat interface operational
-4. Week 13: Admin interface complete
-5. Week 15: Testing complete
-6. Week 16: Production deployment
+3. Week 7: Billing & compensation system complete
+4. Week 11: Chat interface operational
+5. Week 14: Admin interface complete
+6. Week 16: Testing complete
+7. Week 17: Production deployment
 
 ---
 

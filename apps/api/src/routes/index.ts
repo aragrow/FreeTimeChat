@@ -11,6 +11,9 @@ import clientRoutes from './client.routes';
 import healthRoutes from './health.routes';
 import impersonationRoutes from './impersonation.routes';
 import oauthRoutes from './oauth.routes';
+import projectRoutes from './project.routes';
+import taskRoutes from './task.routes';
+import timeEntryRoutes from './time-entry.routes';
 import twoFactorRoutes from './two-factor.routes';
 
 // Create main API router
@@ -29,11 +32,12 @@ v1Router.use('/2fa', twoFactorRoutes);
 v1Router.use('/admin', adminRoutes);
 v1Router.use('/admin/clients', clientRoutes);
 v1Router.use('/impersonate', impersonationRoutes);
+v1Router.use('/projects', projectRoutes);
+v1Router.use('/time-entries', timeEntryRoutes);
+v1Router.use('/tasks', taskRoutes);
 
 // Future routes will be added here:
 // v1Router.use('/users', usersRoutes);
-// v1Router.use('/projects', projectsRoutes);
-// v1Router.use('/time-entries', timeEntriesRoutes);
 // v1Router.use('/chat', chatRoutes);
 
 // Mount v1 router under /api/v1
