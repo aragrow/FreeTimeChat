@@ -32,14 +32,14 @@ This document breaks down the entire FreeTimeChat application into small, manage
   - **User Story**: US-001
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 1.1.2**: Set up pnpm workspaces
+- [x] **Task 1.1.2**: Set up pnpm workspaces
   - Create `pnpm-workspace.yaml`
   - Configure workspace structure (apps/, packages/)
   - Set up root `package.json` with workspace scripts
   - **User Story**: US-001
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 1.1.3**: Configure Turbo for monorepo
+- [x] **Task 1.1.3**: Configure Turbo for monorepo
   - Install and configure Turborepo
   - Create `turbo.json` with pipeline configuration
   - Set up build, dev, lint, test scripts
