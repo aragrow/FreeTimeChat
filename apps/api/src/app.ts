@@ -7,6 +7,7 @@
 import express, { Application, Request, Response } from 'express';
 import { setupMiddleware } from '@/middleware';
 import { errorHandler, notFoundHandler } from '@/middleware/errorHandler.middleware';
+import apiRoutes from '@/routes';
 
 // Create Express app
 export const app: Application = express();
@@ -14,7 +15,7 @@ export const app: Application = express();
 // Setup middleware (security, parsing, compression, logging)
 setupMiddleware(app);
 
-// Health check route
+// Root health check route
 app.get('/', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
@@ -25,8 +26,8 @@ app.get('/', (_req: Request, res: Response) => {
   });
 });
 
-// API routes will be mounted here
-// app.use('/api', apiRoutes);
+// Mount API routes
+app.use('/api', apiRoutes);
 
 // 404 handler - must be after all routes
 app.use(notFoundHandler);
