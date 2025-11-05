@@ -111,7 +111,7 @@ This document breaks down the entire FreeTimeChat application into small, manage
 
 ### 1.5 Development Tools
 
-- [ ] **Task 1.5.1**: Configure ESLint & Prettier
+- [x] **Task 1.5.1**: Configure ESLint & Prettier
   - Set up ESLint with TypeScript rules
   - Configure Prettier
   - Create shared config in packages/config

@@ -1,44 +1,22 @@
+/**
+ * Root ESLint Configuration
+ *
+ * Uses shared base ESLint config from @freetimechat/config
+ * Applied to root-level files and scripts
+ */
+
 module.exports = {
   root: true,
-  extends: ['eslint:recommended', 'prettier'],
+  extends: ['./packages/config/eslint-base.js'],
   parserOptions: {
-    ecmaVersion: 2022,
-    sourceType: 'module',
+    project: './tsconfig.json',
   },
-  env: {
-    node: true,
-    es6: true,
-  },
-  ignorePatterns: [
-    'node_modules/',
-    'dist/',
-    'build/',
-    '.next/',
-    'coverage/',
-    '*.config.js',
-  ],
-  rules: {
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
-    'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-  },
+  // Override for scripts directory to allow console
   overrides: [
     {
-      files: ['*.ts', '*.tsx'],
-      parser: '@typescript-eslint/parser',
-      parserOptions: {
-        project: ['./tsconfig.json', './apps/*/tsconfig.json', './packages/*/tsconfig.json'],
-      },
-      extends: [
-        'eslint:recommended',
-        'plugin:@typescript-eslint/recommended',
-        'prettier',
-      ],
+      files: ['scripts/**/*.js', 'scripts/**/*.ts'],
       rules: {
-        '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-        '@typescript-eslint/no-explicit-any': 'warn',
-        '@typescript-eslint/explicit-function-return-type': 'off',
-        '@typescript-eslint/explicit-module-boundary-types': 'off',
-        '@typescript-eslint/no-non-null-assertion': 'warn',
+        'no-console': 'off',
       },
     },
   ],
