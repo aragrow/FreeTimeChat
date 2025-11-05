@@ -24,6 +24,9 @@ describe('Authentication Flow Integration Tests', () => {
   beforeAll(async () => {
     dbAvailable = await isDatabaseAvailable();
     if (dbAvailable) {
+      // Clean up any leftover data from previous test runs
+      await cleanupTestDatabase();
+      // Seed fresh test data
       await seedTestDatabase();
     }
   });
@@ -176,13 +179,18 @@ describe('Authentication Flow Integration Tests', () => {
         return;
       }
 
-      const response = await request(app)
-        .post('/api/v1/auth/refresh')
-        .send({
-          refreshToken,
-        })
-        .expect(200);
+      const response = await request(app).post('/api/v1/auth/refresh').send({
+        refreshToken,
+      });
 
+      // Log response for debugging
+      if (response.status !== 200) {
+        console.log('❌ Refresh failed with status:', response.status);
+        console.log('❌ Response body:', JSON.stringify(response.body, null, 2));
+        console.log('❌ Refresh token being used:', `${refreshToken.substring(0, 50)}...`);
+      }
+
+      expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
       expect(response.body.data.accessToken).toBeDefined();
       expect(response.body.data.refreshToken).toBeDefined();
@@ -264,6 +272,7 @@ describe('Authentication Flow Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/v1/auth/logout')
+        .set('Authorization', `Bearer ${accessToken}`)
         .send({
           refreshToken,
         })

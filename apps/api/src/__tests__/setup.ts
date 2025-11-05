@@ -16,12 +16,13 @@ process.env.SESSION_SECRET = 'test-secret';
 // Global test timeout
 jest.setTimeout(10000);
 
-// Mock console methods to reduce noise in tests
+// Mock console methods to reduce noise in tests (but keep error and warn)
 global.console = {
   ...console,
   log: jest.fn(),
   debug: jest.fn(),
   info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
+  // Keep warn and error for debugging
+  // warn: jest.fn(),
+  // error: jest.fn(),
 };

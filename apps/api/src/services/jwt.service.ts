@@ -4,6 +4,7 @@
  * Handles JWT token generation and verification using RS256 algorithm
  */
 
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import jwt from 'jsonwebtoken';
@@ -57,11 +58,15 @@ export class JWTService {
    * Sign an access token
    */
   signAccessToken(options: SignTokenOptions): string {
-    const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
+    // Generate unique JWT ID to prevent duplicate tokens
+    const jti = crypto.randomBytes(16).toString('hex');
+
+    const payload: Omit<JWTPayload, 'iat' | 'exp'> & { jti: string } = {
       sub: options.userId,
       email: options.email,
       role: options.role,
       clientId: options.clientId,
+      jti,
     };
 
     if (options.impersonation) {
@@ -81,12 +86,16 @@ export class JWTService {
    * Sign a refresh token (simpler payload)
    */
   signRefreshToken(userId: string, familyId: string): string {
+    // Generate unique JWT ID to prevent duplicate tokens
+    const jti = crypto.randomBytes(16).toString('hex');
+
     // @ts-expect-error - jsonwebtoken types are overly strict for RS256 with string expiresIn
     return jwt.sign(
       {
         sub: userId,
         familyId,
         type: 'refresh',
+        jti,
       },
       this.privateKey,
       {

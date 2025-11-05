@@ -46,7 +46,14 @@
       "Bash(__NEW_LINE__ sed -i '' 's/\"\"jest --testPathPattern=__tests__\\/integration\"\"/\"\"jest __tests__\\/integration\"\"/g' /Users/david/Documents/nextjs/FreeTimeChat/apps/api/package.json)",
       "Bash(pnpm test:*)",
       "Bash(pnpm --filter @freetimechat/api test)",
-      "Bash(pnpm --filter @freetimechat/api test auth-flow)"
+      "Bash(pnpm --filter @freetimechat/api test auth-flow)",
+      "Bash(jobs)",
+      "Bash(pnpm test:integration:*)",
+      "Bash(git restore:*)",
+      "Bash(docker exec:*)",
+      "Bash(NODE_ENV=test pnpm jest:*)",
+      "Bash(pnpm jest:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []

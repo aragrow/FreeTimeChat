@@ -171,57 +171,66 @@ export class AuthService {
     accessToken: string;
     refreshToken: string;
   }> {
-    // Verify refresh token
-    const decoded = this.jwtService.verifyRefreshToken(refreshToken);
+    try {
+      // Verify refresh token
+      const decoded = this.jwtService.verifyRefreshToken(refreshToken);
 
-    // Check if refresh token exists and is not revoked
-    const storedToken = await this.prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
-    });
+      // Check if refresh token exists and is not revoked
+      const storedToken = await this.prisma.refreshToken.findUnique({
+        where: { token: refreshToken },
+      });
 
-    if (!storedToken) {
-      throw new Error('Invalid refresh token');
+      if (!storedToken) {
+        throw new Error('Invalid refresh token');
+      }
+
+      if (storedToken.isRevoked) {
+        // Token reuse detected - revoke entire family
+        await this.revokeTokenFamily(storedToken.familyId);
+        throw new Error('Token reuse detected');
+      }
+
+      // Check expiration
+      if (storedToken.expiresAt < new Date()) {
+        throw new Error('Refresh token expired');
+      }
+
+      // Get user
+      const user = await this.userService.findById(decoded.sub);
+      if (!user || !user.isActive || user.deletedAt) {
+        throw new Error('User not found or inactive');
+      }
+
+      // Get user's role
+      const role = await this.userService.getPrimaryRole(user.id);
+
+      // Revoke old refresh token
+      await this.revokeRefreshToken(refreshToken);
+
+      // Generate new tokens with same family ID
+      const newFamilyId = storedToken.familyId;
+      const tokens = this.jwtService.generateTokenPair(
+        {
+          userId: user.id,
+          email: user.email,
+          role: role || 'user',
+          clientId: user.clientId,
+        },
+        newFamilyId
+      );
+
+      // Store new refresh token
+      await this.storeRefreshToken(user.id, tokens.refreshToken, newFamilyId);
+
+      return tokens;
+    } catch (error) {
+      // Log the specific error for debugging
+      console.error('Refresh token error details:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
     }
-
-    if (storedToken.isRevoked) {
-      // Token reuse detected - revoke entire family
-      await this.revokeTokenFamily(storedToken.familyId);
-      throw new Error('Token reuse detected');
-    }
-
-    // Check expiration
-    if (storedToken.expiresAt < new Date()) {
-      throw new Error('Refresh token expired');
-    }
-
-    // Get user
-    const user = await this.userService.findById(decoded.sub);
-    if (!user || !user.isActive || user.deletedAt) {
-      throw new Error('User not found or inactive');
-    }
-
-    // Get user's role
-    const role = await this.userService.getPrimaryRole(user.id);
-
-    // Revoke old refresh token
-    await this.revokeRefreshToken(refreshToken);
-
-    // Generate new tokens with same family ID
-    const newFamilyId = storedToken.familyId;
-    const tokens = this.jwtService.generateTokenPair(
-      {
-        userId: user.id,
-        email: user.email,
-        role: role || 'user',
-        clientId: user.clientId,
-      },
-      newFamilyId
-    );
-
-    // Store new refresh token
-    await this.storeRefreshToken(user.id, tokens.refreshToken, newFamilyId);
-
-    return tokens;
   }
 
   /**
@@ -245,10 +254,19 @@ export class AuthService {
    * Revoke a refresh token
    */
   private async revokeRefreshToken(token: string): Promise<void> {
-    await this.prisma.refreshToken.update({
-      where: { token },
-      data: { isRevoked: true },
-    });
+    try {
+      await this.prisma.refreshToken.update({
+        where: { token },
+        data: { isRevoked: true },
+      });
+    } catch (error) {
+      // Token might not exist or already be revoked - this is acceptable
+      // Just log and continue
+      console.warn(
+        'Failed to revoke refresh token:',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
   }
 
   /**

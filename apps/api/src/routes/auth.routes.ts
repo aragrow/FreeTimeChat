@@ -87,6 +87,16 @@ router.post('/register', async (req: Request, res: Response) => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Invalid email format',
+      });
+      return;
+    }
+
     const result = await authService.register(data);
 
     res.status(201).json({
@@ -175,6 +185,18 @@ router.post('/refresh', async (req: Request, res: Response) => {
         });
         return;
       }
+
+      if (error.message.includes('User not found')) {
+        res.status(401).json({
+          status: 'error',
+          message: 'Invalid refresh token',
+        });
+        return;
+      }
+
+      // Log unexpected errors for debugging
+      console.error('Unexpected refresh token error:', error.message);
+      console.error(error.stack);
     }
 
     res.status(500).json({

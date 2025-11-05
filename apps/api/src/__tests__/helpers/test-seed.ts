@@ -108,12 +108,11 @@ export async function cleanupTestDatabase(): Promise<void> {
 
   try {
     // Delete test users (keep default client and roles for other tests)
+    // Include users with 'test-' prefix or 'invalid-email'
     await prisma.refreshToken.deleteMany({
       where: {
         user: {
-          email: {
-            contains: 'test-',
-          },
+          OR: [{ email: { contains: 'test-' } }, { email: 'invalid-email' }],
         },
       },
     });
@@ -121,18 +120,14 @@ export async function cleanupTestDatabase(): Promise<void> {
     await prisma.userRole.deleteMany({
       where: {
         user: {
-          email: {
-            contains: 'test-',
-          },
+          OR: [{ email: { contains: 'test-' } }, { email: 'invalid-email' }],
         },
       },
     });
 
     await prisma.user.deleteMany({
       where: {
-        email: {
-          contains: 'test-',
-        },
+        OR: [{ email: { contains: 'test-' } }, { email: 'invalid-email' }],
       },
     });
 
