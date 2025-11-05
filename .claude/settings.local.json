@@ -32,7 +32,8 @@
       "Bash(openssl rsa:*)",
       "Bash(pnpm prisma:generate:*)",
       "Bash(git commit:*)",
-      "Bash(pnpm build:api:*)"
+      "Bash(pnpm build:api:*)",
+      "Bash(pnpm prisma:format:*)"
     ],
     "deny": [],
     "ask": []

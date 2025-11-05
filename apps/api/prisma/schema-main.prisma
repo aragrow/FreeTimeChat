@@ -18,22 +18,24 @@ datasource db {
 }
 
 model User {
-  id               String         @id @default(uuid())
-  email            String         @unique
-  passwordHash     String?        @map("password_hash")
+  id               String            @id @default(uuid())
+  email            String            @unique
+  passwordHash     String?           @map("password_hash")
   name             String
-  clientId         String         @map("client_id")
-  client           Client         @relation(fields: [clientId], references: [id])
+  clientId         String            @map("client_id")
+  client           Client            @relation(fields: [clientId], references: [id])
   roles            UserRole[]
   refreshTokens    RefreshToken[]
-  googleId         String?        @unique @map("google_id")
-  twoFactorEnabled Boolean        @default(false) @map("two_factor_enabled")
-  twoFactorSecret  String?        @map("two_factor_secret")
-  isActive         Boolean        @default(true) @map("is_active")
-  lastLoginAt      DateTime?      @map("last_login_at")
-  createdAt        DateTime       @default(now()) @map("created_at")
-  updatedAt        DateTime       @updatedAt @map("updated_at")
-  deletedAt        DateTime?      @map("deleted_at")
+  googleId         String?           @unique @map("google_id")
+  twoFactorEnabled Boolean           @default(false) @map("two_factor_enabled")
+  twoFactorSecret  String?           @map("two_factor_secret")
+  isActive         Boolean           @default(true) @map("is_active")
+  lastLoginAt      DateTime?         @map("last_login_at")
+  compensationType CompensationType? @map("compensation_type")
+  hourlyRate       Decimal?          @map("hourly_rate") @db.Decimal(10, 2)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  deletedAt        DateTime?         @map("deleted_at")
 
   @@index([email])
   @@index([clientId])
@@ -139,4 +141,10 @@ model ImpersonationSession {
   @@index([targetUserId])
   @@index([startedAt])
   @@map("impersonation_sessions")
+}
+
+enum CompensationType {
+  SALARY_HCE // Highly Compensated Employee - no overtime
+  SALARY_WITH_OT // Salary with overtime after 40 hours
+  HOURLY // Hourly employee with overtime after 40 hours
 }
