@@ -165,14 +165,14 @@ manageable tasks organized by implementation phase.
 
 ### 2.1 JWT Infrastructure
 
-- [ ] **Task 2.1.1**: Generate RSA key pair
+- [x] **Task 2.1.1**: Generate RSA key pair
   - Create scripts to generate RSA keys
   - Store keys securely in apps/api/keys/
   - Add keys to .gitignore
   - **User Story**: US-003
   - **Complexity**: Low (1 hour)
 
-- [ ] **Task 2.1.2**: Implement JWT Service
+- [x] **Task 2.1.2**: Implement JWT Service
   - Create JWTService class with RS256
   - Implement generateAccessToken()
   - Implement verifyAccessToken()
@@ -180,7 +180,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-003
   - **Complexity**: Medium (6 hours)
 
-- [ ] **Task 2.1.3**: Implement Refresh Token Service
+- [x] **Task 2.1.3**: Implement Refresh Token Service
   - Create refresh token generation
   - Implement token rotation
   - Add token family tracking
@@ -190,7 +190,7 @@ manageable tasks organized by implementation phase.
 
 ### 2.2 Database Schema - Main DB (Auth)
 
-- [ ] **Task 2.2.1**: Create User model
+- [x] **Task 2.2.1**: Create User model
   - Define User schema in Prisma
   - Add email, password, 2FA fields
   - Add clientId foreign key
@@ -198,35 +198,35 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-003, US-004
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 2.2.2**: Create Client model
+- [x] **Task 2.2.2**: Create Client model
   - Define Client schema
   - Add database name and host fields
   - Create unique constraints
   - **User Story**: US-004
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 2.2.3**: Create Role & Capability models
+- [x] **Task 2.2.3**: Create Role & Capability models
   - Define Role, Capability schemas
   - Create UserRole junction table
   - Create RoleCapability with isAllowed flag
   - **User Story**: US-005
   - **Complexity**: Medium (4 hours)
 
-- [ ] **Task 2.2.4**: Create RefreshToken model
+- [x] **Task 2.2.4**: Create RefreshToken model
   - Define RefreshToken schema
   - Add familyId for rotation tracking
   - Create indexes for performance
   - **User Story**: US-003
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 2.2.5**: Create ImpersonationSession model
+- [x] **Task 2.2.5**: Create ImpersonationSession model
   - Define impersonation tracking schema
   - Add admin and target user relations
   - Create session metadata fields
   - **User Story**: US-006
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 2.2.6**: Run initial migrations
+- [x] **Task 2.2.6**: Run initial migrations
   - Generate migration for main database
   - Run migration
   - Verify schema creation
@@ -235,7 +235,7 @@ manageable tasks organized by implementation phase.
 
 ### 2.3 Authentication Endpoints
 
-- [ ] **Task 2.3.1**: Implement registration endpoint
+- [x] **Task 2.3.1**: Implement registration endpoint
   - Create POST /auth/register
   - Validate email and password
   - Hash password with bcrypt
@@ -243,15 +243,15 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-007
   - **Complexity**: Medium (4 hours)
 
-- [ ] **Task 2.3.2**: Implement login endpoint
+- [x] **Task 2.3.2**: Implement login endpoint
   - Create POST /auth/login
   - Verify credentials
   - Generate access and refresh tokens
-  - Handle 2FA requirement
+  - Handle 2FA requirement, when the user is connecting to the cloud
   - **User Story**: US-008
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 2.3.3**: Implement refresh token endpoint
+- [x] **Task 2.3.3**: Implement refresh token endpoint
   - Create POST /auth/refresh
   - Verify refresh token
   - Rotate refresh token
@@ -259,7 +259,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-008
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 2.3.4**: Implement logout endpoint
+- [x] **Task 2.3.4**: Implement logout endpoint
   - Create POST /auth/logout
   - Revoke refresh token
   - Clear cookies
@@ -268,7 +268,7 @@ manageable tasks organized by implementation phase.
 
 ### 2.4 Two-Factor Authentication
 
-- [ ] **Task 2.4.1**: Implement 2FA Service
+- [x] **Task 2.4.1**: Implement 2FA Service
   - Install speakeasy and qrcode
   - Create TwoFactorService class
   - Implement secret generation
@@ -276,21 +276,21 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-010
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 2.4.2**: Create 2FA enable endpoint
+- [x] **Task 2.4.2**: Create 2FA enable endpoint
   - Create POST /auth/2fa/enable
   - Generate secret and QR code
   - Store encrypted secret
   - **User Story**: US-010
   - **Complexity**: Medium (4 hours)
 
-- [ ] **Task 2.4.3**: Create 2FA verify endpoint
+- [x] **Task 2.4.3**: Create 2FA verify endpoint
   - Create POST /auth/2fa/verify
   - Verify TOTP code
   - Issue full access token on success
   - **User Story**: US-010
   - **Complexity**: Medium (3 hours)
 
-- [ ] **Task 2.4.4**: Create 2FA disable endpoint
+- [x] **Task 2.4.4**: Create 2FA disable endpoint
   - Create POST /auth/2fa/disable
   - Verify password and current code
   - Remove 2FA from account
@@ -299,21 +299,21 @@ manageable tasks organized by implementation phase.
 
 ### 2.5 Google OAuth
 
-- [ ] **Task 2.5.1**: Set up Google OAuth credentials
+- [x] **Task 2.5.1**: Set up Google OAuth credentials
   - Create Google Cloud project
   - Configure OAuth consent screen
   - Generate client ID and secret
   - **User Story**: US-011
   - **Complexity**: Low (2 hours)
 
-- [ ] **Task 2.5.2**: Implement Google OAuth Service
+- [x] **Task 2.5.2**: Implement Google OAuth Service
   - Create GoogleAuthService
   - Implement authorization URL generation
   - Implement token exchange
   - **User Story**: US-011
   - **Complexity**: Medium (5 hours)
 
-- [ ] **Task 2.5.3**: Create Google OAuth endpoints
+- [x] **Task 2.5.3**: Create Google OAuth endpoints
   - Create GET /auth/google (redirect)
   - Create GET /auth/google/callback
   - Link Google account to user
@@ -322,7 +322,7 @@ manageable tasks organized by implementation phase.
 
 ### 2.6 Authorization System
 
-- [ ] **Task 2.6.1**: Create AuthorizationService
+- [x] **Task 2.6.1**: Create AuthorizationService
   - Implement getUserRoles()
   - Implement getUserCapabilities()
   - Implement userHasCapability() with explicit deny
@@ -330,14 +330,14 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-005
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 2.6.2**: Create authorization middleware
+- [x] **Task 2.6.2**: Create authorization middleware
   - Create requireAuth middleware
   - Create requireCapability middleware
   - Add role-checking middleware
   - **User Story**: US-005
   - **Complexity**: Medium (4 hours)
 
-- [ ] **Task 2.6.3**: Seed default roles and capabilities
+- [x] **Task 2.6.3**: Seed default roles and capabilities
   - Create seed script
   - Define admin, manager, user roles
   - Define capabilities (user.read, project.write, etc.)
@@ -347,7 +347,7 @@ manageable tasks organized by implementation phase.
 
 ### 2.7 Admin Impersonation
 
-- [ ] **Task 2.7.1**: Implement ImpersonationService
+- [x] **Task 2.7.1**: Implement ImpersonationService
   - Create startImpersonation()
   - Create endImpersonation()
   - Generate impersonation JWT
@@ -355,14 +355,14 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-006
   - **Complexity**: High (8 hours)
 
-- [ ] **Task 2.7.2**: Create impersonation endpoints
+- [x] **Task 2.7.2**: Create impersonation endpoints
   - Create POST /admin/impersonate/start
   - Create POST /admin/impersonate/end
   - Create GET /admin/impersonate/sessions
   - **User Story**: US-006
   - **Complexity**: Medium (4 hours)
 
-- [ ] **Task 2.7.3**: Implement impersonation middleware
+- [x] **Task 2.7.3**: Implement impersonation middleware
   - Create detectImpersonation middleware
   - Create restrictImpersonation middleware
   - Add impersonation metadata to requests

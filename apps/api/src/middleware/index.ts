@@ -4,12 +4,13 @@
  * Centralized middleware setup with environment-specific configuration
  */
 
-import { Application, RequestHandler } from 'express';
+import compression from 'compression';
 import cors from 'cors';
+import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import compression from 'compression';
-import express from 'express';
+import passport from 'passport';
+import type { Application, RequestHandler } from 'express';
 
 /**
  * Configure CORS middleware
@@ -69,12 +70,13 @@ export function configureLogger() {
   const format = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
 
   // Custom token for response time in ms
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   morgan.token('response-time-ms', (req: any, res: any) => {
     if (!req._startAt || !res._startAt) {
       return '-';
     }
-    const ms = (res._startAt[0] - req._startAt[0]) * 1000 +
-               (res._startAt[1] - req._startAt[1]) / 1000000;
+    const ms =
+      (res._startAt[0] - req._startAt[0]) * 1000 + (res._startAt[1] - req._startAt[1]) / 1000000;
     return ms.toFixed(3);
   });
 
@@ -118,6 +120,9 @@ export function setupMiddleware(app: Application): void {
 
   // Logging
   app.use(configureLogger());
+
+  // Passport (OAuth)
+  app.use(passport.initialize());
 
   // Trust proxy (for rate limiting and IP detection)
   app.set('trust proxy', 1);
