@@ -52,6 +52,7 @@
     "db:seed": "cd apps/api && pnpm prisma db seed",
     "db:studio": "cd apps/api && pnpm prisma studio",
     "db:migrate-clients": "node scripts/migrate-all-clients.js",
+    "setup:env": "node scripts/setup-env.js",
     "commit": "node scripts/commit.js",
     "prepare": "husky install || true",
     "preinstall": "npx only-allow pnpm",
