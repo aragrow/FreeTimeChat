@@ -46,6 +46,7 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     fetchUserDetails();
     fetchActivityLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
   const fetchUserDetails = async () => {
