@@ -86,11 +86,11 @@ export class PermissionCacheService {
    */
   async cacheUserPermissions(
     userId: string,
-    capabilities: Array<{ capability: string; allow: boolean }>,
+    capabilities: Array<{ capability: string; isAllowed: boolean }>,
     roles: string[]
   ): Promise<boolean> {
     // Filter out denied capabilities, keep only allowed ones
-    const allowedCapabilities = capabilities.filter((c) => c.allow).map((c) => c.capability);
+    const allowedCapabilities = capabilities.filter((c) => c.isAllowed).map((c) => c.capability);
 
     const permissions: UserPermissions = {
       userId,

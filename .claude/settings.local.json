@@ -33,7 +33,14 @@
       "Bash(pnpm prisma:generate:*)",
       "Bash(git commit:*)",
       "Bash(pnpm build:api:*)",
-      "Bash(pnpm prisma:format:*)"
+      "Bash(pnpm prisma:format:*)",
+      "Bash(brew list:*)",
+      "Bash(pnpm type-check:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill -9)",
+      "Bash(find:*)",
+      "Bash(pkill:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

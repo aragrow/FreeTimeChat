@@ -37,7 +37,7 @@ router.post('/', validate(sendMessageSchema), async (req: Request, res: Response
     const chatService = new ChatService(req.clientDb, req.mainDb);
 
     const response = await chatService.processMessage({
-      userId: req.user.userId,
+      userId: req.user.sub,
       message,
       conversationId,
       includeContext,
@@ -82,7 +82,7 @@ router.get(
 
       const chatService = new ChatService(req.clientDb, req.mainDb);
 
-      const context = await chatService.getConversationContext(conversationId, req.user.userId);
+      const context = await chatService.getConversationContext(conversationId, req.user.sub);
 
       if (!context) {
         res.status(404).json({
@@ -121,7 +121,7 @@ router.post('/:id/end', validate(endConversationSchema), async (req: Request, re
 
     const chatService = new ChatService(req.clientDb, req.mainDb);
 
-    const success = await chatService.endConversation(conversationId, req.user.userId);
+    const success = await chatService.endConversation(conversationId, req.user.sub);
 
     if (!success) {
       res.status(500).json({

@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticateJWT } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/permission.middleware';
 import { getCapabilityService } from '../services/capability.service';
 import { getRoleService } from '../services/role.service';
@@ -16,7 +16,7 @@ const roleService = getRoleService();
 const capabilityService = getCapabilityService();
 
 // All admin routes require authentication and admin role
-router.use(authenticate);
+router.use(authenticateJWT);
 router.use(requireRole('admin'));
 
 // ============================================================================

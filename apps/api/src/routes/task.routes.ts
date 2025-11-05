@@ -136,7 +136,7 @@ router.get('/my-tasks', async (req: Request, res: Response) => {
       | undefined;
 
     const taskService = new TaskService(req.clientDb);
-    const tasks = await taskService.getByAssignedUser(req.user.userId, status);
+    const tasks = await taskService.getByAssignedUser(req.user.sub, status);
 
     res.json({
       status: 'success',

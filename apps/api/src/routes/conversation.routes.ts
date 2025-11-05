@@ -42,7 +42,7 @@ router.post('/', validate(createConversationSchema), async (req: Request, res: R
 
     const conversationService = new ConversationService(req.clientDb);
     const conversation = await conversationService.startConversation({
-      userId: req.user.userId,
+      userId: req.user.sub,
       title,
     });
 
@@ -82,10 +82,10 @@ router.get('/', validate(listConversationsSchema), async (req: Request, res: Res
       conversationService.listConversations({
         skip,
         take: limit,
-        userId: req.user.userId,
+        userId: req.user.sub,
         isActive,
       }),
-      conversationService.count(req.user.userId, isActive),
+      conversationService.count(req.user.sub, isActive),
     ]);
 
     res.json({
@@ -119,7 +119,7 @@ router.get('/active', async (req: Request, res: Response) => {
     }
 
     const conversationService = new ConversationService(req.clientDb);
-    const conversation = await conversationService.getActiveConversation(req.user.userId);
+    const conversation = await conversationService.getActiveConversation(req.user.sub);
 
     res.json({
       status: 'success',
@@ -146,7 +146,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     }
 
     const conversationService = new ConversationService(req.clientDb);
-    const stats = await conversationService.getUserStats(req.user.userId);
+    const stats = await conversationService.getUserStats(req.user.sub);
 
     res.json({
       status: 'success',

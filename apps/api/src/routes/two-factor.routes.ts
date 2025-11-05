@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticateJWT } from '../middleware/auth.middleware';
 import { getTwoFactorService } from '../services/two-factor.service';
 import type {
   TwoFactorDisableRequest,
@@ -18,7 +18,7 @@ const router = Router();
 const twoFactorService = getTwoFactorService();
 
 // All 2FA routes require authentication
-router.use(authenticate);
+router.use(authenticateJWT);
 
 /**
  * POST /api/v1/2fa/enable

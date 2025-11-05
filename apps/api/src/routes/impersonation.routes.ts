@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticateJWT } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/permission.middleware';
 import { getImpersonationService } from '../services/impersonation.service';
 import type { Request, Response } from 'express';
@@ -14,7 +14,7 @@ const router = Router();
 const impersonationService = getImpersonationService();
 
 // All impersonation routes require authentication
-router.use(authenticate);
+router.use(authenticateJWT);
 
 /**
  * POST /api/v1/impersonate/start

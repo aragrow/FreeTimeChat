@@ -80,7 +80,7 @@ export class CapabilityService {
   async assignToRole(
     roleId: string,
     capabilityId: string,
-    allow: boolean = true
+    isAllowed: boolean = true
   ): Promise<RoleCapability> {
     // Check if assignment already exists
     const existing = await this.prisma.roleCapability.findUnique({
@@ -101,7 +101,7 @@ export class CapabilityService {
             capabilityId,
           },
         },
-        data: { allow },
+        data: { isAllowed },
         include: {
           role: true,
           capability: true,
@@ -113,7 +113,7 @@ export class CapabilityService {
       data: {
         roleId,
         capabilityId,
-        allow,
+        isAllowed,
       },
       include: {
         role: true,
@@ -175,13 +175,13 @@ export class CapabilityService {
     }
 
     // If any role explicitly denies, return false
-    const hasExplicitDeny = roleCapabilities.some((rc) => !rc.allow);
+    const hasExplicitDeny = roleCapabilities.some((rc) => !rc.isAllowed);
     if (hasExplicitDeny) {
       return false;
     }
 
     // If at least one role allows and no explicit denies, return true
-    return roleCapabilities.some((rc) => rc.allow);
+    return roleCapabilities.some((rc) => rc.isAllowed);
   }
 
   /**
@@ -213,7 +213,7 @@ export class CapabilityService {
    */
   async getUserCapabilities(
     userId: string
-  ): Promise<Array<{ capability: Capability; allow: boolean }>> {
+  ): Promise<Array<{ capability: Capability; isAllowed: boolean }>> {
     const roleCapabilities = await this.prisma.roleCapability.findMany({
       where: {
         role: {
@@ -230,7 +230,7 @@ export class CapabilityService {
     });
 
     // Group by capability and apply explicit deny logic
-    const capabilityMap = new Map<string, { capability: Capability; allow: boolean }>();
+    const capabilityMap = new Map<string, { capability: Capability; isAllowed: boolean }>();
 
     for (const rc of roleCapabilities) {
       const existing = capabilityMap.get(rc.capability.id);
@@ -238,12 +238,12 @@ export class CapabilityService {
       if (!existing) {
         capabilityMap.set(rc.capability.id, {
           capability: rc.capability,
-          allow: rc.allow,
+          isAllowed: rc.isAllowed,
         });
       } else {
         // If any role denies, set to deny
-        if (!rc.allow) {
-          existing.allow = false;
+        if (!rc.isAllowed) {
+          existing.isAllowed = false;
         }
       }
     }

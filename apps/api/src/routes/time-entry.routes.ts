@@ -56,7 +56,7 @@ router.post('/', validate(createTimeEntrySchema), async (req: Request, res: Resp
       const start = new Date(startTime);
       const end = new Date(endTime);
 
-      const overlap = await timeEntryService.checkOverlap(req.user.userId, start, end);
+      const overlap = await timeEntryService.checkOverlap(req.user.sub, start, end);
       if (overlap) {
         res.status(400).json({
           status: 'error',
@@ -68,7 +68,7 @@ router.post('/', validate(createTimeEntrySchema), async (req: Request, res: Resp
     }
 
     const timeEntry = await timeEntryService.create({
-      userId: req.user.userId,
+      userId: req.user.sub,
       projectId,
       description,
       startTime: startTime ? new Date(startTime) : new Date(),
@@ -110,7 +110,7 @@ router.post('/start', validate(startTimeEntrySchema), async (req: Request, res: 
 
     const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
     const timeEntry = await timeEntryService.start({
-      userId: req.user.userId,
+      userId: req.user.sub,
       projectId,
       description,
     });
@@ -171,7 +171,7 @@ router.get('/active', async (req: Request, res: Response) => {
     }
 
     const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
-    const activeEntry = await timeEntryService.findActiveByUserId(req.user.userId);
+    const activeEntry = await timeEntryService.findActiveByUserId(req.user.sub);
 
     res.json({
       status: 'success',
@@ -205,7 +205,7 @@ router.get('/', validate(listTimeEntriesSchema), async (req: Request, res: Respo
     const includeDeleted = req.query.includeDeleted === 'true';
 
     // Only allow users to see their own time entries unless they're an admin
-    const userId = req.user.role === 'admin' ? (req.query.userId as string) : req.user.userId;
+    const userId = req.user.role === 'admin' ? (req.query.userId as string) : req.user.sub;
 
     const skip = (page - 1) * limit;
 
@@ -453,12 +453,12 @@ router.get(
       }
 
       const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
-      const totalHours = await timeEntryService.getTotalHours(req.user.userId, startDate, endDate);
+      const totalHours = await timeEntryService.getTotalHours(req.user.sub, startDate, endDate);
 
       res.json({
         status: 'success',
         data: {
-          userId: req.user.userId,
+          userId: req.user.sub,
           startDate,
           endDate,
           totalHours,
@@ -492,12 +492,12 @@ router.get(
       const endDate = new Date(req.query.endDate as string);
 
       const overtimeService = new OvertimeCalculationService(req.clientDb);
-      const summary = await overtimeService.getOvertimeSummary(req.user.userId, startDate, endDate);
+      const summary = await overtimeService.getOvertimeSummary(req.user.sub, startDate, endDate);
 
       res.json({
         status: 'success',
         data: {
-          userId: req.user.userId,
+          userId: req.user.sub,
           startDate,
           endDate,
           ...summary,
@@ -597,7 +597,7 @@ router.get(
 
       const startDate = new Date(req.query.startDate as string);
       const endDate = new Date(req.query.endDate as string);
-      const userId = (req.query.userId as string) || req.user.userId;
+      const userId = (req.query.userId as string) || req.user.sub;
       const projectId = req.query.projectId as string;
 
       // Get time entries with billability information

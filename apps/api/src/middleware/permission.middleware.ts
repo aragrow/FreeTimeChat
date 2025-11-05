@@ -6,6 +6,7 @@
 
 import { getCapabilityService } from '../services/capability.service';
 import { getRoleService } from '../services/role.service';
+import type { JWTPayload } from '@freetimechat/types';
 import type { NextFunction, Request, Response } from 'express';
 
 /**
@@ -23,7 +24,8 @@ export function requireCapability(capabilityName: string) {
       }
 
       const capabilityService = getCapabilityService();
-      const hasCapability = await capabilityService.userHasCapability(req.user.sub, capabilityName);
+      const userId = (req.user as JWTPayload).sub;
+      const hasCapability = await capabilityService.userHasCapability(userId, capabilityName);
 
       if (!hasCapability) {
         res.status(403).json({
@@ -59,8 +61,9 @@ export function requireAnyCapability(capabilityNames: string[]) {
       }
 
       const capabilityService = getCapabilityService();
+      const userId = (req.user as JWTPayload).sub;
       const hasAnyCapability = await capabilityService.userHasAnyCapability(
-        req.user.sub,
+        userId,
         capabilityNames
       );
 
@@ -98,8 +101,9 @@ export function requireAllCapabilities(capabilityNames: string[]) {
       }
 
       const capabilityService = getCapabilityService();
+      const userId = (req.user as JWTPayload).sub;
       const hasAllCapabilities = await capabilityService.userHasAllCapabilities(
-        req.user.sub,
+        userId,
         capabilityNames
       );
 
@@ -137,7 +141,8 @@ export function requireRole(roleName: string) {
       }
 
       const roleService = getRoleService();
-      const hasRole = await roleService.userHasRole(req.user.sub, roleName);
+      const userId = (req.user as JWTPayload).sub;
+      const hasRole = await roleService.userHasRole(userId, roleName);
 
       if (!hasRole) {
         res.status(403).json({
@@ -173,7 +178,8 @@ export function requireAnyRole(roleNames: string[]) {
       }
 
       const roleService = getRoleService();
-      const hasAnyRole = await roleService.userHasAnyRole(req.user.sub, roleNames);
+      const userId = (req.user as JWTPayload).sub;
+      const hasAnyRole = await roleService.userHasAnyRole(userId, roleNames);
 
       if (!hasAnyRole) {
         res.status(403).json({

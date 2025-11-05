@@ -68,6 +68,7 @@ export class JWTService {
       payload.impersonation = options.impersonation;
     }
 
+    // @ts-expect-error - jsonwebtoken types are overly strict for RS256 with string expiresIn
     return jwt.sign(payload, this.privateKey, {
       algorithm: 'RS256',
       expiresIn: this.accessTokenExpiry,
@@ -80,6 +81,7 @@ export class JWTService {
    * Sign a refresh token (simpler payload)
    */
   signRefreshToken(userId: string, familyId: string): string {
+    // @ts-expect-error - jsonwebtoken types are overly strict for RS256 with string expiresIn
     return jwt.sign(
       {
         sub: userId,

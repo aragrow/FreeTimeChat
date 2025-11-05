@@ -10,7 +10,7 @@ import { getJWTService } from './jwt.service';
 import { getPasswordService } from './password.service';
 import { getUserService } from './user.service';
 import type { User } from '../generated/prisma-main';
-import type { LoginResponse, RegisterRequest } from '@freetimechat/types';
+import type { LoginResponse, RegisterRequest, UserPublic } from '@freetimechat/types';
 
 export class AuthService {
   private prisma: MainPrismaClient;
@@ -271,9 +271,17 @@ export class AuthService {
   /**
    * Sanitize user data for public exposure
    */
-  private sanitizeUser(user: User) {
+  private sanitizeUser(user: User): UserPublic {
     const { passwordHash: _passwordHash, twoFactorSecret: _twoFactorSecret, ...publicUser } = user;
-    return publicUser;
+    // Convert null to undefined for optional fields to match UserPublic type
+    return {
+      ...publicUser,
+      googleId: publicUser.googleId ?? undefined,
+      lastLoginAt: publicUser.lastLoginAt ?? undefined,
+      compensationType: publicUser.compensationType ?? undefined,
+      hourlyRate: publicUser.hourlyRate ?? undefined,
+      deletedAt: publicUser.deletedAt ?? undefined,
+    } as UserPublic;
   }
 }
 

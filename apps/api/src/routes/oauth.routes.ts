@@ -42,7 +42,7 @@ router.get('/google', (req: Request, res: Response, next) => {
  * Handle Google OAuth callback
  */
 router.get('/google/callback', (req: Request, res: Response, _next) => {
-  googleOAuthService.authenticateCallback()(req, res, async (err) => {
+  googleOAuthService.authenticateCallback()(req, res, async (err: Error | null) => {
     if (err) {
       // Redirect to frontend with error
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';

@@ -38,7 +38,8 @@ router.get('/time-by-user', authenticateJWT, async (req, res, next) => {
       const csv = convertTimeByUserToCSV(report);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=time-by-user.csv');
-      return res.send(csv);
+      res.send(csv);
+      return;
     }
 
     res.json({
@@ -77,7 +78,8 @@ router.get('/time-by-project', authenticateJWT, async (req, res, next) => {
       const csv = convertTimeByProjectToCSV(report);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=time-by-project.csv');
-      return res.send(csv);
+      res.send(csv);
+      return;
     }
 
     res.json({
@@ -116,7 +118,8 @@ router.get('/time-by-date', authenticateJWT, async (req, res, next) => {
       const csv = convertTimeByDateToCSV(report);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=time-by-date.csv');
-      return res.send(csv);
+      res.send(csv);
+      return;
     }
 
     res.json({

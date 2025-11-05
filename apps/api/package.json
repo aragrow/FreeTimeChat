@@ -23,7 +23,11 @@
     "prisma:format": "prisma format --schema=prisma/schema-main.prisma && prisma format --schema=prisma/schema-client.prisma",
     "prisma:validate": "prisma validate --schema=prisma/schema-main.prisma && prisma validate --schema=prisma/schema-client.prisma",
     "prisma:push:main": "prisma db push --schema=prisma/schema-main.prisma",
-    "prisma:push:client": "prisma db push --schema=prisma/schema-client.prisma"
+    "prisma:push:client": "prisma db push --schema=prisma/schema-client.prisma",
+    "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
   },
   "dependencies": {
     "@freetimechat/types": "workspace:*",

@@ -96,7 +96,7 @@ function defaultKeyGenerator(req: Request): string {
  */
 export function userKeyGenerator(req: Request): string {
   if (req.user?.userId) {
-    return `user:${req.user.userId}`;
+    return `user:${req.user.sub}`;
   }
   return defaultKeyGenerator(req);
 }

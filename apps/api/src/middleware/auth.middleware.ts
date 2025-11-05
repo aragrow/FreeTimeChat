@@ -86,7 +86,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
  * Similar to authenticate, but doesn't fail if no token is provided.
  * Useful for endpoints that work both with and without authentication.
  */
-export function optionalAuthenticate(req: Request, res: Response, next: NextFunction): void {
+export function optionalAuthenticate(req: Request, _res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
 
   // If no auth header, just continue without setting req.user
