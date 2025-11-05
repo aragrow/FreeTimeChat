@@ -572,7 +572,7 @@ manageable tasks organized by implementation phase.
 
 ### 5.1 User Compensation Types
 
-- [ ] **Task 5.1.1**: Extend User model with compensation fields
+- [x] **Task 5.1.1**: Extend User model with compensation fields
   - Add compensationType enum (SALARY_HCE, SALARY_WITH_OT, HOURLY)
   - Add hourlyRate decimal field
   - Create migration for new fields
@@ -596,7 +596,7 @@ manageable tasks organized by implementation phase.
 
 ### 5.2 Project Billability Configuration
 
-- [ ] **Task 5.2.1**: Extend Project model
+- [x] **Task 5.2.1**: Extend Project model
   - Add defaultBillable boolean field
   - Add isBillableProject boolean field
   - Create migration
@@ -610,7 +610,7 @@ manageable tasks organized by implementation phase.
   - **User Story**: US-040
   - **Complexity**: Low (3 hours)
 
-- [ ] **Task 5.2.3**: Create ProjectMember junction table
+- [x] **Task 5.2.3**: Create ProjectMember junction table
   - Define ProjectMember schema
   - Add userId and projectId foreign keys
   - Add isBillable boolean (overrides project default)
@@ -637,7 +637,7 @@ manageable tasks organized by implementation phase.
 
 ### 5.3 Overtime Calculation
 
-- [ ] **Task 5.3.1**: Extend TimeEntry model
+- [x] **Task 5.3.1**: Extend TimeEntry model
   - Add regularHours decimal field
   - Add overtimeHours decimal field
   - Add weekStartDate date field (for grouping)
@@ -675,7 +675,7 @@ manageable tasks organized by implementation phase.
 
 ### 5.4 Billable Hours Tracking
 
-- [ ] **Task 5.4.1**: Add billability tracking to TimeEntry
+- [x] **Task 5.4.1**: Add billability tracking to TimeEntry
   - Add isBillable boolean field
   - Auto-set from project member assignment
   - Allow manual override
