@@ -16,6 +16,7 @@ import impersonationRoutes from './impersonation.routes';
 import oauthRoutes from './oauth.routes';
 import projectMemberRoutes from './project-member.routes';
 import projectRoutes from './project.routes';
+import reportRoutes from './report.routes';
 import taskRoutes from './task.routes';
 import timeEntryRoutes from './time-entry.routes';
 import twoFactorRoutes from './two-factor.routes';
@@ -43,6 +44,7 @@ v1Router.use('/time-entries', timeEntryRoutes);
 v1Router.use('/tasks', taskRoutes);
 v1Router.use('/conversations', conversationRoutes);
 v1Router.use('/chat', chatRoutes);
+v1Router.use('/reports', reportRoutes);
 
 // Future routes will be added here:
 // v1Router.use('/users', usersRoutes);
