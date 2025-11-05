@@ -78,7 +78,7 @@ This document breaks down the entire FreeTimeChat application into small, manage
   - **User Story**: US-001
   - **Complexity**: Low (3 hours)
 
-- [ ] **Task 1.3.2**: Configure middleware stack
+- [x] **Task 1.3.2**: Configure middleware stack
   - Set up CORS with proper origins
   - Add body-parser, helmet, compression
   - Configure request logging (morgan)

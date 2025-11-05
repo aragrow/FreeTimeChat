@@ -1,51 +1,35 @@
 /**
  * Express Application Configuration
  *
- * Sets up Express app with basic middleware and routes
+ * Sets up Express app with middleware, routes, and error handling
  */
 
-import express, { Application, Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import compression from 'compression';
+import express, { Application, Request, Response } from 'express';
+import { setupMiddleware } from '@/middleware';
+import { errorHandler, notFoundHandler } from '@/middleware/errorHandler.middleware';
 
 // Create Express app
 export const app: Application = express();
 
-// Basic middleware
-app.use(helmet()); // Security headers
-app.use(cors()); // CORS
-app.use(compression()); // Response compression
-app.use(express.json()); // JSON body parser
-app.use(express.urlencoded({ extended: true })); // URL-encoded body parser
-app.use(morgan('dev')); // Request logging
+// Setup middleware (security, parsing, compression, logging)
+setupMiddleware(app);
 
-// Basic health check route
+// Health check route
 app.get('/', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     message: 'FreeTimeChat API',
     version: '0.1.0',
+    environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
   });
 });
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    status: 'error',
-    message: 'Route not found',
-    path: req.path,
-  });
-});
+// API routes will be mounted here
+// app.use('/api', apiRoutes);
 
-// Error handler
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('❌ Error:', err);
-  res.status(500).json({
-    status: 'error',
-    message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
-  });
-});
+// 404 handler - must be after all routes
+app.use(notFoundHandler);
+
+// Error handler - must be last
+app.use(errorHandler);
