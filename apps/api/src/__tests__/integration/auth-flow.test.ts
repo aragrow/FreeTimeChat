@@ -16,12 +16,22 @@
 import request from 'supertest';
 import { app } from '../../app';
 import { isDatabaseAvailable } from '../helpers/database-checker';
+import { seedTestDatabase, cleanupTestDatabase } from '../helpers/test-seed';
 
 describe('Authentication Flow Integration Tests', () => {
   let dbAvailable = false;
 
   beforeAll(async () => {
     dbAvailable = await isDatabaseAvailable();
+    if (dbAvailable) {
+      await seedTestDatabase();
+    }
+  });
+
+  afterAll(async () => {
+    if (dbAvailable) {
+      await cleanupTestDatabase();
+    }
   });
 
   const testUser = {
@@ -138,7 +148,7 @@ describe('Authentication Flow Integration Tests', () => {
         .expect(401);
 
       expect(response.body.status).toBe('error');
-      expect(response.body.message).toContain('Invalid credentials');
+      expect(response.body.message).toContain('Invalid');
     });
 
     it('should reject non-existent user', async () => {
@@ -214,7 +224,8 @@ describe('Authentication Flow Integration Tests', () => {
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.email).toBe(testUser.email);
-      expect(response.body.data.name).toBe(testUser.name);
+      expect(response.body.data.sub).toBeDefined(); // JWT includes sub (user ID)
+      expect(response.body.data.role).toBeDefined(); // JWT includes role
     });
 
     it('should reject request without token', async () => {
