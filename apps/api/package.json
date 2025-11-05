@@ -10,26 +10,41 @@
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist node_modules .turbo"
+    "clean": "rm -rf dist node_modules .turbo",
+    "prisma:generate": "prisma generate --schema=prisma/schema-main.prisma && prisma generate --schema=prisma/schema-client.prisma",
+    "prisma:generate:main": "prisma generate --schema=prisma/schema-main.prisma",
+    "prisma:generate:client": "prisma generate --schema=prisma/schema-client.prisma",
+    "prisma:migrate:main": "prisma migrate dev --schema=prisma/schema-main.prisma",
+    "prisma:migrate:client": "prisma migrate dev --schema=prisma/schema-client.prisma",
+    "prisma:migrate:deploy:main": "prisma migrate deploy --schema=prisma/schema-main.prisma",
+    "prisma:migrate:deploy:client": "prisma migrate deploy --schema=prisma/schema-client.prisma",
+    "prisma:studio:main": "prisma studio --schema=prisma/schema-main.prisma",
+    "prisma:studio:client": "prisma studio --schema=prisma/schema-client.prisma",
+    "prisma:format": "prisma format --schema=prisma/schema-main.prisma && prisma format --schema=prisma/schema-client.prisma",
+    "prisma:validate": "prisma validate --schema=prisma/schema-main.prisma && prisma validate --schema=prisma/schema-client.prisma",
+    "prisma:push:main": "prisma db push --schema=prisma/schema-main.prisma",
+    "prisma:push:client": "prisma db push --schema=prisma/schema-client.prisma"
   },
   "dependencies": {
     "@freetimechat/types": "workspace:*",
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "helmet": "^7.1.0",
-    "morgan": "^1.10.0",
+    "@prisma/client": "^6.18.0",
     "compression": "^1.7.4",
-    "dotenv": "^16.3.1"
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/cors": "^2.8.17",
-    "@types/morgan": "^1.9.9",
     "@types/compression": "^1.7.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/morgan": "^1.9.9",
     "@types/node": "^20.10.6",
-    "typescript": "^5.3.3",
     "nodemon": "^3.0.2",
+    "prisma": "^6.18.0",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0"
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.3.3"
   }
 }

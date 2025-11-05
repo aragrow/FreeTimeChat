@@ -53,3 +53,8 @@ temp/
 
 # Turbo
 .turbo/
+
+# Prisma generated clients
+/src/generated/prisma
+/src/generated/prisma-main
+/src/generated/prisma-client

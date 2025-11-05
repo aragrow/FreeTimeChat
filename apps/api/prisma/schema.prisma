@@ -1,0 +1,24 @@
+// Main Prisma Schema File
+// This file acts as the default schema for development
+//
+// For multi-database setup, use:
+// - schema-main.prisma: Main authentication database
+// - schema-client.prisma: Client-specific data databases
+//
+// In development, this typically points to the main database
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// This is a placeholder schema.
+// Use schema-main.prisma and schema-client.prisma for the actual schemas.
+// To generate clients:
+//   pnpm prisma:generate:main
+//   pnpm prisma:generate:client

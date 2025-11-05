@@ -1,0 +1,142 @@
+// Main Database Schema
+// Contains authentication, authorization, and client registry
+//
+// This database is shared across all clients and handles:
+// - User accounts and authentication
+// - Roles and capabilities (RBAC)
+// - Client registry and database routing
+// - Refresh tokens for JWT
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma-main"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String         @id @default(uuid())
+  email            String         @unique
+  passwordHash     String?        @map("password_hash")
+  name             String
+  clientId         String         @map("client_id")
+  client           Client         @relation(fields: [clientId], references: [id])
+  roles            UserRole[]
+  refreshTokens    RefreshToken[]
+  googleId         String?        @unique @map("google_id")
+  twoFactorEnabled Boolean        @default(false) @map("two_factor_enabled")
+  twoFactorSecret  String?        @map("two_factor_secret")
+  isActive         Boolean        @default(true) @map("is_active")
+  lastLoginAt      DateTime?      @map("last_login_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  deletedAt        DateTime?      @map("deleted_at")
+
+  @@index([email])
+  @@index([clientId])
+  @@index([googleId])
+  @@map("users")
+}
+
+model Client {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  databaseName String   @unique @map("database_name")
+  databaseHost String   @default("localhost") @map("database_host")
+  isActive     Boolean  @default(true) @map("is_active")
+  users        User[]
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([databaseName])
+  @@map("clients")
+}
+
+model Role {
+  id           String           @id @default(uuid())
+  name         String           @unique
+  description  String?
+  users        UserRole[]
+  capabilities RoleCapability[]
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  @@map("roles")
+}
+
+model Capability {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String?
+  roles       RoleCapability[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@map("capabilities")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  roleId    String   @map("role_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RoleCapability {
+  id           String     @id @default(uuid())
+  roleId       String     @map("role_id")
+  capabilityId String     @map("capability_id")
+  isAllowed    Boolean    @default(true) @map("is_allowed")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  capability   Capability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@unique([roleId, capabilityId])
+  @@index([roleId])
+  @@index([capabilityId])
+  @@map("role_capabilities")
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  familyId   String   @map("family_id")
+  isRevoked  Boolean  @default(false) @map("is_revoked")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  deviceInfo String?  @map("device_info")
+
+  @@index([userId])
+  @@index([token])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model ImpersonationSession {
+  id           String    @id @default(uuid())
+  adminUserId  String    @map("admin_user_id")
+  targetUserId String    @map("target_user_id")
+  startedAt    DateTime  @default(now()) @map("started_at")
+  endedAt      DateTime? @map("ended_at")
+  reason       String?
+  ipAddress    String?   @map("ip_address")
+  userAgent    String?   @map("user_agent")
+
+  @@index([adminUserId])
+  @@index([targetUserId])
+  @@index([startedAt])
+  @@map("impersonation_sessions")
+}
