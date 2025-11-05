@@ -61,7 +61,7 @@ export const listConversationsSchema = z.object({
       .string()
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : 20))
-      .pipe(z.number().int().positive().max(100).default(20)),
+      .pipe(z.number().int().positive().max(100)),
     isActive: z
       .string()
       .optional()
@@ -83,7 +83,7 @@ export const addMessageSchema = z.object({
   body: z.object({
     content: z.string().min(1, 'Message content is required').max(10000, 'Message too long'),
     role: messageRoleEnum.optional(),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   }),
 });
 
@@ -103,7 +103,7 @@ export const getMessagesSchema = z.object({
       .string()
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : 50))
-      .pipe(z.number().int().positive().max(100).default(50)),
+      .pipe(z.number().int().positive().max(100)),
     role: messageRoleEnum.optional(),
     fromDate: z
       .string()
@@ -135,7 +135,7 @@ export const searchMessagesSchema = z.object({
       .string()
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : 20))
-      .pipe(z.number().int().positive().max(100).default(20)),
+      .pipe(z.number().int().positive().max(100)),
   }),
 });
 

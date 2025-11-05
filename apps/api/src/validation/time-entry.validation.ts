@@ -151,7 +151,7 @@ export const listTimeEntriesSchema = z.object({
       .string()
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : 20))
-      .pipe(z.number().int().positive().max(100).default(20)),
+      .pipe(z.number().int().positive().max(100)),
     userId: z.string().uuid('Invalid user ID format').optional(),
     projectId: z.string().uuid('Invalid project ID format').optional(),
     startDate: z

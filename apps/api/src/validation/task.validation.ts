@@ -89,7 +89,7 @@ export const listTasksSchema = z.object({
       .string()
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : 20))
-      .pipe(z.number().int().positive().max(100).default(20)),
+      .pipe(z.number().int().positive().max(100)),
     projectId: z.string().uuid('Invalid project ID format').optional(),
     status: taskStatusEnum.optional(),
     priority: taskPriorityEnum.optional(),

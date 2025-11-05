@@ -148,22 +148,6 @@ export class ImpersonationService {
         adminUserId,
         endedAt: null,
       },
-      include: {
-        adminUser: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-        targetUser: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-      },
     });
   }
 
@@ -173,22 +157,6 @@ export class ImpersonationService {
   async getSession(sessionId: string): Promise<ImpersonationSession | null> {
     return this.prisma.impersonationSession.findUnique({
       where: { id: sessionId },
-      include: {
-        adminUser: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-        targetUser: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-      },
     });
   }
 
@@ -200,17 +168,8 @@ export class ImpersonationService {
       where: {
         adminUserId,
       },
-      include: {
-        targetUser: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-      },
       orderBy: {
-        createdAt: 'desc',
+        startedAt: 'desc',
       },
       take: limit,
     });
@@ -227,17 +186,8 @@ export class ImpersonationService {
       where: {
         targetUserId,
       },
-      include: {
-        adminUser: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-      },
       orderBy: {
-        createdAt: 'desc',
+        startedAt: 'desc',
       },
       take: limit,
     });

@@ -56,14 +56,21 @@ export class ClientService {
       throw new Error('Email already in use');
     }
 
-    // Generate client ID
+    // Generate client ID and slug
     const clientId = crypto.randomUUID();
+    const slug = name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+    const databaseName = `freetimechat_client_${slug}_${Date.now()}`;
 
     // Create client record in main database
     const client = await this.prisma.client.create({
       data: {
         id: clientId,
         name,
+        slug,
+        databaseName,
       },
     });
 
@@ -72,7 +79,7 @@ export class ClientService {
       const databaseUrl = await this.databaseService.provisionClientDatabase(clientId);
 
       // Hash admin password
-      const hashedPassword = await this.passwordService.hashPassword(adminPassword);
+      const hashedPassword = await this.passwordService.hash(adminPassword);
 
       // Create admin user for this client
       const adminUser = await this.userService.create({
@@ -80,13 +87,12 @@ export class ClientService {
         name: adminName,
         passwordHash: hashedPassword,
         clientId,
-        emailVerified: true, // Auto-verify admin email
       });
 
       // Assign admin role to user
       const adminRole = await this.roleService.findByName('admin');
       if (adminRole) {
-        await this.roleService.assignRole(adminUser.id, adminRole.id);
+        await this.roleService.assignToUser(adminUser.id, adminRole.id);
       }
 
       return {
@@ -134,12 +140,14 @@ export class ClientService {
   async list(options?: {
     skip?: number;
     take?: number;
-    includeDeleted?: boolean;
+    includeInactive?: boolean;
   }): Promise<Client[]> {
     return this.prisma.client.findMany({
-      where: {
-        deletedAt: options?.includeDeleted ? undefined : null,
-      },
+      where: options?.includeInactive
+        ? {}
+        : {
+            isActive: true,
+          },
       skip: options?.skip,
       take: options?.take,
       orderBy: {
@@ -151,11 +159,13 @@ export class ClientService {
   /**
    * Count clients
    */
-  async count(includeDeleted: boolean = false): Promise<number> {
+  async count(includeInactive: boolean = false): Promise<number> {
     return this.prisma.client.count({
-      where: {
-        deletedAt: includeDeleted ? undefined : null,
-      },
+      where: includeInactive
+        ? {}
+        : {
+            isActive: true,
+          },
     });
   }
 
@@ -170,13 +180,13 @@ export class ClientService {
   }
 
   /**
-   * Soft delete client
+   * Deactivate client
    */
-  async softDelete(id: string): Promise<Client> {
+  async deactivate(id: string): Promise<Client> {
     return this.prisma.client.update({
       where: { id },
       data: {
-        deletedAt: new Date(),
+        isActive: false,
       },
     });
   }
@@ -196,13 +206,13 @@ export class ClientService {
   }
 
   /**
-   * Restore soft-deleted client
+   * Reactivate client
    */
-  async restore(id: string): Promise<Client> {
+  async reactivate(id: string): Promise<Client> {
     return this.prisma.client.update({
       where: { id },
       data: {
-        deletedAt: null,
+        isActive: true,
       },
     });
   }

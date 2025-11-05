@@ -39,7 +39,6 @@ export interface SemanticSearchResult {
 
 export class SemanticMemoryService {
   private readonly EMBEDDING_DIMENSION = 1536; // OpenAI ada-002 dimension
-  private readonly _TOP_K_RESULTS = 5;
 
   constructor(private prisma: ClientPrismaClient) {}
 

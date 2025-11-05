@@ -2,12 +2,28 @@
  * Integration Tests for Authentication Flow
  *
  * Tests the complete authentication flow including registration, login, and token refresh
+ *
+ * NOTE: These tests require a running database. They will be skipped if:
+ * - SKIP_INTEGRATION_TESTS=true environment variable is set
+ * - Database connection fails
+ *
+ * To run these tests:
+ * 1. Start database: docker-compose up -d
+ * 2. Run migrations: pnpm prisma:migrate:deploy:main
+ * 3. Run tests: pnpm test:integration
  */
 
 import request from 'supertest';
 import { app } from '../../app';
+import { isDatabaseAvailable } from '../helpers/database-checker';
 
 describe('Authentication Flow Integration Tests', () => {
+  let dbAvailable = false;
+
+  beforeAll(async () => {
+    dbAvailable = await isDatabaseAvailable();
+  });
+
   const testUser = {
     email: `test-${Date.now()}@example.com`,
     password: 'SecurePassword123!',
@@ -19,6 +35,11 @@ describe('Authentication Flow Integration Tests', () => {
 
   describe('POST /api/v1/auth/register', () => {
     it('should register a new user', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app).post('/api/v1/auth/register').send(testUser).expect(201);
 
       expect(response.body.status).toBe('success');
@@ -33,6 +54,11 @@ describe('Authentication Flow Integration Tests', () => {
     });
 
     it('should reject duplicate email registration', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app).post('/api/v1/auth/register').send(testUser).expect(409);
 
       expect(response.body.status).toBe('error');
@@ -40,6 +66,11 @@ describe('Authentication Flow Integration Tests', () => {
     });
 
     it('should validate email format', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app)
         .post('/api/v1/auth/register')
         .send({
@@ -53,6 +84,11 @@ describe('Authentication Flow Integration Tests', () => {
     });
 
     it('should enforce password requirements', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app)
         .post('/api/v1/auth/register')
         .send({
@@ -68,6 +104,11 @@ describe('Authentication Flow Integration Tests', () => {
 
   describe('POST /api/v1/auth/login', () => {
     it('should login with valid credentials', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app)
         .post('/api/v1/auth/login')
         .send({
@@ -83,6 +124,11 @@ describe('Authentication Flow Integration Tests', () => {
     });
 
     it('should reject invalid credentials', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app)
         .post('/api/v1/auth/login')
         .send({
@@ -96,6 +142,11 @@ describe('Authentication Flow Integration Tests', () => {
     });
 
     it('should reject non-existent user', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app)
         .post('/api/v1/auth/login')
         .send({
@@ -110,6 +161,11 @@ describe('Authentication Flow Integration Tests', () => {
 
   describe('POST /api/v1/auth/refresh', () => {
     it('should refresh access token with valid refresh token', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app)
         .post('/api/v1/auth/refresh')
         .send({
@@ -128,6 +184,11 @@ describe('Authentication Flow Integration Tests', () => {
     });
 
     it('should reject invalid refresh token', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app)
         .post('/api/v1/auth/refresh')
         .send({
@@ -141,6 +202,11 @@ describe('Authentication Flow Integration Tests', () => {
 
   describe('GET /api/v1/auth/me', () => {
     it('should get current user with valid access token', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app)
         .get('/api/v1/auth/me')
         .set('Authorization', `Bearer ${accessToken}`)
@@ -152,6 +218,11 @@ describe('Authentication Flow Integration Tests', () => {
     });
 
     it('should reject request without token', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app).get('/api/v1/auth/me').expect(401);
 
       expect(response.body.status).toBe('error');
@@ -159,6 +230,11 @@ describe('Authentication Flow Integration Tests', () => {
     });
 
     it('should reject invalid access token', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app)
         .get('/api/v1/auth/me')
         .set('Authorization', 'Bearer invalid-token')
@@ -170,6 +246,11 @@ describe('Authentication Flow Integration Tests', () => {
 
   describe('POST /api/v1/auth/logout', () => {
     it('should logout and invalidate refresh token', async () => {
+      if (!dbAvailable) {
+        console.log('⏭️  Skipping test - database not available');
+        return;
+      }
+
       const response = await request(app)
         .post('/api/v1/auth/logout')
         .send({

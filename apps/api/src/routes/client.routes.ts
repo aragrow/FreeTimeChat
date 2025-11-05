@@ -102,13 +102,13 @@ router.get('/', authenticateJWT, requireRole('admin'), async (req: Request, res:
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
-    const includeDeleted = req.query.includeDeleted === 'true';
+    const includeInactive = req.query.includeInactive === 'true';
 
     const skip = (page - 1) * limit;
 
     const [clients, total] = await Promise.all([
-      clientService.list({ skip, take: limit, includeDeleted }),
-      clientService.count(includeDeleted),
+      clientService.list({ skip, take: limit, includeInactive }),
+      clientService.count(includeInactive),
     ]);
 
     res.json({
@@ -238,13 +238,13 @@ router.delete(
           message: 'Client permanently deleted',
         });
       } else {
-        // Soft delete
-        const deleted = await clientService.softDelete(id);
+        // Deactivate
+        const deactivated = await clientService.deactivate(id);
 
         res.json({
           status: 'success',
-          data: deleted,
-          message: 'Client soft deleted',
+          data: deactivated,
+          message: 'Client deactivated',
         });
       }
     } catch (error) {
@@ -270,12 +270,12 @@ router.post(
     try {
       const { id } = req.params;
 
-      const restored = await clientService.restore(id);
+      const reactivated = await clientService.reactivate(id);
 
       res.json({
         status: 'success',
-        data: restored,
-        message: 'Client restored successfully',
+        data: reactivated,
+        message: 'Client reactivated successfully',
       });
     } catch (error) {
       console.error('Failed to restore client:', error);

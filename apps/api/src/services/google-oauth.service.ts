@@ -64,7 +64,8 @@ export class GoogleOAuthService {
     passport.deserializeUser(async (id: string, done) => {
       try {
         const user = await this.userService.findById(id);
-        done(null, user);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        done(null, user as any);
       } catch (error) {
         done(error, null);
       }
@@ -75,8 +76,8 @@ export class GoogleOAuthService {
    * Passport verify callback
    */
   private async verifyCallback(
-    accessToken: string,
-    refreshToken: string,
+    _accessToken: string,
+    _refreshToken: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     profile: any,
     done: VerifyCallback
@@ -120,7 +121,8 @@ export class GoogleOAuthService {
       // Update last login
       await this.userService.updateLastLogin(user.id);
 
-      done(null, user);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      done(null, user as any);
     } catch (error) {
       done(error as Error, undefined);
     }

@@ -99,8 +99,7 @@ export class ReportService {
       },
       select: {
         id: true,
-        firstName: true,
-        lastName: true,
+        name: true,
         email: true,
       },
     });
@@ -120,7 +119,7 @@ export class ReportService {
       if (!userReports.has(userKey)) {
         userReports.set(userKey, {
           userId: entry.userId,
-          userName: `${user.firstName} ${user.lastName}`,
+          userName: user.name,
           userEmail: user.email,
           totalMinutes: 0,
           totalHours: 0,
@@ -199,8 +198,7 @@ export class ReportService {
       },
       select: {
         id: true,
-        firstName: true,
-        lastName: true,
+        name: true,
       },
     });
 
@@ -240,7 +238,7 @@ export class ReportService {
       } else {
         report.userBreakdown.push({
           userId: entry.userId,
-          userName: `${user.firstName} ${user.lastName}`,
+          userName: user.name,
           minutes: duration,
           hours: duration / 60,
         });

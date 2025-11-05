@@ -120,7 +120,7 @@ export class TaskService {
 
     if (data.status === 'DONE') {
       updateData.completedAt = new Date();
-    } else if (data.status && data.status !== 'DONE') {
+    } else if (data.status) {
       // If changing from DONE to another status, clear completedAt
       const existing = await this.getById(id);
       if (existing?.status === 'DONE') {
