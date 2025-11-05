@@ -9,6 +9,7 @@ import adminRoutes from './admin.routes';
 import authRoutes from './auth.routes';
 import clientRoutes from './client.routes';
 import compensationRoutes from './compensation.routes';
+import conversationRoutes from './conversation.routes';
 import healthRoutes from './health.routes';
 import impersonationRoutes from './impersonation.routes';
 import oauthRoutes from './oauth.routes';
@@ -39,6 +40,7 @@ v1Router.use('/projects', projectRoutes);
 v1Router.use('/projects', projectMemberRoutes);
 v1Router.use('/time-entries', timeEntryRoutes);
 v1Router.use('/tasks', taskRoutes);
+v1Router.use('/conversations', conversationRoutes);
 
 // Future routes will be added here:
 // v1Router.use('/users', usersRoutes);
