@@ -7,6 +7,7 @@
 import { Router } from 'express';
 import adminRoutes from './admin.routes';
 import authRoutes from './auth.routes';
+import clientRoutes from './client.routes';
 import healthRoutes from './health.routes';
 import impersonationRoutes from './impersonation.routes';
 import oauthRoutes from './oauth.routes';
@@ -26,6 +27,7 @@ v1Router.use('/auth', authRoutes);
 v1Router.use('/oauth', oauthRoutes);
 v1Router.use('/2fa', twoFactorRoutes);
 v1Router.use('/admin', adminRoutes);
+v1Router.use('/admin/clients', clientRoutes);
 v1Router.use('/impersonate', impersonationRoutes);
 
 // Future routes will be added here:
