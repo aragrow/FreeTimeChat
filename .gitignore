@@ -152,3 +152,8 @@ public/uploads/
 # Documentation
 docs/.vitepress/dist
 docs/.vitepress/cache
+
+# Docker
+docker/volumes/
+*.sql
+!docker/postgres/init/*.sql
