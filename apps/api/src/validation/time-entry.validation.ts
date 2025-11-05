@@ -202,6 +202,62 @@ export const totalHoursReportSchema = z.object({
     ),
 });
 
+/**
+ * Overtime Summary Report Schema
+ */
+export const overtimeSummarySchema = z.object({
+  query: z
+    .object({
+      startDate: z.string().datetime({ message: 'Invalid start date format' }),
+      endDate: z.string().datetime({ message: 'Invalid end date format' }),
+    })
+    .refine(
+      (data) => {
+        const start = new Date(data.startDate);
+        const end = new Date(data.endDate);
+        return end > start;
+      },
+      {
+        message: 'End date must be after start date',
+        path: ['endDate'],
+      }
+    ),
+});
+
+/**
+ * Recalculate Week Overtime Schema
+ */
+export const recalculateWeekOvertimeSchema = z.object({
+  body: z.object({
+    userId: z.string().uuid('Invalid user ID format'),
+    weekStartDate: z.string().datetime({ message: 'Invalid week start date format' }).or(z.date()),
+  }),
+});
+
+/**
+ * Billable Hours Summary Schema
+ */
+export const billableHoursSummarySchema = z.object({
+  query: z
+    .object({
+      startDate: z.string().datetime({ message: 'Invalid start date format' }),
+      endDate: z.string().datetime({ message: 'Invalid end date format' }),
+      userId: z.string().uuid('Invalid user ID format').optional(),
+      projectId: z.string().uuid('Invalid project ID format').optional(),
+    })
+    .refine(
+      (data) => {
+        const start = new Date(data.startDate);
+        const end = new Date(data.endDate);
+        return end > start;
+      },
+      {
+        message: 'End date must be after start date',
+        path: ['endDate'],
+      }
+    ),
+});
+
 export type CreateTimeEntryInput = z.infer<typeof createTimeEntrySchema>;
 export type StartTimeEntryInput = z.infer<typeof startTimeEntrySchema>;
 export type StopTimeEntryInput = z.infer<typeof stopTimeEntrySchema>;
@@ -211,3 +267,6 @@ export type DeleteTimeEntryInput = z.infer<typeof deleteTimeEntrySchema>;
 export type ListTimeEntriesInput = z.infer<typeof listTimeEntriesSchema>;
 export type RestoreTimeEntryInput = z.infer<typeof restoreTimeEntrySchema>;
 export type TotalHoursReportInput = z.infer<typeof totalHoursReportSchema>;
+export type OvertimeSummaryInput = z.infer<typeof overtimeSummarySchema>;
+export type RecalculateWeekOvertimeInput = z.infer<typeof recalculateWeekOvertimeSchema>;
+export type BillableHoursSummaryInput = z.infer<typeof billableHoursSummarySchema>;

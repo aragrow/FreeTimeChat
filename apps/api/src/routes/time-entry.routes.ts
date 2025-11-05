@@ -8,12 +8,16 @@ import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
 import { attachClientDatabase } from '../middleware/client-database.middleware';
 import { validate } from '../middleware/validation.middleware';
+import { OvertimeCalculationService } from '../services/overtime-calculation.service';
 import { TimeEntryService } from '../services/time-entry.service';
 import {
+  billableHoursSummarySchema,
   createTimeEntrySchema,
   deleteTimeEntrySchema,
   getTimeEntryByIdSchema,
   listTimeEntriesSchema,
+  overtimeSummarySchema,
+  recalculateWeekOvertimeSchema,
   restoreTimeEntrySchema,
   startTimeEntrySchema,
   stopTimeEntrySchema,
@@ -45,7 +49,7 @@ router.post('/', validate(createTimeEntrySchema), async (req: Request, res: Resp
       return;
     }
 
-    const timeEntryService = new TimeEntryService(req.clientDb);
+    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
 
     // Check for overlaps if endTime is provided
     if (endTime) {
@@ -104,7 +108,7 @@ router.post('/start', validate(startTimeEntrySchema), async (req: Request, res: 
       return;
     }
 
-    const timeEntryService = new TimeEntryService(req.clientDb);
+    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
     const timeEntry = await timeEntryService.start({
       userId: req.user.userId,
       projectId,
@@ -138,7 +142,7 @@ router.post('/:id/stop', validate(stopTimeEntrySchema), async (req: Request, res
 
     const { id } = req.params;
 
-    const timeEntryService = new TimeEntryService(req.clientDb);
+    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
     const timeEntry = await timeEntryService.stop(id);
 
     res.json({
@@ -166,7 +170,7 @@ router.get('/active', async (req: Request, res: Response) => {
       return;
     }
 
-    const timeEntryService = new TimeEntryService(req.clientDb);
+    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
     const activeEntry = await timeEntryService.findActiveByUserId(req.user.userId);
 
     res.json({
@@ -205,7 +209,7 @@ router.get('/', validate(listTimeEntriesSchema), async (req: Request, res: Respo
 
     const skip = (page - 1) * limit;
 
-    const timeEntryService = new TimeEntryService(req.clientDb);
+    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
     const [timeEntries, total] = await Promise.all([
       timeEntryService.list({
         skip,
@@ -251,7 +255,7 @@ router.get('/:id', validate(getTimeEntryByIdSchema), async (req: Request, res: R
 
     const { id } = req.params;
 
-    const timeEntryService = new TimeEntryService(req.clientDb);
+    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
     const timeEntry = await timeEntryService.getById(id);
 
     if (!timeEntry) {
@@ -289,7 +293,7 @@ router.patch('/:id', validate(updateTimeEntrySchema), async (req: Request, res: 
     const { id } = req.params;
     const { description, startTime, endTime, duration } = req.body;
 
-    const timeEntryService = new TimeEntryService(req.clientDb);
+    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
 
     // Check if time entry exists
     const existing = await timeEntryService.getById(id);
@@ -354,7 +358,7 @@ router.delete('/:id', validate(deleteTimeEntrySchema), async (req: Request, res:
     const { id } = req.params;
     const permanent = req.query.permanent === 'true';
 
-    const timeEntryService = new TimeEntryService(req.clientDb);
+    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
 
     // Check if time entry exists
     const existing = await timeEntryService.getById(id);
@@ -405,7 +409,7 @@ router.post(
 
       const { id } = req.params;
 
-      const timeEntryService = new TimeEntryService(req.clientDb);
+      const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
       const restored = await timeEntryService.restore(id);
 
       res.json({
@@ -448,7 +452,7 @@ router.get(
         return;
       }
 
-      const timeEntryService = new TimeEntryService(req.clientDb);
+      const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
       const totalHours = await timeEntryService.getTotalHours(req.user.userId, startDate, endDate);
 
       res.json({
@@ -465,6 +469,247 @@ router.get(
       res.status(500).json({
         status: 'error',
         message: 'Failed to get total hours',
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/v1/time-entries/reports/overtime
+ * Get overtime summary for current user in a date range
+ */
+router.get(
+  '/reports/overtime',
+  validate(overtimeSummarySchema),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.clientDb || !req.mainDb || !req.user) {
+        res.status(500).json({ status: 'error', message: 'Database not available' });
+        return;
+      }
+
+      const startDate = new Date(req.query.startDate as string);
+      const endDate = new Date(req.query.endDate as string);
+
+      const overtimeService = new OvertimeCalculationService(req.clientDb);
+      const summary = await overtimeService.getOvertimeSummary(req.user.userId, startDate, endDate);
+
+      res.json({
+        status: 'success',
+        data: {
+          userId: req.user.userId,
+          startDate,
+          endDate,
+          ...summary,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to get overtime summary:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to get overtime summary',
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/v1/time-entries/admin/recalculate-overtime
+ * Recalculate overtime for a specific week (admin only)
+ */
+router.post(
+  '/admin/recalculate-overtime',
+  validate(recalculateWeekOvertimeSchema),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.clientDb || !req.mainDb || !req.user) {
+        res.status(500).json({ status: 'error', message: 'Database not available' });
+        return;
+      }
+
+      // Check if user is admin
+      if (req.user.role !== 'admin') {
+        res.status(403).json({
+          status: 'error',
+          message: 'Unauthorized. Admin access required.',
+        });
+        return;
+      }
+
+      const { userId, weekStartDate } = req.body;
+      const weekStart = new Date(weekStartDate);
+
+      // Get user's compensation type
+      const user = await req.mainDb.user.findUnique({
+        where: { id: userId },
+        select: { compensationType: true },
+      });
+
+      if (!user) {
+        res.status(404).json({
+          status: 'error',
+          message: 'User not found',
+        });
+        return;
+      }
+
+      const compensationType = user.compensationType || 'HOURLY';
+
+      const overtimeService = new OvertimeCalculationService(req.clientDb);
+      const updatedCount = await overtimeService.recalculateWeekOvertime(
+        userId,
+        weekStart,
+        compensationType
+      );
+
+      res.json({
+        status: 'success',
+        data: {
+          userId,
+          weekStartDate: weekStart,
+          entriesUpdated: updatedCount,
+        },
+        message: `Recalculated overtime for ${updatedCount} entries`,
+      });
+    } catch (error) {
+      console.error('Failed to recalculate overtime:', error);
+      res.status(500).json({
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Failed to recalculate overtime',
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/v1/time-entries/reports/billable-hours
+ * Get billable hours summary
+ */
+router.get(
+  '/reports/billable-hours',
+  validate(billableHoursSummarySchema),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.clientDb || !req.mainDb || !req.user) {
+        res.status(500).json({ status: 'error', message: 'Database not available' });
+        return;
+      }
+
+      const startDate = new Date(req.query.startDate as string);
+      const endDate = new Date(req.query.endDate as string);
+      const userId = (req.query.userId as string) || req.user.userId;
+      const projectId = req.query.projectId as string;
+
+      // Get time entries with billability information
+      const entries = await req.clientDb.timeEntry.findMany({
+        where: {
+          userId,
+          ...(projectId && { projectId }),
+          startTime: {
+            gte: startDate,
+            lte: endDate,
+          },
+          deletedAt: null,
+          endTime: { not: null },
+        },
+        select: {
+          id: true,
+          duration: true,
+          regularHours: true,
+          overtimeHours: true,
+          isBillable: true,
+          projectId: true,
+          project: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      // Calculate totals
+      const billableEntries = entries.filter((e) => e.isBillable);
+      const nonBillableEntries = entries.filter((e) => !e.isBillable);
+
+      const billableHours = billableEntries.reduce((sum, e) => {
+        const hours = e.duration ? e.duration / 3600 : 0;
+        return sum + hours;
+      }, 0);
+
+      const nonBillableHours = nonBillableEntries.reduce((sum, e) => {
+        const hours = e.duration ? e.duration / 3600 : 0;
+        return sum + hours;
+      }, 0);
+
+      const billableRegularHours = billableEntries.reduce((sum, e) => {
+        return sum + (e.regularHours ? parseFloat(e.regularHours.toString()) : 0);
+      }, 0);
+
+      const billableOvertimeHours = billableEntries.reduce((sum, e) => {
+        return sum + (e.overtimeHours ? parseFloat(e.overtimeHours.toString()) : 0);
+      }, 0);
+
+      // Group by project
+      const byProject = entries.reduce(
+        (acc, entry) => {
+          const key = entry.projectId;
+          if (!acc[key]) {
+            acc[key] = {
+              projectId: entry.projectId,
+              projectName: entry.project.name,
+              billableHours: 0,
+              nonBillableHours: 0,
+              totalHours: 0,
+            };
+          }
+
+          const hours = entry.duration ? entry.duration / 3600 : 0;
+          if (entry.isBillable) {
+            acc[key].billableHours += hours;
+          } else {
+            acc[key].nonBillableHours += hours;
+          }
+          acc[key].totalHours += hours;
+
+          return acc;
+        },
+        {} as Record<
+          string,
+          {
+            projectId: string;
+            projectName: string;
+            billableHours: number;
+            nonBillableHours: number;
+            totalHours: number;
+          }
+        >
+      );
+
+      res.json({
+        status: 'success',
+        data: {
+          userId,
+          startDate,
+          endDate,
+          summary: {
+            totalHours: billableHours + nonBillableHours,
+            billableHours,
+            nonBillableHours,
+            billableRegularHours,
+            billableOvertimeHours,
+            billablePercentage:
+              billableHours + nonBillableHours > 0
+                ? (billableHours / (billableHours + nonBillableHours)) * 100
+                : 0,
+          },
+          byProject: Object.values(byProject),
+        },
+      });
+    } catch (error) {
+      console.error('Failed to get billable hours summary:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to get billable hours summary',
       });
     }
   }

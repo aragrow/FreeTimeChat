@@ -44,9 +44,11 @@ export async function attachClientDatabase(
     // Get client database connection
     try {
       const clientDb = await databaseService.getClientDatabase(clientId);
+      const mainDb = databaseService.getMainDatabase();
 
       // Attach to request
       req.clientDb = clientDb;
+      req.mainDb = mainDb;
 
       next();
     } catch (error) {
@@ -89,7 +91,9 @@ export async function attachClientDatabaseOptional(
 
       try {
         const clientDb = await databaseService.getClientDatabase(req.user.clientId);
+        const mainDb = databaseService.getMainDatabase();
         req.clientDb = clientDb;
+        req.mainDb = mainDb;
       } catch (error) {
         console.error('Failed to connect to client database:', error);
         // Continue without client database

@@ -13,6 +13,8 @@ export interface CreateProjectData {
   clientId: string;
   startDate?: Date;
   endDate?: Date;
+  isBillableProject?: boolean;
+  defaultBillable?: boolean;
 }
 
 export interface UpdateProjectData {
@@ -21,6 +23,8 @@ export interface UpdateProjectData {
   isActive?: boolean;
   startDate?: Date;
   endDate?: Date;
+  isBillableProject?: boolean;
+  defaultBillable?: boolean;
 }
 
 export interface ListProjectsOptions {
@@ -44,6 +48,8 @@ export class ProjectService {
         clientId: data.clientId,
         startDate: data.startDate,
         endDate: data.endDate,
+        isBillableProject: data.isBillableProject,
+        defaultBillable: data.defaultBillable,
       },
     });
   }

@@ -5,6 +5,7 @@
  */
 
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
+import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 import type { JWTPayload } from '@freetimechat/types';
 
 declare global {
@@ -13,6 +14,7 @@ declare global {
       user?: JWTPayload;
       clientDatabaseUrl?: string;
       clientDb?: ClientPrismaClient;
+      mainDb?: MainPrismaClient;
     }
   }
 }

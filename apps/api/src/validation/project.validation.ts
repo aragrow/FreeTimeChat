@@ -27,6 +27,8 @@ export const createProjectSchema = z.object({
       .datetime({ message: 'Invalid end date format' })
       .optional()
       .or(z.date().optional()),
+    isBillableProject: z.boolean().optional(),
+    defaultBillable: z.boolean().optional(),
   }),
 });
 
@@ -53,6 +55,8 @@ export const updateProjectSchema = z.object({
       .datetime({ message: 'Invalid end date format' })
       .optional()
       .or(z.date().optional()),
+    isBillableProject: z.boolean().optional(),
+    defaultBillable: z.boolean().optional(),
   }),
   params: z.object({
     id: z.string().uuid('Invalid project ID format'),
