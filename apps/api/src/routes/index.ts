@@ -7,6 +7,7 @@
 import { Router } from 'express';
 import adminRoutes from './admin.routes';
 import authRoutes from './auth.routes';
+import chatRoutes from './chat.routes';
 import clientRoutes from './client.routes';
 import compensationRoutes from './compensation.routes';
 import conversationRoutes from './conversation.routes';
@@ -41,10 +42,10 @@ v1Router.use('/projects', projectMemberRoutes);
 v1Router.use('/time-entries', timeEntryRoutes);
 v1Router.use('/tasks', taskRoutes);
 v1Router.use('/conversations', conversationRoutes);
+v1Router.use('/chat', chatRoutes);
 
 // Future routes will be added here:
 // v1Router.use('/users', usersRoutes);
-// v1Router.use('/chat', chatRoutes);
 
 // Mount v1 router under /api/v1
 apiRouter.use('/v1', v1Router);
