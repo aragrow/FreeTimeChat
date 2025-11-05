@@ -1,0 +1,32 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+.next
+out
+dist
+build
+.turbo
+
+# Generated files
+*.tsbuildinfo
+next-env.d.ts
+
+# Logs
+*.log
+
+# Environment
+.env*
+!.env.example
+
+# Cache
+.cache
+.eslintcache
+
+# Test coverage
+coverage
+
+# Misc
+.DS_Store

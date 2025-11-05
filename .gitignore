@@ -1,36 +1,154 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
+# Dependencies
+node_modules/
 /.pnp
 .pnp.js
+.pnp.*
 
-# testing
+# Testing
 /coverage
+*.coverage
+.nyc_output
+test-results/
+playwright-report/
+playwright/.cache/
+e2e/screenshots/
+e2e/videos/
 
-# next.js
+# Next.js (Frontend)
 /.next/
 /out/
+apps/web/.next/
+apps/web/out/
+apps/web/build/
 
-# production
+# Production builds
 /build
+/dist
+apps/*/build/
+apps/*/dist/
+packages/*/build/
+packages/*/dist/
 
-# misc
-.DS_Store
+# Turbo (Monorepo)
+.turbo/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+*.env
+!.env.example
+!apps/*/.env.example
+
+# JWT Keys & Certificates (Security Sensitive)
 *.pem
+*.key
+*.crt
+*.p12
+*.pfx
+apps/api/keys/
+**/keys/private.pem
+**/keys/public.pem
 
-# debug
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+/prisma/dev.db
+/prisma/test.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Misc
+.DS_Store
+.DS_Store?
+._*
+*.swp
+*.swo
+*~
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
-.env
-
-# vercel
+# Vercel
 .vercel
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.history/
+
+# OS Files
+.DS_Store
+[Dd]esktop.ini
+$RECYCLE.BIN/
+.directory
+.Trash-*
+
+# Cache
+.cache/
+.npm/
+.eslintcache
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Temporary
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Uploads (user-generated content)
+uploads/
+public/uploads/
+
+# Deployment
+.netlify
+.firebase
+
+# Backup files
+*.bak
+*.backup
+
+# Sentry
+.sentryclirc
+
+# Documentation
+docs/.vitepress/dist
+docs/.vitepress/cache
