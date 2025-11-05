@@ -110,7 +110,7 @@ export default function Verify2FAPage() {
               />
             </div>
 
-            <Button type="submit" loading={isLoading} className="w-full">
+            <Button type="submit" isLoading={isLoading} className="w-full">
               Verify
             </Button>
           </form>

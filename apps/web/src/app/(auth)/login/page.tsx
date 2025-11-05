@@ -235,7 +235,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <Button type="submit" loading={isLoading} className="w-full">
+            <Button type="submit" isLoading={isLoading} className="w-full">
               Sign in
             </Button>
           </form>

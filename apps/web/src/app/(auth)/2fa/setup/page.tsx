@@ -219,7 +219,7 @@ export default function Setup2FAPage() {
                 >
                   Back
                 </Button>
-                <Button type="submit" loading={isVerifying} className="flex-1">
+                <Button type="submit" isLoading={isVerifying} className="flex-1">
                   Verify and enable
                 </Button>
               </div>
