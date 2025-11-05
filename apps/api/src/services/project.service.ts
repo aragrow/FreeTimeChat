@@ -76,6 +76,22 @@ export class ProjectService {
   }
 
   /**
+   * Search projects by name (case-insensitive)
+   */
+  async findByName(name: string, includeDeleted: boolean = false): Promise<Project[]> {
+    return this.prisma.project.findMany({
+      where: {
+        name: {
+          contains: name,
+          mode: 'insensitive',
+        },
+        ...(!includeDeleted && { deletedAt: null }),
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
    * List projects with pagination and filters
    */
   async list(options: ListProjectsOptions = {}): Promise<Project[]> {
