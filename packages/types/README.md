@@ -81,6 +81,18 @@ function login(req: LoginRequest): Promise<LoginResponse> {
 - `ChatRequest` / `ChatResponse` - Chat interaction
 - `CreateConversationRequest` - Conversation creation
 
+### API Types (`api.types.ts`)
+
+- `ApiResponse<T>` - Standard success response wrapper
+- `ApiErrorResponse` - Standard error response format
+- `PaginatedResponse<T>` - Paginated response wrapper
+- `PaginationMeta` - Pagination metadata
+- `HealthCheckResponse` - Health check endpoint response
+- `ServiceStatus` - Service status type for health checks
+- `PaginationParams` - Query parameters for pagination
+- `FilterParams` - Query parameters for filtering
+- `ListQueryParams` - Combined pagination and filtering params
+
 ## Development
 
 ### Build
@@ -162,6 +174,37 @@ function hasCapability(user: User, capabilityName: string): boolean {
       rc.capability?.name === capabilityName && rc.isAllowed
     )
   ) ?? false;
+}
+```
+
+### API Responses
+
+```typescript
+import type { ApiResponse, PaginatedResponse, Project } from '@freetimechat/types';
+
+// Single item response
+function getProject(id: string): ApiResponse<Project> {
+  return {
+    status: 'success',
+    data: project,
+    message: 'Project retrieved successfully',
+  };
+}
+
+// Paginated list response
+function listProjects(page: number): PaginatedResponse<Project> {
+  return {
+    status: 'success',
+    data: projects,
+    pagination: {
+      page,
+      perPage: 20,
+      total: 100,
+      totalPages: 5,
+      hasNext: true,
+      hasPrev: page > 1,
+    },
+  };
 }
 ```
 

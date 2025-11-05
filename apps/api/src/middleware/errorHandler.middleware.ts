@@ -6,16 +6,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '@/utils/errors';
-
-/**
- * Error response interface
- */
-interface ErrorResponse {
-  status: 'error';
-  message: string;
-  errors?: any;
-  stack?: string;
-}
+import type { ApiErrorResponse } from '@freetimechat/types';
 
 /**
  * Global error handler middleware
@@ -52,7 +43,7 @@ export function errorHandler(
   }
 
   // Build error response
-  const errorResponse: ErrorResponse = {
+  const errorResponse: ApiErrorResponse = {
     status: 'error',
     message: process.env.NODE_ENV === 'production' && statusCode === 500
       ? 'Internal server error'
@@ -76,7 +67,7 @@ export function errorHandler(
  * 404 Not Found handler
  * Should be placed before the error handler
  */
-export function notFoundHandler(_req: Request, res: Response): void {
+export function notFoundHandler(_req: Request, res: Response<ApiErrorResponse>): void {
   res.status(404).json({
     status: 'error',
     message: 'Route not found',

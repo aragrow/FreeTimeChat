@@ -5,7 +5,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import type { HealthCheckResponse } from '@/types/api.types';
+import type { HealthCheckResponse } from '@freetimechat/types';
 
 const router: Router = Router();
 

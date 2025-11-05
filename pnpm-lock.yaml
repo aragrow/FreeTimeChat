@@ -35,6 +35,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@freetimechat/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       compression:
         specifier: ^1.7.4
         version: 1.8.1
@@ -84,6 +87,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@freetimechat/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       next:
         specifier: 16.0.1
         version: 16.0.1(@babel/core@7.28.5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
