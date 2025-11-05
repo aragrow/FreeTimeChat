@@ -7,7 +7,8 @@
  * 1. Analyzes all changes in the working directory
  * 2. Generates a detailed commit message with summary
  * 3. Creates the commit
- * 4. Automatically creates a new dev branch (dev-1, dev-2, etc.)
+ * 4. Pushes the commit to origin
+ * 5. Automatically creates a new dev branch (dev-1, dev-2, etc.)
  *
  * Usage: node scripts/commit.js
  * Or add to package.json scripts: "commit": "node scripts/commit.js"
@@ -263,12 +264,31 @@ async function main() {
   fs.unlinkSync(tmpFile);
   console.log();
 
-  // Step 7: Get commit info
+  // Step 7: Get commit info and push to origin
   const lastCommit = exec('git log -1 --oneline', true);
   const currentBranch = exec('git branch --show-current', true);
 
-  // Step 8: Create new dev branch
-  logBold('Step 6: Creating New Dev Branch...', 'cyan');
+  // Step 8: Push to origin
+  logBold('Step 6: Pushing to Origin...', 'cyan');
+
+  try {
+    exec(`git push origin ${currentBranch}`, true);
+    log(`✓ Pushed to origin/${currentBranch}`, 'green');
+  } catch (error) {
+    // Try setting upstream if regular push fails
+    log('⚠ Could not push to origin (may need to set upstream)', 'yellow');
+    log('  Attempting to set upstream and push...', 'yellow');
+    try {
+      exec(`git push -u origin ${currentBranch}`, true);
+      log(`✓ Pushed to origin/${currentBranch}`, 'green');
+    } catch (pushError) {
+      log('⚠ Push failed. You may need to push manually later.', 'yellow');
+    }
+  }
+  console.log();
+
+  // Step 9: Create new dev branch
+  logBold('Step 7: Creating New Dev Branch...', 'cyan');
 
   const newBranch = getNextDevBranch();
   exec(`git checkout -b ${newBranch}`);
@@ -286,6 +306,10 @@ async function main() {
   console.log(`  ${lastCommit}`);
   console.log();
 
+  log('Remote:', 'cyan');
+  console.log(`  Pushed to: origin/${currentBranch}`);
+  console.log();
+
   log('Branches:', 'cyan');
   console.log(`  Previous: ${currentBranch}`);
   console.log(`  Current:  ${newBranch}`);
@@ -294,7 +318,7 @@ async function main() {
   logBold('Next Steps:', 'yellow');
   console.log(`  1. Continue working on ${newBranch}`);
   console.log(`  2. Merge when ready: git checkout ${currentBranch} && git merge ${newBranch}`);
-  console.log(`  3. Push to remote: git push origin ${newBranch}`);
+  console.log(`  3. Push new branch: git push origin ${newBranch}`);
   console.log();
 }
 

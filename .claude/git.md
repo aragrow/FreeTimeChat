@@ -22,7 +22,8 @@ Every commit in FreeTimeChat follows this automated workflow:
 1. **Analyze Changes**: Review all staged and unstaged changes
 2. **Generate Summary**: Create comprehensive commit message with detailed description
 3. **Create Commit**: Commit changes with generated message
-4. **Create Branch**: Automatically create new branch (dev-1, dev-2, dev-3, etc.)
+4. **Push to Origin**: Push the committed branch to remote repository
+5. **Create Branch**: Automatically create new branch (dev-1, dev-2, dev-3, etc.)
 
 ### Implementation
 
@@ -185,8 +186,27 @@ rm "$TEMP_MSG_FILE"
 echo -e "${GREEN}✓ Commit created successfully${NC}"
 echo ""
 
-# Step 8: Create new dev branch
-echo -e "${GREEN}Step 5: Creating new dev branch...${NC}"
+# Step 8: Push to origin
+echo -e "${GREEN}Step 5: Pushing to origin...${NC}"
+
+CURRENT_BRANCH=$(git branch --show-current)
+
+# Push current branch to origin
+if git push origin "$CURRENT_BRANCH" 2>&1; then
+    echo -e "${GREEN}✓ Pushed to origin/$CURRENT_BRANCH${NC}"
+else
+    echo -e "${YELLOW}⚠ Could not push to origin (may need to set upstream)${NC}"
+    echo -e "${YELLOW}  Attempting to set upstream and push...${NC}"
+    if git push -u origin "$CURRENT_BRANCH" 2>&1; then
+        echo -e "${GREEN}✓ Pushed to origin/$CURRENT_BRANCH${NC}"
+    else
+        echo -e "${YELLOW}⚠ Push failed. You may need to push manually later.${NC}"
+    fi
+fi
+echo ""
+
+# Step 9: Create new dev branch
+echo -e "${GREEN}Step 6: Creating new dev branch...${NC}"
 
 # Get current branch name
 CURRENT_BRANCH=$(git branch --show-current)
@@ -205,19 +225,20 @@ git checkout -b "$NEW_BRANCH"
 echo -e "${GREEN}✓ Created and switched to branch: $NEW_BRANCH${NC}"
 echo ""
 
-# Step 9: Summary
+# Step 10: Summary
 echo -e "${BLUE}========================================${NC}"
 echo -e "${GREEN}✓ Workflow Complete!${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 echo "Commit: $(git log -1 --oneline)"
+echo "Pushed to: origin/$CURRENT_BRANCH"
 echo "Current branch: $NEW_BRANCH"
 echo "Previous branch: $CURRENT_BRANCH"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
 echo "1. Continue working on $NEW_BRANCH"
 echo "2. When ready to merge: git checkout main && git merge $NEW_BRANCH"
-echo "3. Push changes: git push origin $NEW_BRANCH"
+echo "3. Push new branch: git push origin $NEW_BRANCH"
 echo ""
 ```
 
@@ -436,10 +457,29 @@ Generated automatically by FreeTimeChat commit workflow
 
   log('✓ Commit created successfully\n', 'green');
 
-  // Step 6: Create new dev branch
-  log('Step 5: Creating new dev branch...', 'green');
+  // Step 6: Push to origin
+  log('Step 5: Pushing to origin...', 'green');
 
   const currentBranch = exec('git branch --show-current', true);
+
+  // Push current branch to origin
+  try {
+    exec(`git push origin ${currentBranch}`, true);
+    log(`✓ Pushed to origin/${currentBranch}\n`, 'green');
+  } catch (error) {
+    // Try setting upstream if regular push fails
+    log('⚠ Could not push to origin (may need to set upstream)', 'yellow');
+    log('  Attempting to set upstream and push...', 'yellow');
+    try {
+      exec(`git push -u origin ${currentBranch}`, true);
+      log(`✓ Pushed to origin/${currentBranch}\n`, 'green');
+    } catch (pushError) {
+      log('⚠ Push failed. You may need to push manually later.\n', 'yellow');
+    }
+  }
+
+  // Step 7: Create new dev branch
+  log('Step 6: Creating new dev branch...', 'green');
 
   // Find next available dev branch number
   let devNum = 1;
@@ -461,13 +501,14 @@ Generated automatically by FreeTimeChat commit workflow
 
   const lastCommit = exec('git log -1 --oneline', true);
   console.log(`Commit: ${lastCommit}`);
+  console.log(`Pushed to: origin/${currentBranch}`);
   console.log(`Current branch: ${newBranch}`);
   console.log(`Previous branch: ${currentBranch}`);
   console.log();
   log('Next steps:', 'yellow');
   console.log(`1. Continue working on ${newBranch}`);
   console.log(`2. When ready to merge: git checkout main && git merge ${newBranch}`);
-  console.log(`3. Push changes: git push origin ${newBranch}`);
+  console.log(`3. Push new branch: git push origin ${newBranch}`);
   console.log();
 }
 
