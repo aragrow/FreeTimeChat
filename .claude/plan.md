@@ -71,7 +71,7 @@ This document breaks down the entire FreeTimeChat application into small, manage
 
 ### 1.3 Express Backend Setup
 
-- [ ] **Task 1.3.1**: Create Express app in apps/api
+- [x] **Task 1.3.1**: Create Express app in apps/api
   - Initialize Express with TypeScript
   - Set up folder structure (routes/, services/, middleware/)
   - Configure nodemon for development
