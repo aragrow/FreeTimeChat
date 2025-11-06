@@ -53,7 +53,11 @@
       "Bash(docker exec:*)",
       "Bash(NODE_ENV=test pnpm jest:*)",
       "Bash(pnpm jest:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(docker ps:*)",
+      "Bash(pnpm analyze:db:*)",
+      "Bash(pnpm analyze:authz:*)",
+      "Bash(pnpm analyze:tenant:*)"
     ],
     "deny": [],
     "ask": []

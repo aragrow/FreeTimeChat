@@ -5,6 +5,7 @@
  */
 
 import { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
+import { getPermissionCacheService } from './permission-cache.service';
 import type { Capability, RoleCapability } from '../generated/prisma-main';
 
 export class CapabilityService {
@@ -106,9 +107,11 @@ export class CapabilityService {
       },
     });
 
+    let result: RoleCapability;
+
     if (existing) {
       // Update existing assignment
-      return this.prisma.roleCapability.update({
+      result = await this.prisma.roleCapability.update({
         where: {
           roleId_capabilityId: {
             roleId,
@@ -121,19 +124,24 @@ export class CapabilityService {
           capability: true,
         },
       });
+    } else {
+      result = await this.prisma.roleCapability.create({
+        data: {
+          roleId,
+          capabilityId,
+          isAllowed,
+        },
+        include: {
+          role: true,
+          capability: true,
+        },
+      });
     }
 
-    return this.prisma.roleCapability.create({
-      data: {
-        roleId,
-        capabilityId,
-        isAllowed,
-      },
-      include: {
-        role: true,
-        capability: true,
-      },
-    });
+    // Invalidate cache for all users with this role
+    await this.invalidateRoleCache(roleId);
+
+    return result;
   }
 
   /**
@@ -148,6 +156,22 @@ export class CapabilityService {
         },
       },
     });
+
+    // Invalidate cache for all users with this role
+    await this.invalidateRoleCache(roleId);
+  }
+
+  /**
+   * Invalidate permission cache for all users with a specific role
+   */
+  private async invalidateRoleCache(roleId: string): Promise<void> {
+    try {
+      const permissionCache = getPermissionCacheService();
+      await permissionCache.invalidateRole(roleId);
+    } catch (error) {
+      console.error('Error invalidating role cache:', error);
+      // Don't throw - cache invalidation failure shouldn't break the operation
+    }
   }
 
   /**
@@ -168,34 +192,114 @@ export class CapabilityService {
    * Supports explicit deny: if any role denies a capability, it's denied
    */
   async userHasCapability(userId: string, capabilityName: string): Promise<boolean> {
-    // Get all user's role capabilities for this specific capability
-    const roleCapabilities = await this.prisma.roleCapability.findMany({
-      where: {
-        role: {
-          users: {
-            some: {
-              userId,
+    try {
+      // Try to get from cache first
+      const permissionCache = getPermissionCacheService();
+      const cachedResult = await permissionCache.hasCapability(userId, capabilityName);
+
+      if (cachedResult !== null) {
+        // Cache hit
+        return cachedResult;
+      }
+
+      // Cache miss - fetch from database
+      const roleCapabilities = await this.prisma.roleCapability.findMany({
+        where: {
+          role: {
+            users: {
+              some: {
+                userId,
+              },
             },
           },
+          capability: {
+            name: capabilityName,
+          },
         },
-        capability: {
-          name: capabilityName,
+        include: {
+          capability: true,
+          role: true,
         },
-      },
-    });
+      });
 
-    if (roleCapabilities.length === 0) {
-      return false; // No capability assigned
+      if (roleCapabilities.length === 0) {
+        // Cache the result (no capabilities)
+        await this.cacheUserPermissions(userId);
+        return false; // No capability assigned
+      }
+
+      // If any role explicitly denies, return false
+      const hasExplicitDeny = roleCapabilities.some((rc) => !rc.isAllowed);
+      if (hasExplicitDeny) {
+        // Cache the result
+        await this.cacheUserPermissions(userId);
+        return false;
+      }
+
+      // If at least one role allows and no explicit denies, return true
+      const hasCapability = roleCapabilities.some((rc) => rc.isAllowed);
+
+      // Cache the result
+      await this.cacheUserPermissions(userId);
+
+      return hasCapability;
+    } catch (error) {
+      // If caching fails, fall back to database-only check
+      console.error('Error in userHasCapability (falling back to DB):', error);
+
+      const roleCapabilities = await this.prisma.roleCapability.findMany({
+        where: {
+          role: {
+            users: {
+              some: {
+                userId,
+              },
+            },
+          },
+          capability: {
+            name: capabilityName,
+          },
+        },
+      });
+
+      if (roleCapabilities.length === 0) {
+        return false;
+      }
+
+      const hasExplicitDeny = roleCapabilities.some((rc) => !rc.isAllowed);
+      if (hasExplicitDeny) {
+        return false;
+      }
+
+      return roleCapabilities.some((rc) => rc.isAllowed);
     }
+  }
 
-    // If any role explicitly denies, return false
-    const hasExplicitDeny = roleCapabilities.some((rc) => !rc.isAllowed);
-    if (hasExplicitDeny) {
-      return false;
+  /**
+   * Cache user permissions for future use
+   * Helper method to populate the permission cache
+   */
+  private async cacheUserPermissions(userId: string): Promise<void> {
+    try {
+      const capabilities = await this.getUserCapabilities(userId);
+      const roles = await this.prisma.userRole.findMany({
+        where: { userId },
+        include: { role: true },
+      });
+
+      const permissionCache = getPermissionCacheService();
+      await permissionCache.cacheUserPermissions(
+        userId,
+        capabilities.map((c) => ({
+          capability: c.capability.name,
+          isAllowed: c.isAllowed,
+        })),
+        roles.map((r) => r.role.name)
+      );
+    } catch (error) {
+      console.error('Error caching user permissions:', error);
+      // Don't throw - caching failure shouldn't break permission checks
     }
-
-    // If at least one role allows and no explicit denies, return true
-    return roleCapabilities.some((rc) => rc.isAllowed);
   }
 
   /**

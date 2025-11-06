@@ -3,6 +3,19 @@
 This document breaks down the entire FreeTimeChat application into small,
 manageable tasks organized by implementation phase.
 
+## Development Constraints
+
+**IMPORTANT**: During development, Docker services are NOT used. All development
+work must be done without running Docker containers. This includes:
+
+- Database services (PostgreSQL)
+- Redis caching
+- Any containerized services
+
+Testing and performance benchmarking infrastructure can be created and
+documented, but should not be executed until deployment/production environments
+where Docker is available.
+
 ## Table of Contents
 
 1. [Phase 1: Project Setup](#phase-1-project-setup)

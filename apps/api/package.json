@@ -29,7 +29,15 @@
     "prisma:validate": "prisma validate --schema=prisma/schema-main.prisma && prisma validate --schema=prisma/schema-client.prisma",
     "prisma:push:main": "prisma db push --schema=prisma/schema-main.prisma",
     "prisma:push:client": "prisma db push --schema=prisma/schema-client.prisma",
-    "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
+    "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
+    "benchmark": "node benchmarks/run-all.js",
+    "benchmark:health": "node benchmarks/health-check.js",
+    "benchmark:auth": "node benchmarks/auth-login.js",
+    "analyze:db": "node scripts/analyze-db-performance.js",
+    "analyze:security": "node scripts/analyze-security.js",
+    "analyze:authz": "node scripts/analyze-authorization.js",
+    "analyze:tenant": "node scripts/analyze-multi-tenant.js",
+    "analyze:all": "node scripts/analyze-db-performance.js && node scripts/analyze-security.js && node scripts/analyze-authorization.js && node scripts/analyze-multi-tenant.js"
   },
   "prisma": {
     "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"

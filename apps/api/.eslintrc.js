@@ -11,5 +11,5 @@ module.exports = {
     project: './tsconfig.json',
     tsconfigRootDir: __dirname,
   },
-  ignorePatterns: ['prisma/**/*', 'dist/**/*'],
+  ignorePatterns: ['.eslintrc.js', 'prisma/**/*', 'dist/**/*', 'benchmarks/**/*', 'scripts/**/*'],
 };
