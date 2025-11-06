@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TimeEntry extends Record<string, unknown> {
   id: string;
@@ -29,15 +30,25 @@ interface TimeEntry extends Record<string, unknown> {
 }
 
 export default function TimeEntriesPage() {
+  const { getAuthHeaders } = useAuth();
   const router = useRouter();
+
   const [entries, setEntries] = useState<TimeEntry[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
+
   const [searchTerm, setSearchTerm] = useState('');
+
   const [statusFilter, setStatusFilter] = useState<'all' | 'running' | 'stopped'>('all');
+
   const [startDate, setStartDate] = useState('');
+
   const [endDate, setEndDate] = useState('');
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const [totalPages, setTotalPages] = useState(1);
+
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -61,7 +72,7 @@ export default function TimeEntriesPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries?${params}`,
         {
           method: 'GET',
-          credentials: 'include',
+          headers: getAuthHeaders(),
         }
       );
 
@@ -126,9 +137,9 @@ export default function TimeEntriesPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries/export`, {
         method: 'POST',
         headers: {
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           entryIds: Array.from(selectedEntries),
         }),

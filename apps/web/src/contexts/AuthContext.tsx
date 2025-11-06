@@ -15,6 +15,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: string;
+  roles?: Array<{ name: string }>;
   isTwoFactorEnabled: boolean;
   isImpersonating?: boolean;
   originalUserId?: string;
@@ -29,6 +30,7 @@ interface AuthContextType {
   verify2FA: (code: string) => Promise<{ success: boolean; error?: string }>;
   refreshUser: () => Promise<void>;
   loginWithGoogle: () => void;
+  getAuthHeaders: () => Record<string, string>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
   // Check authentication status on mount
   useEffect(() => {
@@ -48,20 +52,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       const interval = setInterval(
         () => {
-          refreshToken();
+          refreshTokenFunc();
         },
         14 * 60 * 1000
       ); // Refresh every 14 minutes (before 15-minute expiry)
 
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, refreshToken]);
+
+  const getAuthHeaders = () => {
+    const headers: Record<string, string> = {};
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+    return headers;
+  };
 
   const checkAuth = async () => {
     try {
+      if (!accessToken) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
         method: 'GET',
-        credentials: 'include',
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -69,6 +87,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.data);
       } else {
         setUser(null);
+        setAccessToken(null);
+        setRefreshToken(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -78,14 +98,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const refreshToken = async () => {
+  const refreshTokenFunc = async () => {
     try {
+      if (!refreshToken) {
+        await logout();
+        return;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
         method: 'POST',
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        setAccessToken(data.data.accessToken);
+        if (data.data.refreshToken) {
+          setRefreshToken(data.data.refreshToken);
+        }
+      } else {
         // Refresh failed, logout user
         await logout();
       }
@@ -105,7 +139,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -120,7 +153,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { requires2FA: true };
       }
 
-      // Successful login
+      // Successful login - store tokens
+      setAccessToken(data.data.accessToken);
+      setRefreshToken(data.data.refreshToken);
       setUser(data.data.user);
       return {};
     } catch (error) {
@@ -131,14 +166,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      if (accessToken) {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+        });
+      }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
       setUser(null);
+      setAccessToken(null);
+      setRefreshToken(null);
       router.push('/login');
     }
   };
@@ -150,7 +189,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ code }),
       });
 
@@ -160,7 +198,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.message || 'Verification failed' };
       }
 
-      // Successful verification
+      // Successful verification - store tokens
+      setAccessToken(data.data.accessToken);
+      setRefreshToken(data.data.refreshToken);
       setUser(data.data.user);
       return { success: true };
     } catch (error) {
@@ -186,6 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     verify2FA,
     refreshUser,
     loginWithGoogle,
+    getAuthHeaders,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

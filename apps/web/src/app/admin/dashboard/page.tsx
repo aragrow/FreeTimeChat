@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DashboardStats {
   totalUsers: number;
@@ -26,6 +27,7 @@ interface RecentActivity {
 }
 
 export default function AdminDashboard() {
+  const { getAuthHeaders } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     activeUsers: 0,
@@ -49,7 +51,7 @@ export default function AdminDashboard() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard/stats`,
         {
           method: 'GET',
-          credentials: 'include',
+          headers: getAuthHeaders(),
         }
       );
 
@@ -63,7 +65,7 @@ export default function AdminDashboard() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard/activity?take=10`,
         {
           method: 'GET',
-          credentials: 'include',
+          headers: getAuthHeaders(),
         }
       );
 

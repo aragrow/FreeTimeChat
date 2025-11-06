@@ -4,7 +4,7 @@
  * Types for authentication, JWT, and session management
  */
 
-import { UserPublic } from './user.types';
+import type { UserPublic } from './user.types';
 
 /**
  * JWT Access Token Payload
@@ -12,8 +12,10 @@ import { UserPublic } from './user.types';
 export interface JWTPayload {
   sub: string; // User ID
   email: string;
-  role: string;
+  role: string; // Primary role (for backward compatibility)
+  roles: string[]; // All user roles
   clientId: string;
+  databaseName: string; // Client database name for multi-tenancy
   iat: number; // Issued at
   exp: number; // Expiration
   impersonation?: ImpersonationMetadata;

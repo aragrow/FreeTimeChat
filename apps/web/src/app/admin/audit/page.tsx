@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AuditLog extends Record<string, unknown> {
   id: string;
@@ -31,16 +32,25 @@ interface AuditLog extends Record<string, unknown> {
 }
 
 export default function AuditLogsPage() {
+  const { getAuthHeaders } = useAuth();
   const router = useRouter();
+
   const [logs, setLogs] = useState<AuditLog[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
+
   const [searchTerm, setSearchTerm] = useState('');
+
   const [severityFilter, setSeverityFilter] = useState<
     'all' | 'info' | 'warning' | 'error' | 'critical'
   >('all');
+
   const [startDate, setStartDate] = useState('');
+
   const [endDate, setEndDate] = useState('');
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
@@ -64,7 +74,7 @@ export default function AuditLogsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs?${params}`,
         {
           method: 'GET',
-          credentials: 'include',
+          headers: getAuthHeaders(),
         }
       );
 
@@ -182,7 +192,7 @@ export default function AuditLogsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs/export?${params}`,
         {
           method: 'GET',
-          credentials: 'include',
+          headers: getAuthHeaders(),
         }
       );
 

@@ -12,9 +12,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Verify2FAPage() {
   const router = useRouter();
+  const { verify2FA, getAuthHeaders } = useAuth();
   const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,27 +39,38 @@ export default function Verify2FAPage() {
     setIsLoading(true);
 
     try {
-      const endpoint = useBackupCode ? '/2fa/verify-backup' : '/2fa/verify';
+      if (useBackupCode) {
+        // For backup codes, make direct API call
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify-backup`, {
+          method: 'POST',
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code: verificationCode }),
+        });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ code: verificationCode }),
-      });
+        const data = await response.json();
 
-      const data = await response.json();
+        if (!response.ok) {
+          setError(data.message || 'Invalid backup code. Please try again.');
+          return;
+        }
 
-      if (!response.ok) {
-        setError(data.message || 'Invalid code. Please try again.');
-        return;
+        // Successful verification
+        router.push('/chat');
+      } else {
+        // For regular 2FA, use AuthContext
+        const result = await verify2FA(verificationCode);
+
+        if (!result.success) {
+          setError(result.error || 'Invalid code. Please try again.');
+          return;
+        }
+
+        // Successful verification
+        router.push('/chat');
       }
-
-      // Successful verification - redirect to app
-      sessionStorage.removeItem('temp2FAToken');
-      router.push('/chat');
     } catch (err) {
       console.error('2FA verification error:', err);
       setError('An unexpected error occurred. Please try again.');

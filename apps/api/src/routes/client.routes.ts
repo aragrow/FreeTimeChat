@@ -66,8 +66,10 @@ router.post('/', authenticateJWT, requireRole('admin'), async (req: Request, res
     const accessToken = jwtService.signAccessToken({
       userId: result.adminUser.id,
       email: result.adminUser.email,
-      role: 'admin',
+      role: 'Admin',
+      roles: ['Admin'],
       clientId: result.client.id,
+      databaseName: result.client.databaseName,
     });
 
     res.status(201).json({

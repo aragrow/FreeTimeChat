@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
+import { useAuth } from '@/hooks/useAuth';
 
 interface User extends Record<string, unknown> {
   id: string;
@@ -27,14 +28,37 @@ interface User extends Record<string, unknown> {
   roles: Array<{ name: string }>;
 }
 
+interface CreateUserData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+}
+
 export default function UsersPage() {
+  const { getAuthHeaders } = useAuth();
   const router = useRouter();
+
   const [users, setUsers] = useState<User[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
+
   const [searchTerm, setSearchTerm] = useState('');
+
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const [totalPages, setTotalPages] = useState(1);
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const [createFormData, setCreateFormData] = useState<CreateUserData>({
+    email: '',
+    firstName: '',
+    lastName: '',
+    password: '',
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -53,7 +77,7 @@ export default function UsersPage() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users?${params}`, {
         method: 'GET',
-        credentials: 'include',
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -65,6 +89,60 @@ export default function UsersPage() {
       console.error('Failed to fetch users:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(createFormData),
+      });
+
+      if (response.ok) {
+        setShowCreateModal(false);
+        setCreateFormData({ email: '', firstName: '', lastName: '', password: '' });
+        fetchUsers();
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to create user: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Create user error:', error);
+      alert('An error occurred while creating the user.');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userEmail: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to deactivate user "${userEmail}"? The user will no longer be able to log in.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        fetchUsers();
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to deactivate user: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Delete user error:', error);
+      alert('An error occurred while deactivating the user.');
     }
   };
 
@@ -81,9 +159,9 @@ export default function UsersPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/impersonate`, {
         method: 'POST',
         headers: {
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ targetUserId: userId }),
       });
 
@@ -223,6 +301,16 @@ export default function UsersPage() {
           >
             Impersonate
           </Button>
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteUser(user.id, user.email);
+            }}
+          >
+            Deactivate
+          </Button>
         </div>
       ),
     },
@@ -236,7 +324,7 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold text-gray-900">Users</h1>
           <p className="text-gray-600 mt-1">Manage user accounts and permissions</p>
         </div>
-        <Button>
+        <Button onClick={() => setShowCreateModal(true)}>
           <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -281,6 +369,100 @@ export default function UsersPage() {
           onPageChange: setCurrentPage,
         }}
       />
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Add New User</h2>
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={createFormData.email}
+                  onChange={(e) => setCreateFormData({ ...createFormData, email: e.target.value })}
+                  placeholder="user@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name *
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  required
+                  value={createFormData.firstName}
+                  onChange={(e) =>
+                    setCreateFormData({ ...createFormData, firstName: e.target.value })
+                  }
+                  placeholder="John"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name *
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  required
+                  value={createFormData.lastName}
+                  onChange={(e) =>
+                    setCreateFormData({ ...createFormData, lastName: e.target.value })
+                  }
+                  placeholder="Doe"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Password *
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  minLength={8}
+                  value={createFormData.password}
+                  onChange={(e) =>
+                    setCreateFormData({ ...createFormData, password: e.target.value })
+                  }
+                  placeholder="Minimum 8 characters"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button type="submit" className="flex-1">
+                  Create User
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setCreateFormData({ email: '', firstName: '', lastName: '', password: '' });
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

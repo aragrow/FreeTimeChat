@@ -11,9 +11,11 @@ import { useChatContext } from './layout';
 import type { Message } from '@/components/chat/ChatMessages';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ChatMessages } from '@/components/chat/ChatMessages';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ChatPage() {
   const { activeConversationId, setActiveConversationId, refreshConversations } = useChatContext();
+  const { getAuthHeaders } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -34,7 +36,7 @@ export default function ChatPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/conversations/${conversationId}/messages`,
         {
           method: 'GET',
-          credentials: 'include',
+          headers: getAuthHeaders(),
         }
       );
 
@@ -66,9 +68,9 @@ export default function ChatPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat`, {
         method: 'POST',
         headers: {
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           message: messageContent,
           conversationId: activeConversationId,

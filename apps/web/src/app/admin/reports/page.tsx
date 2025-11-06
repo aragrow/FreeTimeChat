@@ -25,6 +25,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TimeByUserData {
   userId: string;
@@ -74,15 +75,23 @@ interface SummaryStats {
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
 
 export default function ReportsPage() {
+  const { getAuthHeaders } = useAuth();
   const [reportType, setReportType] = useState<'user' | 'project' | 'date'>('user');
+
   const [startDate, setStartDate] = useState('');
+
   const [endDate, setEndDate] = useState('');
+
   const [isLoading, setIsLoading] = useState(false);
+
   const [isExporting, setIsExporting] = useState(false);
 
   const [timeByUserData, setTimeByUserData] = useState<TimeByUserData[]>([]);
+
   const [timeByProjectData, setTimeByProjectData] = useState<TimeByProjectData[]>([]);
+
   const [timeByDateData, setTimeByDateData] = useState<TimeByDateData[]>([]);
+
   const [summaryStats, setSummaryStats] = useState<SummaryStats | null>(null);
 
   useEffect(() => {
@@ -116,7 +125,7 @@ export default function ReportsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/reports/summary?${params}`,
         {
           method: 'GET',
-          credentials: 'include',
+          headers: getAuthHeaders(),
         }
       );
 
@@ -143,7 +152,7 @@ export default function ReportsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/reports/${endpoint}?${params}`,
         {
           method: 'GET',
-          credentials: 'include',
+          headers: getAuthHeaders(),
         }
       );
 
@@ -199,7 +208,7 @@ export default function ReportsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/reports/${endpoint}?${params}`,
         {
           method: 'GET',
-          credentials: 'include',
+          headers: getAuthHeaders(),
         }
       );
 

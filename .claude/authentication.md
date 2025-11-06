@@ -1,14 +1,18 @@
 # Authentication Architecture
 
-This document outlines the complete authentication system for FreeTimeChat, including username/password authentication, Google Sign-On, 2FA with authenticator apps, and JWT token management.
+This document outlines the complete authentication system for FreeTimeChat,
+including username/password authentication, Google Sign-On, 2FA with
+authenticator apps, and JWT token management.
 
 ## Overview
 
 FreeTimeChat supports two authentication methods:
+
 1. **Username/Password** with optional 2FA (TOTP authenticator app)
 2. **Google OAuth 2.0** (no 2FA required as Google handles security)
 
-Once authenticated, users receive a JWT token that maintains their session across requests.
+Once authenticated, users receive a JWT token that maintains their session
+across requests.
 
 ---
 
@@ -17,6 +21,7 @@ Once authenticated, users receive a JWT token that maintains their session acros
 ### Method 1: Username & Password with 2FA
 
 **Flow:**
+
 1. User enters email and password
 2. Backend verifies credentials
 3. If 2FA is enabled for the user:
@@ -25,6 +30,7 @@ Once authenticated, users receive a JWT token that maintains their session acros
 4. Issue JWT token upon successful authentication
 
 **Security Features:**
+
 - Passwords hashed with bcrypt (12 rounds minimum)
 - 2FA using TOTP (Time-based One-Time Password)
 - Rate limiting on login attempts (max 5 attempts per 15 minutes)
@@ -34,6 +40,7 @@ Once authenticated, users receive a JWT token that maintains their session acros
 ### Method 2: Google OAuth 2.0
 
 **Flow:**
+
 1. User clicks "Sign in with Google"
 2. Redirect to Google OAuth consent screen
 3. User authorizes the application
@@ -43,6 +50,7 @@ Once authenticated, users receive a JWT token that maintains their session acros
 7. Issue JWT token
 
 **Benefits:**
+
 - No password management needed
 - Google handles security (including their 2FA if enabled)
 - Faster onboarding
@@ -193,6 +201,7 @@ enum Role {
 ### Modern Approach: RS256 with Token Rotation
 
 **Why RS256 over HS256:**
+
 - Asymmetric keys allow token verification without the signing secret
 - Better for distributed systems and microservices
 - More secure: private key stays on auth server only
@@ -200,6 +209,7 @@ enum Role {
 - Industry standard for production applications
 
 **Alternative: ES256 (More Modern)**
+
 - Faster than RS256
 - Smaller tokens
 - Increasingly preferred by industry (Google, Auth0 use ES256)
@@ -208,12 +218,16 @@ enum Role {
 ### Access Token (Short-lived)
 
 **Payload:**
+
 ```typescript
 {
   // Standard JWT claims
   sub: string;         // Subject (User UUID) - standard claim
   email: string;       // User email
-  role: 'user' | 'admin';
+  role: string;        // Primary role (for backward compatibility)
+  roles: string[];     // All user roles (RBAC)
+  clientId: string;    // Client ID for multi-tenancy
+  databaseName: string; // Client database name for routing
   iat: number;         // Issued at (timestamp) - standard claim
   exp: number;         // Expires at (timestamp) - standard claim
   jti: string;         // JWT ID (unique token identifier) - for revocation
@@ -223,11 +237,13 @@ enum Role {
 ```
 
 **Configuration:**
+
 - **Expiration**: 15 minutes (or 5-10 minutes for higher security)
 - **Algorithm**: **RS256** (production) or ES256 (more modern)
 - **Storage**: HTTP-only, Secure, SameSite=Strict cookie (preferred)
   - Alternative: Memory only in frontend (not localStorage/sessionStorage)
-- **Transmission**: HTTP-only cookie (primary) or Authorization header (mobile/SPA)
+- **Transmission**: HTTP-only cookie (primary) or Authorization header
+  (mobile/SPA)
 - **Token Identifier (jti)**: Enables token revocation if needed
 
 ### Refresh Token (Long-lived)
@@ -235,14 +251,18 @@ enum Role {
 **Purpose**: Generate new access tokens without re-authentication
 
 **Configuration:**
+
 - **Expiration**: 7 days (30 days for "remember me")
 - **Storage**: Database + HTTP-only, Secure cookie
-- **Rotation**: **Automatic rotation** - issue new refresh token on each use (modern best practice)
+- **Rotation**: **Automatic rotation** - issue new refresh token on each use
+  (modern best practice)
 - **Revocation**: Can be revoked (logout, security breach, suspicious activity)
 - **Format**: Cryptographically random string (not JWT)
-- **Reuse Detection**: If old refresh token is used after rotation, revoke entire family
+- **Reuse Detection**: If old refresh token is used after rotation, revoke
+  entire family
 
 **Refresh Token Rotation (Modern Security Pattern):**
+
 ```
 1. User logs in → Receive Access Token + Refresh Token A
 2. Access token expires → Use Refresh Token A
@@ -600,10 +620,13 @@ const JWT_EXPIRES_IN = '15m'; // 15 minutes
 const REFRESH_TOKEN_EXPIRES_IN = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 interface JWTPayload {
-  sub: string;         // User ID (standard claim)
+  sub: string; // User ID (standard claim)
   email: string;
-  role: 'user' | 'admin';
-  jti?: string;        // JWT ID for revocation
+  role: string; // Primary role (for backward compatibility)
+  roles: string[]; // All user roles (RBAC)
+  clientId: string; // Client ID for multi-tenancy
+  databaseName: string; // Client database name for routing
+  jti?: string; // JWT ID for revocation
 }
 
 export class JWTService {
@@ -772,8 +795,11 @@ export class JWTService {
       where: {
         OR: [
           { expiresAt: { lt: new Date() } },
-          { revoked: true, createdAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
-        ]
+          {
+            revoked: true,
+            createdAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+          },
+        ],
       },
     });
   }
@@ -855,9 +881,7 @@ export class TwoFactorService {
   }
 
   static async hashBackupCodes(codes: string[]): Promise<string[]> {
-    return Promise.all(
-      codes.map(code => bcrypt.hash(code, 12))
-    );
+    return Promise.all(codes.map((code) => bcrypt.hash(code, 12)));
   }
 
   static async verifyBackupCode(
@@ -1349,12 +1373,14 @@ export function LoginForm() {
 ## Security Best Practices
 
 ### 1. Password Security
+
 - ✅ Use bcrypt or argon2 with minimum 12 rounds
 - ✅ Enforce strong password requirements
 - ✅ Never log passwords
 - ✅ Use timing-safe comparison for password checks
 
 ### 2. Token Security
+
 - ✅ Use HTTP-only cookies for tokens (preferred over localStorage)
 - ✅ Set SameSite=Strict on cookies
 - ✅ Use HTTPS in production
@@ -1363,6 +1389,7 @@ export function LoginForm() {
 - ✅ Store refresh tokens in database for revocation
 
 ### 3. 2FA Security
+
 - ✅ Use time-based window for TOTP validation (account for clock skew)
 - ✅ Provide backup codes (hashed)
 - ✅ Allow backup code to be used only once
@@ -1370,12 +1397,14 @@ export function LoginForm() {
 - ✅ Require password confirmation to disable 2FA
 
 ### 4. Rate Limiting
+
 - ✅ Login: 5 attempts per 15 minutes per IP
 - ✅ Registration: 3 attempts per hour per IP
 - ✅ Password reset: 3 attempts per hour per email
 - ✅ 2FA verification: 5 attempts per token
 
 ### 5. General Security
+
 - ✅ Sanitize all inputs
 - ✅ Use parameterized queries (Prisma handles this)
 - ✅ Implement CORS properly
@@ -1429,7 +1458,10 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
 
 ## Admin Impersonation (Sign In As Client)
 
-Admin impersonation allows administrators to access the application as if they were a specific client/user, without needing to know the client's password. This is useful for:
+Admin impersonation allows administrators to access the application as if they
+were a specific client/user, without needing to know the client's password. This
+is useful for:
+
 - Troubleshooting user-reported issues
 - Providing support and debugging
 - Testing features from the user's perspective
@@ -1437,16 +1469,19 @@ Admin impersonation allows administrators to access the application as if they w
 
 ### Security Considerations
 
-**IMPORTANT**: Impersonation is a powerful feature that must be implemented with strict security controls:
+**IMPORTANT**: Impersonation is a powerful feature that must be implemented with
+strict security controls:
 
-1. **Authorization**: Only users with `admin.impersonate` capability can impersonate
+1. **Authorization**: Only users with `admin.impersonate` capability can
+   impersonate
 2. **Audit Logging**: Every impersonation session must be logged with:
    - Who impersonated whom
    - When the session started and ended
    - What actions were taken during impersonation
 3. **Session Isolation**: The original admin session must be preserved
 4. **Visual Indicators**: Clear UI indication when in impersonation mode
-5. **Limited Scope**: Impersonation should not allow password changes or security settings modifications
+5. **Limited Scope**: Impersonation should not allow password changes or
+   security settings modifications
 6. **Time Limits**: Optional timeout for impersonation sessions
 
 ### Database Schema
@@ -1492,18 +1527,20 @@ The impersonation JWT includes special claims:
 
 ```typescript
 interface ImpersonationJWTPayload extends JWTPayload {
-  sub: string;              // Target user ID
-  email: string;            // Target user email
-  role: string;             // Target user role
-  clientId: string;         // Target client ID
+  sub: string; // Target user ID
+  email: string; // Target user email
+  role: string; // Target user role
+  roles: string[]; // Target user roles
+  clientId: string; // Target client ID
+  databaseName: string; // Target client database name
 
   // Impersonation metadata
   impersonation: {
     isImpersonating: true;
-    adminUserId: string;    // Original admin user ID
-    adminEmail: string;     // Original admin email
-    sessionId: string;      // Impersonation session ID
-    startedAt: number;      // Unix timestamp
+    adminUserId: string; // Original admin user ID
+    adminEmail: string; // Original admin email
+    sessionId: string; // Impersonation session ID
+    startedAt: number; // Unix timestamp
   };
 }
 ```
@@ -2256,8 +2293,10 @@ await AuditService.log({
 
 ### Security Best Practices
 
-1. **Capability-Based Access**: Only users with `admin.impersonate` capability can impersonate
-2. **Complete Audit Trail**: Log every impersonation session and all actions taken
+1. **Capability-Based Access**: Only users with `admin.impersonate` capability
+   can impersonate
+2. **Complete Audit Trail**: Log every impersonation session and all actions
+   taken
 3. **Visual Indicators**: Always show impersonation banner
 4. **Restricted Actions**: Block password changes, 2FA changes, account deletion
 5. **Session Timeout**: Impersonation sessions expire after 4 hours
@@ -2270,6 +2309,7 @@ await AuditService.log({
 ## Testing Checklist
 
 ### Registration & Login
+
 - [ ] User can register with email/password
 - [ ] Password validation works
 - [ ] Email verification is sent
@@ -2282,6 +2322,7 @@ await AuditService.log({
 - [ ] Google OAuth links account if email already exists
 
 ### 2FA
+
 - [ ] User can enable 2FA
 - [ ] QR code is generated correctly
 - [ ] Backup codes are generated (10 codes)
@@ -2293,6 +2334,7 @@ await AuditService.log({
 - [ ] User can regenerate backup codes
 
 ### JWT & Sessions
+
 - [ ] Access token expires after 15 minutes
 - [ ] Refresh token works to get new access token
 - [ ] New refresh token is issued on refresh
@@ -2301,6 +2343,7 @@ await AuditService.log({
 - [ ] Expired tokens are rejected
 
 ### Password Management
+
 - [ ] Password reset email is sent
 - [ ] Password can be reset with valid token
 - [ ] Reset token expires after 1 hour
@@ -2308,6 +2351,7 @@ await AuditService.log({
 - [ ] Old password must be provided to change password
 
 ### Security
+
 - [ ] Rate limiting prevents brute force
 - [ ] Passwords are hashed (never stored in plain text)
 - [ ] SQL injection is prevented (use Prisma)

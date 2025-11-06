@@ -34,7 +34,7 @@ export function useImpersonation() {
 
 export function ImpersonationProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, getAuthHeaders } = useAuth();
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [targetUser, setTargetUser] = useState<ImpersonationContextType['targetUser']>(null);
 
@@ -60,9 +60,9 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/impersonate`, {
         method: 'POST',
         headers: {
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ targetUserId }),
       });
 
@@ -90,7 +90,7 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/end-impersonation`, {
         method: 'POST',
-        credentials: 'include',
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {

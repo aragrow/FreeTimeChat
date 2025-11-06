@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BackupCode {
   code: string;
@@ -18,6 +19,7 @@ interface BackupCode {
 
 export default function Setup2FAPage() {
   const router = useRouter();
+  const { getAuthHeaders } = useAuth();
   const [qrCode, setQrCode] = useState('');
   const [secret, setSecret] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -39,9 +41,9 @@ export default function Setup2FAPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/enable`, {
         method: 'POST',
         headers: {
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
       });
 
       const data = await response.json();
@@ -76,9 +78,9 @@ export default function Setup2FAPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify`, {
         method: 'POST',
         headers: {
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ code: verificationCode }),
       });
 

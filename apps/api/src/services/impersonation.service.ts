@@ -87,8 +87,9 @@ export class ImpersonationService {
       },
     });
 
-    // Get target user's role
-    const targetRole = await this.userService.getPrimaryRole(targetUserId);
+    // Get target user's roles
+    const targetRoles = await this.userService.getUserRoles(targetUserId);
+    const targetRole = targetRoles.length > 0 ? targetRoles[0] : 'user';
 
     // Create impersonation metadata
     const impersonationMetadata: ImpersonationMetadata = {
@@ -103,8 +104,10 @@ export class ImpersonationService {
     const accessToken = this.jwtService.signAccessToken({
       userId: targetUserId,
       email: targetUser.email,
-      role: targetRole || 'user',
+      role: targetRole,
+      roles: targetRoles.length > 0 ? targetRoles : ['user'],
       clientId: targetUser.clientId,
+      databaseName: targetUser.client.databaseName,
       impersonation: impersonationMetadata,
     });
 

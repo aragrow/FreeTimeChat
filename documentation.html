@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreeTimeChat - Authentication Flow Documentation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      padding: 40px 20px;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    header p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .flow-container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .values-panel {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-error {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    .btn-error:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(245, 87, 108, 0.4);
+    }
+
+    .btn-reset {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-reset:hover {
+      background: #5a6268;
+      transform: translateY(-2px);
+    }
+
+    .flow-diagram {
+      position: relative;
+      padding: 40px 0;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      margin-bottom: 40px;
+      opacity: 0.3;
+      transition: all 0.5s ease;
+      position: relative;
+    }
+
+    .step.active {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    .step.completed {
+      opacity: 0.6;
+    }
+
+    .step-number {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 24px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      position: relative;
+      z-index: 2;
+    }
+
+    .step.error .step-number {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .step-content {
+      margin-left: 30px;
+      flex: 1;
+    }
+
+    .step-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #2d3748;
+    }
+
+    .step-description {
+      color: #718096;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .connector {
+      position: absolute;
+      left: 29px;
+      top: 60px;
+      width: 2px;
+      height: calc(100% - 60px);
+      background: #e2e8f0;
+      z-index: 1;
+    }
+
+    .connector-progress {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 0%;
+      background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+      transition: height 0.5s ease;
+    }
+
+    .values-panel h2 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #2d3748;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .value-group {
+      margin-bottom: 25px;
+      padding: 15px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .value-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #718096;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .value-content {
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      color: #2d3748;
+      word-break: break-all;
+      padding: 8px;
+      background: white;
+      border-radius: 4px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .highlight-success {
+      color: #38a169;
+      font-weight: 600;
+    }
+
+    .highlight-error {
+      color: #e53e3e;
+      font-weight: 600;
+    }
+
+    .jwt-payload {
+      background: #1a202c;
+      color: #68d391;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.6;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .jwt-key {
+      color: #90cdf4;
+    }
+
+    .jwt-string {
+      color: #fbd38d;
+    }
+
+    .jwt-number {
+      color: #fc8181;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      }
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+      }
+    }
+
+    .step.active .step-number {
+      animation: pulse 2s infinite;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    .status-success {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+
+    .status-error {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    .status-pending {
+      background: #feebc8;
+      color: #7c2d12;
+    }
+
+    .api-request {
+      background: #edf2f7;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    .method {
+      color: #38a169;
+      font-weight: 700;
+    }
+
+    .endpoint {
+      color: #2d3748;
+    }
+
+    @media (max-width: 1200px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+
+      .values-panel {
+        position: relative;
+        top: 0;
+      }
+    }
+
+    .scenario-selector {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f7fafc;
+      border-radius: 8px;
+    }
+
+    .scenario-selector label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .scenario-selector select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    footer {
+      text-align: center;
+      color: white;
+      padding: 40px 20px;
+      margin-top: 40px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔐 FreeTimeChat Authentication Flow</h1>
+      <p>Interactive visualization of JWT authentication with RS256 & multi-tenancy</p>
+    </header>
+
+    <div class="main-content">
+      <!-- Flow Diagram -->
+      <div class="flow-container">
+        <div class="scenario-selector">
+          <label for="scenario">Select Scenario:</label>
+          <select id="scenario">
+            <option value="success">✅ Successful Login</option>
+            <option value="wrong-password">❌ Wrong Password</option>
+            <option value="2fa-required">🔑 2FA Required</option>
+            <option value="account-locked">🔒 Account Locked</option>
+            <option value="token-expired">⏰ Token Expired</option>
+          </select>
+        </div>
+
+        <div class="controls">
+          <button class="btn btn-success" onclick="startFlow()">▶️ Start Flow</button>
+          <button class="btn btn-reset" onclick="resetFlow()">🔄 Reset</button>
+        </div>
+
+        <div class="flow-diagram" id="flowDiagram">
+          <!-- Steps will be dynamically inserted here -->
+        </div>
+      </div>
+
+      <!-- Values Panel -->
+      <div class="values-panel" id="valuesPanel">
+        <h2>📊 Live Values</h2>
+        <div id="valuesContent">
+          <p style="color: #718096; text-align: center; padding: 40px 0;">
+            Click "Start Flow" to begin the authentication journey
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>FreeTimeChat Authentication System - Built with RS256 JWT, RBAC, and Multi-Tenancy</p>
+      <p style="margin-top: 10px;">Database-per-tenant architecture for maximum security and isolation</p>
+    </footer>
+  </div>
+
+  <script>
+    // Authentication flow scenarios
+    const scenarios = {
+      success: {
+        name: 'Successful Login',
+        steps: [
+          {
+            title: 'Client Sends Login Request',
+            description: 'User submits email and password from the login form',
+            values: {
+              'Request Method': 'POST',
+              'Endpoint': '/api/v1/auth/login',
+              'Email': 'admin@freetimechat.local',
+              'Password': '••••••••',
+              'IP Address': '192.168.1.100'
+            }
+          },
+          {
+            title: 'Find User by Email',
+            description: 'Query main database to locate user account',
+            values: {
+              'Query': 'SELECT * FROM users WHERE email = ?',
+              'User Found': 'true',
+              'User ID': 'uuid-123-admin',
+              'Email': 'admin@freetimechat.local',
+              'Client ID': 'uuid-client-1',
+              'Database Name': 'freetimechat_client_default'
+            }
+          },
+          {
+            title: 'Verify Password',
+            description: 'Compare submitted password with bcrypt hash',
+            values: {
+              'Algorithm': 'bcrypt',
+              'Rounds': '12',
+              'Hash from DB': '$2b$12$KIXxZ...',
+              'Password Match': 'true',
+              'Status': 'Valid ✓'
+            }
+          },
+          {
+            title: 'Check 2FA Status',
+            description: 'Determine if two-factor authentication is enabled',
+            values: {
+              '2FA Enabled': 'false',
+              'Skip 2FA': 'true',
+              'Continue to Token': 'true'
+            }
+          },
+          {
+            title: 'Fetch User Roles',
+            description: 'Get all roles assigned to the user for RBAC',
+            values: {
+              'Query': 'getUserRoles(userId)',
+              'Roles Found': '["Admin"]',
+              'Primary Role': 'Admin',
+              'Capabilities': '["admin.users.read", "admin.impersonate", ...]'
+            }
+          },
+          {
+            title: 'Generate JWT Tokens',
+            description: 'Create access token (RS256) and refresh token',
+            values: {
+              'Algorithm': 'RS256',
+              'Access Token Expiry': '15 minutes',
+              'Refresh Token Expiry': '7 days',
+              'Family ID': 'uuid-family-abc123',
+              'JTI': 'uuid-jti-xyz789'
+            }
+          },
+          {
+            title: 'Store Refresh Token',
+            description: 'Save refresh token in database for rotation',
+            values: {
+              'Token': 'ref_abc123...',
+              'Family ID': 'uuid-family-abc123',
+              'User ID': 'uuid-123-admin',
+              'Expires At': new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+              'Revoked': 'false'
+            }
+          },
+          {
+            title: 'Update Last Login',
+            description: 'Record timestamp of successful authentication',
+            values: {
+              'Last Login': new Date().toISOString(),
+              'IP Address': '192.168.1.100',
+              'User Agent': 'Mozilla/5.0 (Macintosh...)'
+            }
+          },
+          {
+            title: 'Return Success Response',
+            description: 'Send JWT tokens and user data to client',
+            values: {
+              'Status Code': '200 OK',
+              'Access Token': 'eyJhbGciOiJSUzI1NiIs...',
+              'Refresh Token': 'ref_abc123def456...',
+              'User Data': JSON.stringify({
+                id: 'uuid-123-admin',
+                email: 'admin@freetimechat.local',
+                role: 'Admin',
+                roles: ['Admin']
+              }, null, 2)
+            },
+            jwt: {
+              sub: 'uuid-123-admin',
+              email: 'admin@freetimechat.local',
+              role: 'Admin',
+              roles: ['Admin'],
+              clientId: 'uuid-client-1',
+              databaseName: 'freetimechat_client_default',
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + 900,
+              jti: 'uuid-jti-xyz789',
+              iss: 'freetimechat-api',
+              aud: 'freetimechat-web'
+            }
+          }
+        ]
+      },
+      'wrong-password': {
+        name: 'Wrong Password',
+        steps: [
+          {
+            title: 'Client Sends Login Request',
+            description: 'User submits email and password from the login form',
+            values: {
+              'Request Method': 'POST',
+              'Endpoint': '/api/v1/auth/login',
+              'Email': 'admin@freetimechat.local',
+              'Password': '••••••••',
+              'IP Address': '192.168.1.100'
+            }
+          },
+          {
+            title: 'Find User by Email',
+            description: 'Query main database to locate user account',
+            values: {
+              'Query': 'SELECT * FROM users WHERE email = ?',
+              'User Found': 'true',
+              'User ID': 'uuid-123-admin',
+              'Email': 'admin@freetimechat.local'
+            }
+          },
+          {
+            title: 'Verify Password',
+            description: 'Compare submitted password with bcrypt hash',
+            values: {
+              'Algorithm': 'bcrypt',
+              'Rounds': '12',
+              'Hash from DB': '$2b$12$KIXxZ...',
+              'Password Match': 'false',
+              'Status': 'Invalid ✗'
+            },
+            error: true
+          },
+          {
+            title: 'Increment Failed Attempts',
+            description: 'Track failed login attempts for security',
+            values: {
+              'Failed Attempts': '3',
+              'Max Attempts': '10',
+              'Account Locked': 'false',
+              'Lockout After': '7 more attempts'
+            },
+            error: true
+          },
+          {
+            title: 'Return Error Response',
+            description: 'Send authentication failure message',
+            values: {
+              'Status Code': '401 Unauthorized',
+              'Error': 'Invalid email or password',
+              'Timestamp': new Date().toISOString()
+            },
+            error: true
+          }
+        ]
+      },
+      '2fa-required': {
+        name: '2FA Required',
+        steps: [
+          {
+            title: 'Client Sends Login Request',
+            description: 'User submits email and password from the login form',
+            values: {
+              'Request Method': 'POST',
+              'Endpoint': '/api/v1/auth/login',
+              'Email': 'user@freetimechat.local',
+              'Password': '••••••••'
+            }
+          },
+          {
+            title: 'Find User by Email',
+            description: 'Query main database to locate user account',
+            values: {
+              'User Found': 'true',
+              'User ID': 'uuid-456-user',
+              'Email': 'user@freetimechat.local'
+            }
+          },
+          {
+            title: 'Verify Password',
+            description: 'Compare submitted password with bcrypt hash',
+            values: {
+              'Password Match': 'true',
+              'Status': 'Valid ✓'
+            }
+          },
+          {
+            title: 'Check 2FA Status',
+            description: 'Determine if two-factor authentication is enabled',
+            values: {
+              '2FA Enabled': 'true',
+              'Secret': 'JBSWY3DPEHPK3PXP',
+              'Require Code': 'true'
+            }
+          },
+          {
+            title: 'Generate Temporary Token',
+            description: 'Create short-lived token for 2FA verification',
+            values: {
+              'Temp Token': 'temp_abc123xyz...',
+              'Expires In': '5 minutes',
+              'Purpose': 'awaiting_2fa'
+            }
+          },
+          {
+            title: 'Return 2FA Challenge',
+            description: 'Prompt user to enter authenticator code',
+            values: {
+              'Status Code': '200 OK',
+              'Requires 2FA': 'true',
+              'Temp Token': 'temp_abc123xyz...',
+              'Message': 'Please enter your 2FA code'
+            }
+          }
+        ]
+      },
+      'account-locked': {
+        name: 'Account Locked',
+        steps: [
+          {
+            title: 'Client Sends Login Request',
+            description: 'User submits email and password from the login form',
+            values: {
+              'Request Method': 'POST',
+              'Endpoint': '/api/v1/auth/login',
+              'Email': 'locked@freetimechat.local',
+              'Password': '••••••••'
+            }
+          },
+          {
+            title: 'Find User by Email',
+            description: 'Query main database to locate user account',
+            values: {
+              'User Found': 'true',
+              'User ID': 'uuid-789-locked',
+              'Email': 'locked@freetimechat.local',
+              'Is Active': 'true'
+            }
+          },
+          {
+            title: 'Check Account Status',
+            description: 'Verify account is not locked or suspended',
+            values: {
+              'Failed Attempts': '10',
+              'Account Locked Until': new Date(Date.now() + 30*60*1000).toISOString(),
+              'Lock Duration': '30 minutes',
+              'Status': 'Locked ✗'
+            },
+            error: true
+          },
+          {
+            title: 'Return Error Response',
+            description: 'Inform user their account is temporarily locked',
+            values: {
+              'Status Code': '403 Forbidden',
+              'Error': 'Account temporarily locked',
+              'Reason': 'Too many failed login attempts',
+              'Unlock At': new Date(Date.now() + 30*60*1000).toLocaleString(),
+              'Message': 'Please try again in 30 minutes or contact support'
+            },
+            error: true
+          }
+        ]
+      },
+      'token-expired': {
+        name: 'Token Expired',
+        steps: [
+          {
+            title: 'Client Makes Authenticated Request',
+            description: 'User attempts to access protected resource',
+            values: {
+              'Request Method': 'GET',
+              'Endpoint': '/api/v1/projects',
+              'Authorization': 'Bearer eyJhbGc...',
+              'Access Token': 'eyJhbGciOiJSUzI1NiIs...'
+            }
+          },
+          {
+            title: 'Verify Access Token',
+            description: 'Validate JWT signature and expiration',
+            values: {
+              'Algorithm': 'RS256',
+              'Signature': 'Valid ✓',
+              'Issued At': new Date(Date.now() - 20*60*1000).toISOString(),
+              'Expires At': new Date(Date.now() - 5*60*1000).toISOString(),
+              'Current Time': new Date().toISOString(),
+              'Expired': 'true ✗'
+            },
+            error: true
+          },
+          {
+            title: 'Return Token Expired Error',
+            description: 'Request refresh token to get new access token',
+            values: {
+              'Status Code': '401 Unauthorized',
+              'Error': 'Token expired',
+              'Code': 'TOKEN_EXPIRED',
+              'Message': 'Please refresh your access token'
+            },
+            error: true
+          },
+          {
+            title: 'Client Sends Refresh Request',
+            description: 'Use refresh token to obtain new access token',
+            values: {
+              'Request Method': 'POST',
+              'Endpoint': '/api/v1/auth/refresh',
+              'Refresh Token': 'ref_abc123def456...'
+            }
+          },
+          {
+            title: 'Verify Refresh Token',
+            description: 'Check refresh token validity and family',
+            values: {
+              'Token Found': 'true',
+              'Is Revoked': 'false',
+              'Expires At': new Date(Date.now() + 6*24*60*60*1000).toISOString(),
+              'Family ID': 'uuid-family-abc123',
+              'Valid': 'true ✓'
+            }
+          },
+          {
+            title: 'Revoke Old Refresh Token',
+            description: 'Mark current refresh token as used (rotation)',
+            values: {
+              'Token': 'ref_abc123def456...',
+              'Revoked': 'true',
+              'Revoked At': new Date().toISOString(),
+              'Reason': 'Token rotation'
+            }
+          },
+          {
+            title: 'Generate New Tokens',
+            description: 'Issue fresh access token and rotate refresh token',
+            values: {
+              'New Access Token': 'eyJhbGciOiJSUzI1NiIs...(new)',
+              'New Refresh Token': 'ref_xyz789ghi012...',
+              'Same Family ID': 'uuid-family-abc123',
+              'Access Expiry': '15 minutes',
+              'Refresh Expiry': '7 days'
+            }
+          },
+          {
+            title: 'Return New Tokens',
+            description: 'Client can retry original request with new token',
+            values: {
+              'Status Code': '200 OK',
+              'Access Token': 'eyJhbGciOiJSUzI1NiIs...(new)',
+              'Refresh Token': 'ref_xyz789ghi012...',
+              'Message': 'Tokens refreshed successfully'
+            }
+          }
+        ]
+      }
+    };
+
+    let currentStep = 0;
+    let currentScenario = 'success';
+    let animationInterval = null;
+
+    function renderFlow() {
+      const scenario = scenarios[currentScenario];
+      const flowDiagram = document.getElementById('flowDiagram');
+
+      flowDiagram.innerHTML = `
+        <div class="connector">
+          <div class="connector-progress" id="connectorProgress"></div>
+        </div>
+      `;
+
+      scenario.steps.forEach((step, index) => {
+        const stepDiv = document.createElement('div');
+        stepDiv.className = 'step';
+        stepDiv.id = `step-${index}`;
+
+        const apiRequest = step.values['Request Method'] && step.values['Endpoint'] ?
+          `<div class="api-request">
+            <span class="method">${step.values['Request Method']}</span>
+            <span class="endpoint">${step.values['Endpoint']}</span>
+          </div>` : '';
+
+        stepDiv.innerHTML = `
+          <div class="step-number">${index + 1}</div>
+          <div class="step-content">
+            <div class="step-title">${step.title}</div>
+            <div class="step-description">${step.description}</div>
+            ${apiRequest}
+          </div>
+        `;
+
+        flowDiagram.appendChild(stepDiv);
+      });
+    }
+
+    function updateValues(step) {
+      const valuesContent = document.getElementById('valuesContent');
+      const scenario = scenarios[currentScenario];
+      const stepData = scenario.steps[step];
+
+      let html = '';
+
+      // Add step status badge
+      const status = stepData.error ? 'error' : 'success';
+      const statusText = stepData.error ? 'ERROR' : 'SUCCESS';
+      html += `<div class="status-badge status-${status}">${statusText}</div>`;
+
+      // Add values
+      for (const [key, value] of Object.entries(stepData.values)) {
+        const valueClass = value.toString().includes('true') || value.toString().includes('✓') ?
+          'highlight-success' :
+          (value.toString().includes('false') || value.toString().includes('✗') ? 'highlight-error' : '');
+
+        html += `
+          <div class="value-group">
+            <div class="value-label">${key}</div>
+            <div class="value-content ${valueClass}">${typeof value === 'object' ? JSON.stringify(value, null, 2) : value}</div>
+          </div>
+        `;
+      }
+
+      // Add JWT payload if present
+      if (stepData.jwt) {
+        html += `
+          <div class="value-group">
+            <div class="value-label">JWT PAYLOAD (DECODED)</div>
+            <div class="jwt-payload">${formatJWT(stepData.jwt)}</div>
+          </div>
+        `;
+      }
+
+      valuesContent.innerHTML = html;
+    }
+
+    function formatJWT(payload) {
+      let html = '{\n';
+      for (const [key, value] of Object.entries(payload)) {
+        const valueType = typeof value;
+        let formattedValue;
+
+        if (valueType === 'string') {
+          formattedValue = `<span class="jwt-string">"${value}"</span>`;
+        } else if (valueType === 'number') {
+          formattedValue = `<span class="jwt-number">${value}</span>`;
+        } else if (Array.isArray(value)) {
+          formattedValue = `<span class="jwt-string">[${value.map(v => `"${v}"`).join(', ')}]</span>`;
+        } else {
+          formattedValue = `<span class="jwt-string">${JSON.stringify(value)}</span>`;
+        }
+
+        html += `  <span class="jwt-key">"${key}"</span>: ${formattedValue},\n`;
+      }
+      html = html.slice(0, -2) + '\n}'; // Remove last comma
+      return html;
+    }
+
+    function startFlow() {
+      resetFlow();
+      currentScenario = document.getElementById('scenario').value;
+      renderFlow();
+
+      const scenario = scenarios[currentScenario];
+      animationInterval = setInterval(() => {
+        if (currentStep < scenario.steps.length) {
+          // Mark previous step as completed
+          if (currentStep > 0) {
+            const prevStep = document.getElementById(`step-${currentStep - 1}`);
+            prevStep.classList.remove('active');
+            prevStep.classList.add('completed');
+          }
+
+          // Activate current step
+          const currentStepElement = document.getElementById(`step-${currentStep}`);
+          currentStepElement.classList.add('active');
+
+          // Add error class if step failed
+          if (scenario.steps[currentStep].error) {
+            currentStepElement.classList.add('error');
+          }
+
+          // Update connector progress
+          const progress = ((currentStep + 1) / scenario.steps.length) * 100;
+          document.getElementById('connectorProgress').style.height = `${progress}%`;
+
+          // Update values panel
+          updateValues(currentStep);
+
+          currentStep++;
+        } else {
+          clearInterval(animationInterval);
+          // Mark last step as completed
+          const lastStep = document.getElementById(`step-${scenario.steps.length - 1}`);
+          lastStep.classList.remove('active');
+          lastStep.classList.add('completed');
+        }
+      }, 1500);
+    }
+
+    function resetFlow() {
+      if (animationInterval) {
+        clearInterval(animationInterval);
+      }
+      currentStep = 0;
+      renderFlow();
+      document.getElementById('valuesContent').innerHTML = `
+        <p style="color: #718096; text-align: center; padding: 40px 0;">
+          Click "Start Flow" to begin the authentication journey
+        </p>
+      `;
+      document.getElementById('connectorProgress').style.height = '0%';
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      renderFlow();
+
+      // Change scenario on select
+      document.getElementById('scenario').addEventListener('change', () => {
+        resetFlow();
+      });
+    });
+  </script>
+</body>
+</html>

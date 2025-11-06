@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Project extends Record<string, unknown> {
   id: string;
@@ -27,12 +28,19 @@ interface Project extends Record<string, unknown> {
 }
 
 export default function ProjectsPage() {
+  const { getAuthHeaders } = useAuth();
   const router = useRouter();
+
   const [projects, setProjects] = useState<Project[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
+
   const [searchTerm, setSearchTerm] = useState('');
+
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
@@ -52,7 +60,7 @@ export default function ProjectsPage() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects?${params}`, {
         method: 'GET',
-        credentials: 'include',
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {

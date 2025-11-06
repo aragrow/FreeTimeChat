@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { useAuth } from '@/hooks/useAuth';
 
 interface User {
   id: string;
@@ -37,10 +38,15 @@ interface ActivityLog {
 }
 
 export default function UserDetailPage({ params }: { params: { id: string } }) {
+  const { getAuthHeaders } = useAuth();
   const router = useRouter();
+
   const [user, setUser] = useState<User | null>(null);
+
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
+
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -54,7 +60,7 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
       setIsLoading(true);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${params.id}`, {
         method: 'GET',
-        credentials: 'include',
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -77,7 +83,7 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${params.id}/activity?take=10`,
         {
           method: 'GET',
-          credentials: 'include',
+          headers: getAuthHeaders(),
         }
       );
 
@@ -105,9 +111,9 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${user.id}`, {
         method: 'PATCH',
         headers: {
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ isActive: newStatus }),
       });
 
@@ -140,9 +146,9 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/impersonate`, {
         method: 'POST',
         headers: {
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ targetUserId: user.id }),
       });
 

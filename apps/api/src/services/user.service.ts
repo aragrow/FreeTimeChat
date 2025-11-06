@@ -237,6 +237,29 @@ export class UserService {
   }
 
   /**
+   * Get all user roles
+   */
+  async getUserRoles(userId: string): Promise<string[]> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!user || user.roles.length === 0) {
+      return [];
+    }
+
+    // Return all role names
+    return user.roles.map((userRole) => userRole.role.name);
+  }
+
+  /**
    * Check if user is active
    */
   async isActive(userId: string): Promise<boolean> {

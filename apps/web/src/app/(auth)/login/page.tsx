@@ -9,13 +9,15 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { GoogleLogo } from '@/components/icons/GoogleLogo';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { GoogleLogo } from '@/components/icons/GoogleLogo';
 import { Input } from '@/components/ui/Input';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, loginWithGoogle } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -65,41 +67,20 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
+      const result = await login(formData.email, formData.password);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.errors) {
-          // Field-specific errors
-          const fieldErrors: Record<string, string> = {};
-          data.errors.forEach((error: { field: string; message: string }) => {
-            fieldErrors[error.field] = error.message;
-          });
-          setErrors(fieldErrors);
-        } else {
-          setGeneralError(data.message || 'Login failed. Please try again.');
-        }
+      if (result.error) {
+        setGeneralError(result.error);
         return;
       }
 
       // Check if 2FA is required
-      if (data.data?.requires2FA) {
-        // Store temporary token and redirect to 2FA verification
-        sessionStorage.setItem('temp2FAToken', data.data.token);
+      if (result.requires2FA) {
         router.push('/2fa/verify');
         return;
       }
 
       // Successful login
-      // Store token in cookie (already set by backend with httpOnly)
       router.push('/chat');
     } catch (error) {
       console.error('Login error:', error);
@@ -110,8 +91,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
-    // Redirect to backend Google OAuth endpoint
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/oauth/google`;
+    loginWithGoogle();
   };
 
   return (

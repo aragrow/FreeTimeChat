@@ -34,7 +34,14 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   useEffect(() => {
     // Check role requirement
     if (!isLoading && isAuthenticated && requiredRole) {
-      if (user?.role !== requiredRole && !user?.role.includes('ADMIN')) {
+      const hasRole =
+        user?.roles?.some((r) => r.name.toLowerCase() === requiredRole.toLowerCase()) ||
+        user?.role?.toLowerCase() === requiredRole.toLowerCase();
+      const isAdmin =
+        user?.roles?.some((r) => r.name.toLowerCase() === 'admin') ||
+        user?.role?.toLowerCase() === 'admin';
+
+      if (!hasRole && !isAdmin) {
         // User doesn't have required role
         router.push('/unauthorized');
       }

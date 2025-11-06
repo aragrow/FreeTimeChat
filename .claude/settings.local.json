@@ -58,7 +58,22 @@
       "Bash(pnpm analyze:db:*)",
       "Bash(pnpm analyze:authz:*)",
       "Bash(pnpm analyze:tenant:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(/opt/homebrew/Cellar/postgresql@16/16.10/bin/psql:*)",
+      "Bash(open:*)",
+      "Bash(python3:*)",
+      "Bash(pnpm --filter @freetimechat/web build:*)",
+      "Bash(psql:*)",
+      "Bash(/opt/homebrew/bin/psql:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(pnpm tsx:*)",
+      "Bash(pnpm --filter=api prisma:seed:*)",
+      "Bash(npx prisma db seed)",
+      "Bash(pnpm prisma:migrate:deploy:client:*)",
+      "Bash(pnpm prisma:push:client:*)",
+      "Bash(pnpm prisma:push:main:*)",
+      "Bash(pnpm prisma db push:*)",
+      "Bash(pnpm build:types:*)"
     ],
     "deny": [],
     "ask": []

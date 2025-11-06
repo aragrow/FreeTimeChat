@@ -177,8 +177,15 @@ export class GoogleOAuthService {
     accessToken: string;
     refreshToken: string;
   }> {
-    // Get user's primary role
-    const role = await this.userService.getPrimaryRole(user.id);
+    // Get user with client info
+    const userWithClient = await this.userService.findById(user.id);
+    if (!userWithClient) {
+      throw new Error('User not found');
+    }
+
+    // Get user's roles
+    const roles = await this.userService.getUserRoles(user.id);
+    const role = roles.length > 0 ? roles[0] : 'user';
 
     // Generate tokens
     const familyId = crypto.randomUUID();
@@ -186,8 +193,10 @@ export class GoogleOAuthService {
       {
         userId: user.id,
         email: user.email,
-        role: role || 'user',
+        role,
+        roles: roles.length > 0 ? roles : ['user'],
         clientId: user.clientId,
+        databaseName: userWithClient.client.databaseName,
       },
       familyId
     );

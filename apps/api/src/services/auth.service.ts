@@ -63,8 +63,9 @@ export class AuthService {
       };
     }
 
-    // Get user's primary role
-    const role = await this.userService.getPrimaryRole(user.id);
+    // Get user's roles
+    const roles = await this.userService.getUserRoles(user.id);
+    const role = roles.length > 0 ? roles[0] : 'user';
 
     // Generate tokens
     const familyId = crypto.randomUUID();
@@ -72,8 +73,10 @@ export class AuthService {
       {
         userId: user.id,
         email: user.email,
-        role: role || 'user',
+        role,
+        roles: roles.length > 0 ? roles : ['user'],
         clientId: user.clientId,
+        databaseName: user.client.databaseName,
       },
       familyId
     );
@@ -139,8 +142,15 @@ export class AuthService {
       clientId,
     });
 
-    // Get user's primary role (or assign default role)
-    const role = await this.userService.getPrimaryRole(user.id);
+    // Get user's roles (or assign default role)
+    const roles = await this.userService.getUserRoles(user.id);
+    const role = roles.length > 0 ? roles[0] : 'user';
+
+    // Get user with client info for database name
+    const userWithClient = await this.userService.findById(user.id);
+    if (!userWithClient) {
+      throw new Error('User not found after creation');
+    }
 
     // Generate tokens
     const familyId = crypto.randomUUID();
@@ -148,8 +158,10 @@ export class AuthService {
       {
         userId: user.id,
         email: user.email,
-        role: role || 'user',
+        role,
+        roles: roles.length > 0 ? roles : ['user'],
         clientId: user.clientId,
+        databaseName: userWithClient.client.databaseName,
       },
       familyId
     );
@@ -201,8 +213,9 @@ export class AuthService {
         throw new Error('User not found or inactive');
       }
 
-      // Get user's role
-      const role = await this.userService.getPrimaryRole(user.id);
+      // Get user's roles
+      const roles = await this.userService.getUserRoles(user.id);
+      const role = roles.length > 0 ? roles[0] : 'user';
 
       // Revoke old refresh token
       await this.revokeRefreshToken(refreshToken);
@@ -213,8 +226,10 @@ export class AuthService {
         {
           userId: user.id,
           email: user.email,
-          role: role || 'user',
+          role,
+          roles: roles.length > 0 ? roles : ['user'],
           clientId: user.clientId,
+          databaseName: user.client.databaseName,
         },
         newFamilyId
       );
