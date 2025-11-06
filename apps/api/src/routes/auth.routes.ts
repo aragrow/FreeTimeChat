@@ -250,9 +250,34 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
       return;
     }
 
+    // Fetch full user data from database
+    const userService = (await import('../services/user.service')).getUserService();
+    const user = await userService.findById(req.user.sub);
+
+    if (!user || !user.isActive || user.deletedAt) {
+      res.status(401).json({
+        status: 'error',
+        message: 'User not found or inactive',
+      });
+      return;
+    }
+
+    // Return user data with roles from JWT (to include any runtime roles like impersonation)
+    const userData = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: req.user.role, // Use role from JWT
+      roles: req.user.roles, // Use roles from JWT
+      isTwoFactorEnabled: user.twoFactorEnabled,
+      isImpersonating: req.user.impersonation?.isImpersonating,
+      originalUserId: req.user.impersonation?.adminUserId,
+    };
+
     res.status(200).json({
       status: 'success',
-      data: req.user,
+      data: userData,
     });
   } catch (error) {
     res.status(500).json({
