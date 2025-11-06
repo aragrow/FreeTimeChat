@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreeTimeChat Authorization Flow</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      margin-bottom: 20px;
+    }
+
+    .controls h3 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .scenario-selector {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    .scenario-btn {
+      padding: 10px 20px;
+      border: 2px solid #667eea;
+      background: white;
+      color: #667eea;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .scenario-btn:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .scenario-btn.active {
+      background: #667eea;
+      color: white;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #e0e7ff;
+      color: #667eea;
+    }
+
+    .btn-secondary:hover {
+      background: #c7d2fe;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 20px;
+    }
+
+    .flow-diagram {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .values-panel {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      max-height: 800px;
+      overflow-y: auto;
+    }
+
+    .values-panel h3 {
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 1.3rem;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .value-section {
+      margin-bottom: 20px;
+    }
+
+    .value-section h4 {
+      color: #667eea;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .value-content {
+      background: #f8fafc;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 30px;
+      opacity: 0.3;
+      transition: all 0.3s ease;
+    }
+
+    .step.active {
+      opacity: 1;
+    }
+
+    .step.completed {
+      opacity: 0.6;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e0e7ff;
+      color: #667eea;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 20px;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+
+    .step.active .step-number {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .step.completed .step-number {
+      background: #10b981;
+      color: white;
+    }
+
+    .step.error .step-number {
+      background: #ef4444;
+      color: white;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-title {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 5px;
+      font-size: 1.1rem;
+    }
+
+    .step-description {
+      color: #6b7280;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .step-details {
+      margin-top: 10px;
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      border-left: 3px solid #667eea;
+    }
+
+    .step.error .step-details {
+      background: #fef2f2;
+      border-left-color: #ef4444;
+    }
+
+    .step.active .step-details {
+      background: #eff6ff;
+      border-left-color: #3b82f6;
+    }
+
+    .connector {
+      width: 2px;
+      height: 30px;
+      background: #e5e7eb;
+      margin-left: 19px;
+      transition: all 0.3s ease;
+    }
+
+    .connector.active {
+      background: linear-gradient(to bottom, #667eea, #764ba2);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 5px;
+    }
+
+    .status-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .code-block {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    .keyword { color: #c792ea; }
+    .string { color: #c3e88d; }
+    .number { color: #f78c6c; }
+    .boolean { color: #ff5370; }
+    .property { color: #82aaff; }
+
+    @media (max-width: 1200px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+
+      .values-panel {
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔐 Authorization Flow</h1>
+      <p>Interactive visualization of RBAC permission checking in FreeTimeChat</p>
+    </div>
+
+    <div class="controls">
+      <h3>Select Authorization Scenario</h3>
+      <div class="scenario-selector">
+        <button class="scenario-btn active" data-scenario="permission-granted">✅ Permission Granted</button>
+        <button class="scenario-btn" data-scenario="permission-denied">❌ Permission Denied</button>
+        <button class="scenario-btn" data-scenario="admin-override">👑 Admin Override</button>
+        <button class="scenario-btn" data-scenario="impersonation">🎭 Impersonation Check</button>
+        <button class="scenario-btn" data-scenario="multiple-roles">🔀 Multiple Roles</button>
+      </div>
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="startBtn">▶️ Start Animation</button>
+        <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="flow-diagram" id="flowDiagram"></div>
+      <div class="values-panel">
+        <h3>📊 Request & Response Data</h3>
+        <div id="valuesContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const scenarios = {
+      'permission-granted': {
+        name: 'Permission Granted',
+        description: 'User has required capability and permission is granted',
+        steps: [
+          {
+            title: '1. Request Received',
+            description: 'User attempts to access a protected resource',
+            details: 'Endpoint: POST /admin/users\nRequired capability: user.create',
+            status: 'active'
+          },
+          {
+            title: '2. Extract JWT Token',
+            description: 'Authentication middleware extracts and verifies JWT from header',
+            details: 'Bearer token found and signature verified with RS256',
+            status: 'pending'
+          },
+          {
+            title: '3. Decode User Info',
+            description: 'Extract user ID, roles, and client info from JWT payload',
+            details: 'User ID: abc-123\nRoles: ["Admin", "User Manager"]\nClient: default',
+            status: 'pending'
+          },
+          {
+            title: '4. Fetch User Roles',
+            description: 'Query database for complete role information',
+            details: 'SELECT * FROM user_roles WHERE user_id = "abc-123"',
+            status: 'pending'
+          },
+          {
+            title: '5. Get Role Capabilities',
+            description: 'Retrieve all capabilities associated with user roles',
+            details: 'Admin role: 50 capabilities\nUser Manager role: 12 capabilities',
+            status: 'pending'
+          },
+          {
+            title: '6. Check Required Capability',
+            description: 'Verify if user has "user.create" capability',
+            details: 'Found: user.create (allow=true) from Admin role',
+            status: 'pending'
+          },
+          {
+            title: '7. Evaluate Permissions',
+            description: 'Check for any deny rules that override allow',
+            details: 'No deny rules found for user.create\nFinal decision: ALLOW',
+            status: 'pending'
+          },
+          {
+            title: '8. Grant Access ✅',
+            description: 'Permission granted - proceed with request',
+            details: 'Status: 200 OK\nAccess granted to POST /admin/users',
+            status: 'success'
+          }
+        ],
+        values: {
+          request: {
+            method: 'POST',
+            endpoint: '/admin/users',
+            requiredCapability: 'user.create',
+            headers: {
+              'Authorization': 'Bearer eyJhbGc...',
+              'Content-Type': 'application/json'
+            }
+          },
+          jwtPayload: {
+            sub: 'abc-123',
+            email: 'admin@freetimechat.local',
+            role: 'Admin',
+            roles: ['Admin', 'User Manager'],
+            clientId: 'default-client-id',
+            databaseName: 'freetimechat_client_default',
+            iat: 1234567890,
+            exp: 1234568790
+          },
+          userRoles: [
+            {
+              id: 'role-1',
+              name: 'Admin',
+              capabilities: [
+                { name: 'user.create', allow: true },
+                { name: 'user.read', allow: true },
+                { name: 'user.update', allow: true },
+                { name: 'user.delete', allow: true }
+              ]
+            },
+            {
+              id: 'role-2',
+              name: 'User Manager',
+              capabilities: [
+                { name: 'user.create', allow: true },
+                { name: 'user.read', allow: true }
+              ]
+            }
+          ],
+          permissionCheck: {
+            capability: 'user.create',
+            result: 'GRANTED',
+            reason: 'User has capability via Admin role',
+            allowRules: 2,
+            denyRules: 0
+          },
+          response: {
+            status: 200,
+            message: 'Access granted',
+            data: { allowed: true }
+          }
+        }
+      },
+      'permission-denied': {
+        name: 'Permission Denied',
+        description: 'User lacks required capability',
+        steps: [
+          {
+            title: '1. Request Received',
+            description: 'User attempts to delete a project',
+            details: 'Endpoint: DELETE /admin/projects/123\nRequired capability: project.delete',
+            status: 'active'
+          },
+          {
+            title: '2. Extract JWT Token',
+            description: 'Authentication middleware extracts and verifies JWT',
+            details: 'Bearer token found and signature verified',
+            status: 'pending'
+          },
+          {
+            title: '3. Decode User Info',
+            description: 'Extract user information from JWT',
+            details: 'User ID: xyz-789\nRoles: ["User", "Project Viewer"]\nClient: client-corp',
+            status: 'pending'
+          },
+          {
+            title: '4. Fetch User Roles',
+            description: 'Query database for user role information',
+            details: 'Found 2 roles: User, Project Viewer',
+            status: 'pending'
+          },
+          {
+            title: '5. Get Role Capabilities',
+            description: 'Retrieve capabilities for User and Project Viewer roles',
+            details: 'User role: 8 capabilities\nProject Viewer role: 3 capabilities',
+            status: 'pending'
+          },
+          {
+            title: '6. Check Required Capability',
+            description: 'Search for "project.delete" capability',
+            details: 'Capability NOT FOUND in any user role',
+            status: 'error'
+          },
+          {
+            title: '7. Permission Denied ❌',
+            description: 'User does not have required capability',
+            details: 'Status: 403 Forbidden\nMissing capability: project.delete',
+            status: 'error'
+          }
+        ],
+        values: {
+          request: {
+            method: 'DELETE',
+            endpoint: '/admin/projects/123',
+            requiredCapability: 'project.delete'
+          },
+          jwtPayload: {
+            sub: 'xyz-789',
+            email: 'user@company.com',
+            role: 'User',
+            roles: ['User', 'Project Viewer'],
+            clientId: 'client-corp-id',
+            databaseName: 'freetimechat_client_corp'
+          },
+          userRoles: [
+            {
+              id: 'role-3',
+              name: 'User',
+              capabilities: [
+                { name: 'project.read', allow: true },
+                { name: 'timeentry.create', allow: true }
+              ]
+            },
+            {
+              id: 'role-4',
+              name: 'Project Viewer',
+              capabilities: [
+                { name: 'project.read', allow: true }
+              ]
+            }
+          ],
+          permissionCheck: {
+            capability: 'project.delete',
+            result: 'DENIED',
+            reason: 'Capability not found in any user role',
+            allowRules: 0,
+            denyRules: 0
+          },
+          response: {
+            status: 403,
+            message: 'Forbidden: Insufficient permissions',
+            error: 'Missing capability: project.delete'
+          }
+        }
+      },
+      'admin-override': {
+        name: 'Admin Override',
+        description: 'Admin user bypasses normal permission checks',
+        steps: [
+          {
+            title: '1. Request Received',
+            description: 'Admin attempts to access restricted resource',
+            details: 'Endpoint: GET /admin/audit/sensitive\nRequired capability: audit.sensitive',
+            status: 'active'
+          },
+          {
+            title: '2. Extract & Verify JWT',
+            description: 'Token extracted and verified successfully',
+            details: 'Valid RS256 signature confirmed',
+            status: 'pending'
+          },
+          {
+            title: '3. Decode User Info',
+            description: 'Extract user information from JWT payload',
+            details: 'User ID: admin-001\nRoles: ["Super Admin"]\nClient: main',
+            status: 'pending'
+          },
+          {
+            title: '4. Check Admin Status',
+            description: 'Detect if user has admin privileges',
+            details: 'Role "Super Admin" detected - admin privileges confirmed',
+            status: 'pending'
+          },
+          {
+            title: '5. Admin Bypass Activated',
+            description: 'Admin users bypass specific capability checks',
+            details: 'Admin override: ENABLED\nSkipping detailed capability check',
+            status: 'pending'
+          },
+          {
+            title: '6. Grant Access ✅',
+            description: 'Access granted via admin override',
+            details: 'Status: 200 OK\nReason: Admin privileges',
+            status: 'success'
+          }
+        ],
+        values: {
+          request: {
+            method: 'GET',
+            endpoint: '/admin/audit/sensitive',
+            requiredCapability: 'audit.sensitive'
+          },
+          jwtPayload: {
+            sub: 'admin-001',
+            email: 'superadmin@freetimechat.local',
+            role: 'Super Admin',
+            roles: ['Super Admin'],
+            clientId: 'main-client-id',
+            databaseName: 'freetimechat_main'
+          },
+          userRoles: [
+            {
+              id: 'role-admin',
+              name: 'Super Admin',
+              isAdmin: true,
+              capabilities: ['*']
+            }
+          ],
+          permissionCheck: {
+            capability: 'audit.sensitive',
+            result: 'GRANTED',
+            reason: 'Admin override - user has Super Admin role',
+            bypass: true
+          },
+          response: {
+            status: 200,
+            message: 'Access granted (admin override)',
+            data: { allowed: true, reason: 'admin' }
+          }
+        }
+      },
+      'impersonation': {
+        name: 'Impersonation Permission Check',
+        description: 'Admin impersonating user - check target user capabilities',
+        steps: [
+          {
+            title: '1. Request Received',
+            description: 'Request made during impersonation session',
+            details: 'Endpoint: POST /projects\nImpersonation: ACTIVE',
+            status: 'active'
+          },
+          {
+            title: '2. Extract JWT Token',
+            description: 'JWT contains impersonation metadata',
+            details: 'Impersonation flag detected in token payload',
+            status: 'pending'
+          },
+          {
+            title: '3. Decode Token',
+            description: 'Extract both target user and admin info',
+            details: 'Target: user@client.com\nAdmin: admin@freetimechat.local\nSession: imp-session-123',
+            status: 'pending'
+          },
+          {
+            title: '4. Verify Impersonation Session',
+            description: 'Check if impersonation session is valid and active',
+            details: 'Session found in database\nStatus: ACTIVE\nStarted: 30 minutes ago',
+            status: 'pending'
+          },
+          {
+            title: '5. Fetch Target User Roles',
+            description: 'Load permissions for the impersonated user',
+            details: 'Target user roles: ["User", "Project Manager"]',
+            status: 'pending'
+          },
+          {
+            title: '6. Check Capability',
+            description: 'Verify if TARGET USER has required capability',
+            details: 'Required: project.create\nFound in Project Manager role',
+            status: 'pending'
+          },
+          {
+            title: '7. Log Impersonation Action',
+            description: 'Record action in audit log',
+            details: 'Audit: Admin "admin@freetimechat.local" performed project.create as "user@client.com"',
+            status: 'pending'
+          },
+          {
+            title: '8. Grant Access ✅',
+            description: 'Permission granted based on target user capabilities',
+            details: 'Status: 201 Created\nImpersonation audit logged',
+            status: 'success'
+          }
+        ],
+        values: {
+          request: {
+            method: 'POST',
+            endpoint: '/projects',
+            requiredCapability: 'project.create',
+            impersonationActive: true
+          },
+          jwtPayload: {
+            sub: 'target-user-456',
+            email: 'user@client.com',
+            role: 'User',
+            roles: ['User', 'Project Manager'],
+            clientId: 'client-id',
+            databaseName: 'freetimechat_client_corp',
+            impersonation: {
+              isImpersonating: true,
+              adminUserId: 'admin-001',
+              adminEmail: 'admin@freetimechat.local',
+              sessionId: 'imp-session-123',
+              startedAt: 1234567890
+            }
+          },
+          impersonationSession: {
+            id: 'imp-session-123',
+            adminUserId: 'admin-001',
+            targetUserId: 'target-user-456',
+            startedAt: '2024-01-15T10:30:00Z',
+            status: 'ACTIVE'
+          },
+          targetUserRoles: [
+            {
+              name: 'User',
+              capabilities: [
+                { name: 'project.read', allow: true }
+              ]
+            },
+            {
+              name: 'Project Manager',
+              capabilities: [
+                { name: 'project.create', allow: true },
+                { name: 'project.update', allow: true }
+              ]
+            }
+          ],
+          permissionCheck: {
+            capability: 'project.create',
+            result: 'GRANTED',
+            reason: 'Target user has capability via Project Manager role',
+            impersonationLogged: true
+          },
+          response: {
+            status: 201,
+            message: 'Project created',
+            impersonationNote: 'Action performed via impersonation'
+          }
+        }
+      },
+      'multiple-roles': {
+        name: 'Multiple Roles with Deny Override',
+        description: 'User has multiple roles with conflicting permissions',
+        steps: [
+          {
+            title: '1. Request Received',
+            description: 'User with multiple roles attempts action',
+            details: 'Endpoint: DELETE /users/789\nRequired capability: user.delete',
+            status: 'active'
+          },
+          {
+            title: '2. Authenticate & Decode',
+            description: 'Extract user information from valid JWT',
+            details: 'User has 3 roles: Admin, Contractor, Restricted',
+            status: 'pending'
+          },
+          {
+            title: '3. Fetch All User Roles',
+            description: 'Load complete role information from database',
+            details: 'Found 3 roles with 45 total capabilities',
+            status: 'pending'
+          },
+          {
+            title: '4. Aggregate Capabilities',
+            description: 'Collect all capabilities from all roles',
+            details: 'Admin: user.delete (allow)\nContractor: user.delete (allow)\nRestricted: user.delete (deny)',
+            status: 'pending'
+          },
+          {
+            title: '5. Check for Deny Rules',
+            description: 'DENY rules always override ALLOW rules',
+            details: 'DENY found in "Restricted" role\nDeny takes precedence over Allow',
+            status: 'error'
+          },
+          {
+            title: '6. Evaluate Final Permission',
+            description: 'Apply RBAC deny-override logic',
+            details: 'Allow rules: 2\nDeny rules: 1\nResult: DENIED (deny wins)',
+            status: 'error'
+          },
+          {
+            title: '7. Permission Denied ❌',
+            description: 'Access denied due to explicit deny rule',
+            details: 'Status: 403 Forbidden\nReason: Explicit deny in Restricted role',
+            status: 'error'
+          }
+        ],
+        values: {
+          request: {
+            method: 'DELETE',
+            endpoint: '/users/789',
+            requiredCapability: 'user.delete'
+          },
+          jwtPayload: {
+            sub: 'user-multi-role',
+            email: 'contractor@company.com',
+            role: 'Admin',
+            roles: ['Admin', 'Contractor', 'Restricted'],
+            clientId: 'company-client-id',
+            databaseName: 'freetimechat_client_company'
+          },
+          userRoles: [
+            {
+              name: 'Admin',
+              capabilities: [
+                { name: 'user.delete', allow: true, deny: false }
+              ]
+            },
+            {
+              name: 'Contractor',
+              capabilities: [
+                { name: 'user.delete', allow: true, deny: false }
+              ]
+            },
+            {
+              name: 'Restricted',
+              capabilities: [
+                { name: 'user.delete', allow: false, deny: true }
+              ]
+            }
+          ],
+          capabilityAggregation: {
+            capability: 'user.delete',
+            allowCount: 2,
+            denyCount: 1,
+            sources: [
+              { role: 'Admin', allow: true },
+              { role: 'Contractor', allow: true },
+              { role: 'Restricted', deny: true }
+            ]
+          },
+          permissionCheck: {
+            capability: 'user.delete',
+            result: 'DENIED',
+            reason: 'Explicit deny rule in Restricted role overrides allow rules',
+            denyOverride: true
+          },
+          response: {
+            status: 403,
+            message: 'Forbidden: Permission explicitly denied',
+            error: 'user.delete capability denied by Restricted role'
+          }
+        }
+      }
+    };
+
+    let currentScenario = 'permission-granted';
+    let currentStep = -1;
+    let intervalId = null;
+
+    // Initialize
+    renderScenario();
+    updateValues();
+
+    // Event Listeners
+    document.querySelectorAll('.scenario-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentScenario = btn.dataset.scenario;
+        resetAnimation();
+        renderScenario();
+        updateValues();
+      });
+    });
+
+    document.getElementById('startBtn').addEventListener('click', startAnimation);
+    document.getElementById('resetBtn').addEventListener('click', resetAnimation);
+
+    function renderScenario() {
+      const scenario = scenarios[currentScenario];
+      const flowDiagram = document.getElementById('flowDiagram');
+
+      let html = `<h2 style="margin-bottom: 20px; color: #1f2937;">${scenario.name}</h2>`;
+      html += `<p style="margin-bottom: 30px; color: #6b7280; font-size: 1.05rem;">${scenario.description}</p>`;
+
+      scenario.steps.forEach((step, index) => {
+        const isLast = index === scenario.steps.length - 1;
+
+        html += `
+          <div class="step" id="step-${index}">
+            <div class="step-number">${index + 1}</div>
+            <div class="step-content">
+              <div class="step-title">${step.title}</div>
+              <div class="step-description">${step.description}</div>
+              <div class="step-details">${step.details}</div>
+            </div>
+          </div>
+        `;
+
+        if (!isLast) {
+          html += `<div class="connector" id="connector-${index}"></div>`;
+        }
+      });
+
+      flowDiagram.innerHTML = html;
+    }
+
+    function updateValues() {
+      const scenario = scenarios[currentScenario];
+      const valuesContent = document.getElementById('valuesContent');
+
+      let html = '';
+
+      // Request
+      html += `
+        <div class="value-section">
+          <h4>📤 Request</h4>
+          <div class="value-content">${JSON.stringify(scenario.values.request, null, 2)}</div>
+        </div>
+      `;
+
+      // JWT Payload
+      if (scenario.values.jwtPayload) {
+        html += `
+          <div class="value-section">
+            <h4>🎫 JWT Payload</h4>
+            <div class="value-content">${JSON.stringify(scenario.values.jwtPayload, null, 2)}</div>
+          </div>
+        `;
+      }
+
+      // Impersonation Session (if applicable)
+      if (scenario.values.impersonationSession) {
+        html += `
+          <div class="value-section">
+            <h4>🎭 Impersonation Session</h4>
+            <div class="value-content">${JSON.stringify(scenario.values.impersonationSession, null, 2)}</div>
+          </div>
+        `;
+      }
+
+      // User Roles
+      if (scenario.values.userRoles || scenario.values.targetUserRoles) {
+        const roles = scenario.values.targetUserRoles || scenario.values.userRoles;
+        html += `
+          <div class="value-section">
+            <h4>👥 ${scenario.values.targetUserRoles ? 'Target ' : ''}User Roles & Capabilities</h4>
+            <div class="value-content">${JSON.stringify(roles, null, 2)}</div>
+          </div>
+        `;
+      }
+
+      // Capability Aggregation (if applicable)
+      if (scenario.values.capabilityAggregation) {
+        html += `
+          <div class="value-section">
+            <h4>🔀 Capability Aggregation</h4>
+            <div class="value-content">${JSON.stringify(scenario.values.capabilityAggregation, null, 2)}</div>
+          </div>
+        `;
+      }
+
+      // Permission Check
+      if (scenario.values.permissionCheck) {
+        html += `
+          <div class="value-section">
+            <h4>✅ Permission Check Result</h4>
+            <div class="value-content">${JSON.stringify(scenario.values.permissionCheck, null, 2)}</div>
+          </div>
+        `;
+      }
+
+      // Response
+      html += `
+        <div class="value-section">
+          <h4>📥 Response</h4>
+          <div class="value-content">${JSON.stringify(scenario.values.response, null, 2)}</div>
+        </div>
+      `;
+
+      valuesContent.innerHTML = html;
+    }
+
+    function startAnimation() {
+      if (intervalId) return; // Already running
+
+      resetAnimation();
+      currentStep = -1;
+
+      intervalId = setInterval(() => {
+        currentStep++;
+        const scenario = scenarios[currentScenario];
+
+        if (currentStep >= scenario.steps.length) {
+          clearInterval(intervalId);
+          intervalId = null;
+          return;
+        }
+
+        // Mark previous step as completed
+        if (currentStep > 0) {
+          const prevStep = document.getElementById(`step-${currentStep - 1}`);
+          prevStep.classList.remove('active');
+          prevStep.classList.add(scenario.steps[currentStep - 1].status === 'error' ? 'error' : 'completed');
+
+          const prevConnector = document.getElementById(`connector-${currentStep - 1}`);
+          if (prevConnector) {
+            prevConnector.classList.add('active');
+          }
+        }
+
+        // Activate current step
+        const currentStepEl = document.getElementById(`step-${currentStep}`);
+        currentStepEl.classList.add('active');
+
+        // Scroll to current step
+        currentStepEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 1500);
+    }
+
+    function resetAnimation() {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+
+      currentStep = -1;
+
+      document.querySelectorAll('.step').forEach(step => {
+        step.classList.remove('active', 'completed', 'error');
+      });
+
+      document.querySelectorAll('.connector').forEach(connector => {
+        connector.classList.remove('active');
+      });
+    }
+  </script>
+</body>
+</html>
