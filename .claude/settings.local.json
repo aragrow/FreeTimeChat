@@ -57,7 +57,8 @@
       "Bash(docker ps:*)",
       "Bash(pnpm analyze:db:*)",
       "Bash(pnpm analyze:authz:*)",
-      "Bash(pnpm analyze:tenant:*)"
+      "Bash(pnpm analyze:tenant:*)",
+      "Bash(kill:*)"
     ],
     "deny": [],
     "ask": []
