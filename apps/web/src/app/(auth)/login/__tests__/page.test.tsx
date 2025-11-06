@@ -85,18 +85,28 @@ describe('LoginPage', () => {
   describe('Form Validation', () => {
     it('validates required email field', async () => {
       const user = userEvent.setup();
-      render(<LoginPage />);
+      const { container } = render(<LoginPage />);
+
+      // Remove HTML5 validation to test custom validation
+      const form = container.querySelector('form');
+      form?.setAttribute('novalidate', 'true');
 
       const submitButton = screen.getByRole('button', { name: /sign in/i });
       await user.click(submitButton);
 
-      expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+      });
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('validates email format', async () => {
       const user = userEvent.setup();
-      render(<LoginPage />);
+      const { container } = render(<LoginPage />);
+
+      // Remove HTML5 validation to test custom validation
+      const form = container.querySelector('form');
+      form?.setAttribute('novalidate', 'true');
 
       const emailInput = screen.getByLabelText(/email address/i);
       const submitButton = screen.getByRole('button', { name: /sign in/i });
@@ -104,13 +114,19 @@ describe('LoginPage', () => {
       await user.type(emailInput, 'invalid-email');
       await user.click(submitButton);
 
-      expect(await screen.findByText(/please enter a valid email/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/please enter a valid email/i)).toBeInTheDocument();
+      });
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('validates required password field', async () => {
       const user = userEvent.setup();
-      render(<LoginPage />);
+      const { container } = render(<LoginPage />);
+
+      // Remove HTML5 validation to test custom validation
+      const form = container.querySelector('form');
+      form?.setAttribute('novalidate', 'true');
 
       const emailInput = screen.getByLabelText(/email address/i);
       const submitButton = screen.getByRole('button', { name: /sign in/i });
@@ -118,20 +134,29 @@ describe('LoginPage', () => {
       await user.type(emailInput, 'test@example.com');
       await user.click(submitButton);
 
-      expect(await screen.findByText(/password is required/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+      });
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('clears validation errors when user types', async () => {
       const user = userEvent.setup();
-      render(<LoginPage />);
+      const { container } = render(<LoginPage />);
+
+      // Remove HTML5 validation to test custom validation
+      const form = container.querySelector('form');
+      form?.setAttribute('novalidate', 'true');
 
       const emailInput = screen.getByLabelText(/email address/i);
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
       // Trigger validation error
       await user.click(submitButton);
-      expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+      });
 
       // Start typing
       await user.type(emailInput, 'test@example.com');
