@@ -15,7 +15,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: string;
-  roles?: Array<{ name: string }>;
+  roles?: string[]; // Array of role names: ["Admin", "User"]
   isTwoFactorEnabled: boolean;
   isImpersonating?: boolean;
   originalUserId?: string;
