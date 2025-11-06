@@ -147,9 +147,17 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
             {/* Sidebar Footer */}
             <div className="border-t border-gray-200 bg-gray-50">
               {/* Admin Panel Link - Only show for admin users */}
-              {user?.roles?.some(
-                (role) => role && typeof role === 'string' && role.toLowerCase() === 'admin'
-              ) && (
+              {(() => {
+                console.log('Chat Layout - User object:', user);
+                console.log('Chat Layout - User roles:', user?.roles);
+                console.log('Chat Layout - User role:', user?.role);
+                const isAdmin =
+                  user?.roles?.some(
+                    (role) => role && typeof role === 'string' && role.toLowerCase() === 'admin'
+                  ) || user?.role?.toLowerCase() === 'admin';
+                console.log('Chat Layout - Is Admin:', isAdmin);
+                return isAdmin;
+              })() && (
                 <div className="p-3 border-b border-gray-200">
                   <a
                     href="/admin/dashboard"

@@ -5,11 +5,12 @@
  */
 
 import crypto from 'crypto';
-import { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
+import { AttemptType, PrismaClient as MainPrismaClient, type User } from '../generated/prisma-main';
 import { getJWTService } from './jwt.service';
+import { getLoginTrackingService } from './login-tracking.service';
 import { getPasswordService } from './password.service';
+import { getSecuritySettingsService } from './security-settings.service';
 import { getUserService } from './user.service';
-import type { User } from '../generated/prisma-main';
 import type { LoginResponse, RegisterRequest, UserPublic } from '@freetimechat/types';
 
 export class AuthService {
@@ -17,23 +18,44 @@ export class AuthService {
   private userService: ReturnType<typeof getUserService>;
   private passwordService: ReturnType<typeof getPasswordService>;
   private jwtService: ReturnType<typeof getJWTService>;
+  private loginTrackingService: ReturnType<typeof getLoginTrackingService>;
+  private securitySettingsService: ReturnType<typeof getSecuritySettingsService>;
 
   constructor() {
     this.prisma = new MainPrismaClient();
     this.userService = getUserService();
     this.passwordService = getPasswordService();
     this.jwtService = getJWTService();
+    this.loginTrackingService = getLoginTrackingService();
+    this.securitySettingsService = getSecuritySettingsService();
   }
 
   /**
    * Authenticate user with email and password
    */
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login(
+    email: string,
+    password: string,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<LoginResponse> {
     // Find user by email
     const user = await this.userService.findByEmail(email);
 
     if (!user) {
       throw new Error('Invalid credentials');
+    }
+
+    // Check if account is locked
+    const isLocked = await this.loginTrackingService.isAccountLocked(user.id);
+    if (isLocked) {
+      const lockout = await this.loginTrackingService.getActiveLockout(user.id);
+      const minutesRemaining = lockout
+        ? Math.ceil((lockout.lockedUntil.getTime() - Date.now()) / 60000)
+        : 0;
+      throw new Error(
+        `Account is temporarily locked due to too many failed login attempts. Please try again in ${minutesRemaining} minutes.`
+      );
     }
 
     // Check if user is active
@@ -49,8 +71,33 @@ export class AuthService {
     const isValidPassword = await this.passwordService.verify(password, user.passwordHash);
 
     if (!isValidPassword) {
+      // Record failed password attempt
+      await this.loginTrackingService.recordAttempt({
+        userId: user.id,
+        attemptType: AttemptType.PASSWORD,
+        success: false,
+        ipAddress,
+        userAgent,
+      });
+
+      // Check if account should be locked
+      await this.loginTrackingService.checkAndLockIfNeeded(
+        user.id,
+        user.clientId,
+        AttemptType.PASSWORD
+      );
+
       throw new Error('Invalid credentials');
     }
+
+    // Record successful password attempt
+    await this.loginTrackingService.recordAttempt({
+      userId: user.id,
+      attemptType: AttemptType.PASSWORD,
+      success: true,
+      ipAddress,
+      userAgent,
+    });
 
     // Check if 2FA is enabled
     if (user.twoFactorEnabled) {
@@ -134,12 +181,24 @@ export class AuthService {
       clientId = defaultClient.id;
     }
 
+    // Get security settings for grace period
+    const securitySettings = await this.securitySettingsService.getByClientId(clientId);
+    const gracePeriodEndDate = this.securitySettingsService.calculateGracePeriodEndDate(
+      securitySettings.twoFactorGracePeriodDays
+    );
+
     // Create user
     const user = await this.userService.create({
       email: data.email,
       passwordHash,
       name: data.name,
       clientId,
+    });
+
+    // Set 2FA grace period for new user
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { twoFactorGracePeriodEndsAt: gracePeriodEndDate },
     });
 
     // Get user's roles (or assign default role)

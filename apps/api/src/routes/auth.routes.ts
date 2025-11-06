@@ -262,12 +262,17 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
       return;
     }
 
+    // Split name into firstName and lastName for frontend
+    const nameParts = user.name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
     // Return user data with roles from JWT (to include any runtime roles like impersonation)
     const userData = {
       id: user.id,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName,
+      lastName,
       role: req.user.role, // Use role from JWT
       roles: req.user.roles, // Use roles from JWT
       isTwoFactorEnabled: user.twoFactorEnabled,

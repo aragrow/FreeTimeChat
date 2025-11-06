@@ -18,24 +18,27 @@ datasource db {
 }
 
 model User {
-  id               String            @id @default(uuid())
-  email            String            @unique
-  passwordHash     String?           @map("password_hash")
-  name             String
-  clientId         String            @map("client_id")
-  client           Client            @relation(fields: [clientId], references: [id])
-  roles            UserRole[]
-  refreshTokens    RefreshToken[]
-  googleId         String?           @unique @map("google_id")
-  twoFactorEnabled Boolean           @default(false) @map("two_factor_enabled")
-  twoFactorSecret  String?           @map("two_factor_secret")
-  isActive         Boolean           @default(true) @map("is_active")
-  lastLoginAt      DateTime?         @map("last_login_at")
-  compensationType CompensationType? @map("compensation_type")
-  hourlyRate       Decimal?          @map("hourly_rate") @db.Decimal(10, 2)
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
-  deletedAt        DateTime?         @map("deleted_at")
+  id                         String            @id @default(uuid())
+  email                      String            @unique
+  passwordHash               String?           @map("password_hash")
+  name                       String
+  clientId                   String            @map("client_id")
+  client                     Client            @relation(fields: [clientId], references: [id])
+  roles                      UserRole[]
+  refreshTokens              RefreshToken[]
+  loginAttempts              LoginAttempt[]
+  accountLockouts            AccountLockout[]
+  googleId                   String?           @unique @map("google_id")
+  twoFactorEnabled           Boolean           @default(false) @map("two_factor_enabled")
+  twoFactorSecret            String?           @map("two_factor_secret")
+  twoFactorGracePeriodEndsAt DateTime?         @map("two_factor_grace_period_ends_at")
+  isActive                   Boolean           @default(true) @map("is_active")
+  lastLoginAt                DateTime?         @map("last_login_at")
+  compensationType           CompensationType? @map("compensation_type")
+  hourlyRate                 Decimal?          @map("hourly_rate") @db.Decimal(10, 2)
+  createdAt                  DateTime          @default(now()) @map("created_at")
+  updatedAt                  DateTime          @updatedAt @map("updated_at")
+  deletedAt                  DateTime?         @map("deleted_at")
 
   @@index([email])
   @@index([clientId])
@@ -149,4 +152,58 @@ enum CompensationType {
   SALARY_HCE // Highly Compensated Employee - no overtime
   SALARY_WITH_OT // Salary with overtime after 40 hours
   HOURLY // Hourly employee with overtime after 40 hours
+}
+
+enum AttemptType {
+  PASSWORD
+  TWO_FACTOR
+}
+
+model SecuritySettings {
+  id                            String   @id @default(uuid())
+  clientId                      String   @unique @map("client_id")
+  twoFactorGracePeriodDays      Int      @default(10) @map("two_factor_grace_period_days")
+  twoFactorRequiredRoles        String[] @map("two_factor_required_roles")
+  twoFactorBypassUrls           String[] @map("two_factor_bypass_urls")
+  maxPasswordAttempts           Int      @default(5) @map("max_password_attempts")
+  maxTwoFactorAttempts          Int      @default(3) @map("max_two_factor_attempts")
+  accountLockoutDurationMinutes Int      @default(30) @map("account_lockout_duration_minutes")
+  createdAt                     DateTime @default(now()) @map("created_at")
+  updatedAt                     DateTime @updatedAt @map("updated_at")
+
+  @@index([clientId])
+  @@map("security_settings")
+}
+
+model LoginAttempt {
+  id          String      @id @default(uuid())
+  userId      String      @map("user_id")
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attemptType AttemptType @map("attempt_type")
+  success     Boolean
+  ipAddress   String?     @map("ip_address")
+  userAgent   String?     @map("user_agent")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, attemptType, createdAt])
+  @@map("login_attempts")
+}
+
+model AccountLockout {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lockedAt    DateTime  @default(now()) @map("locked_at")
+  lockedUntil DateTime  @map("locked_until")
+  reason      String
+  unlocked    Boolean   @default(false)
+  unlockedAt  DateTime? @map("unlocked_at")
+  unlockedBy  String?   @map("unlocked_by") // Admin user ID who manually unlocked
+
+  @@index([userId])
+  @@index([lockedUntil])
+  @@index([userId, unlocked])
+  @@map("account_lockouts")
 }

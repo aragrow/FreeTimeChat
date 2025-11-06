@@ -73,7 +73,10 @@
       "Bash(pnpm prisma:push:client:*)",
       "Bash(pnpm prisma:push:main:*)",
       "Bash(pnpm prisma db push:*)",
-      "Bash(pnpm build:types:*)"
+      "Bash(pnpm build:types:*)",
+      "Bash(bash:*)",
+      "Bash(pnpm prisma migrate dev:*)",
+      "Bash(pnpm --filter @freetimechat/api build:*)"
     ],
     "deny": [],
     "ask": []
