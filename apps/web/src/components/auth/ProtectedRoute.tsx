@@ -35,10 +35,11 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     // Check role requirement
     if (!isLoading && isAuthenticated && requiredRole) {
       const hasRole =
-        user?.roles?.some((r) => r.toLowerCase() === requiredRole.toLowerCase()) ||
-        user?.role?.toLowerCase() === requiredRole.toLowerCase();
+        user?.roles?.some(
+          (r) => r && typeof r === 'string' && r.toLowerCase() === requiredRole.toLowerCase()
+        ) || user?.role?.toLowerCase() === requiredRole.toLowerCase();
       const isAdmin =
-        user?.roles?.some((r) => r.toLowerCase() === 'admin') ||
+        user?.roles?.some((r) => r && typeof r === 'string' && r.toLowerCase() === 'admin') ||
         user?.role?.toLowerCase() === 'admin';
 
       if (!hasRole && !isAdmin) {
