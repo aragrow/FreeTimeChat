@@ -10,6 +10,9 @@ A modern time tracking application with a unique dual-interface architecture:
 - 💬 Natural language time entry via chat
 - 🔐 Secure authentication (JWT RS256, Google OAuth, 2FA)
 - 👥 Role-based access control (RBAC) with explicit deny rules
+- ⚙️ User settings with profile and security management
+- 🔔 Configurable notification preferences (email, SMS, frequency)
+- ⏰ Role-based 2FA grace periods (2h for admins, 10d for users)
 - 🧠 Long-term conversation memory
 - 📊 Comprehensive admin dashboard
 - 🗄️ Multi-tenant database architecture (database-per-client)
@@ -19,12 +22,14 @@ A modern time tracking application with a unique dual-interface architecture:
 ## Tech Stack
 
 ### Frontend
+
 - **Next.js 14+** with App Router
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
 - **React Server Components**
 
 ### Backend
+
 - **Node.js + Express/Fastify**
 - **TypeScript**
 - **Prisma ORM**
@@ -32,6 +37,7 @@ A modern time tracking application with a unique dual-interface architecture:
 - **Redis** for caching
 
 ### Authentication
+
 - **JWT with RS256** (asymmetric encryption)
 - **Google OAuth 2.0**
 - **2FA with TOTP** (authenticator apps)
@@ -237,15 +243,29 @@ pnpm prisma db seed         # Seed database
 
 ## Documentation
 
+### Core Documentation
+
 Comprehensive documentation is available in the `.claude/` directory:
 
-- **[Instructions](.claude/instructions.md)** - Complete project overview and architecture
-- **[Git Best Practices](.claude/git.md)** - Git workflow and automated commit setup
-- **[Code Standards](.claude/code.md)** - Coding best practices and component organization
+- **[Instructions](.claude/instructions.md)** - Complete project overview and
+  architecture
+- **[Git Best Practices](.claude/git.md)** - Git workflow and automated commit
+  setup
+- **[Code Standards](.claude/code.md)** - Coding best practices and component
+  organization
 - **[Authentication](.claude/authentication.md)** - Auth system architecture
 - **[Authorization](.claude/authorization.md)** - RBAC and permissions
 - **[Memory System](.claude/memory.md)** - Long-term conversation memory
 - **[Database Setup](.claude/database.md)** - Database configuration guide
+
+### Feature Documentation
+
+Detailed feature documentation is available in the `docs/` directory:
+
+- **[User Settings](docs/user-settings.md)** - User profile and security
+  settings management
+- **[2FA Grace Periods](docs/2fa-grace-period-implementation.md)** - Role-based
+  2FA enforcement
 
 ## Architecture Highlights
 
@@ -310,6 +330,7 @@ Comprehensive documentation is available in the `.claude/` directory:
 ## Support
 
 For issues and questions:
+
 - Check documentation in `.claude/` directory
 - Review [instructions.md](.claude/instructions.md)
 - Open an issue on GitHub
