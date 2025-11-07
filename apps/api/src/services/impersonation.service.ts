@@ -47,9 +47,14 @@ export class ImpersonationService {
       throw new Error('Only administrators can impersonate users');
     }
 
-    // Get admin and target user
+    // Get admin user
     const adminUser = await this.userService.findById(adminUserId);
-    const targetUser = await this.userService.findById(targetUserId);
+
+    // Get target user with customer relation
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: { tenant: true },
+    });
 
     if (!adminUser) {
       throw new Error('Admin user not found');
@@ -106,8 +111,8 @@ export class ImpersonationService {
       email: targetUser.email,
       role: targetRole,
       roles: targetRoles.length > 0 ? targetRoles : ['user'],
-      clientId: targetUser.clientId,
-      databaseName: targetUser.client.databaseName,
+      tenantId: targetUser.tenantId || 'system',
+      databaseName: targetUser.tenant?.databaseName || 'freetimechat_customer_dev',
       impersonation: impersonationMetadata,
     });
 

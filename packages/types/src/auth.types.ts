@@ -14,7 +14,7 @@ export interface JWTPayload {
   email: string;
   role: string; // Primary role (for backward compatibility)
   roles: string[]; // All user roles
-  clientId: string;
+  tenantId: string;
   databaseName: string; // Client database name for multi-tenancy
   iat: number; // Issued at
   exp: number; // Expiration
@@ -51,6 +51,7 @@ export interface RefreshToken {
 export interface LoginRequest {
   email: string;
   password: string;
+  tenantKey?: string;
 }
 
 /**

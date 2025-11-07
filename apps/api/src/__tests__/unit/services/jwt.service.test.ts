@@ -4,6 +4,7 @@
  * Tests JWT token generation, verification, and decoding
  */
 
+import { generateKeyPairSync } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { JWTService } from '../../../services/jwt.service';
@@ -31,7 +32,6 @@ describe('JWTService', () => {
 
     // Generate test RSA keys if they don't exist
     if (!fs.existsSync(testPrivateKeyPath)) {
-      const { generateKeyPairSync } = require('crypto');
       const { privateKey, publicKey } = generateKeyPairSync('rsa', {
         modulusLength: 2048,
         publicKeyEncoding: {
@@ -56,9 +56,11 @@ describe('JWTService', () => {
     it('should generate a valid access token', () => {
       const token = jwtService.signAccessToken({
         userId: 'user-123',
+        roles: ['user'],
+        databaseName: 'test_db',
         email: 'test@example.com',
         role: 'user',
-        clientId: 'client-456',
+        tenantId: 'client-456',
       });
 
       expect(token).toBeTruthy();
@@ -77,9 +79,11 @@ describe('JWTService', () => {
 
       const token = jwtService.signAccessToken({
         userId: 'user-123',
+        roles: ['user'],
+        databaseName: 'test_db',
         email: 'test@example.com',
         role: 'user',
-        clientId: 'client-456',
+        tenantId: 'client-456',
         impersonation,
       });
 
@@ -111,7 +115,7 @@ describe('JWTService', () => {
       expect(decoded.sub).toBe(userId);
       expect(decoded.email).toBe(email);
       expect(decoded.role).toBe(role);
-      expect(decoded.clientId).toBe(clientId);
+      expect(decoded.tenantId).toBe(clientId);
       expect(decoded.iat).toBeDefined();
       expect(decoded.exp).toBeDefined();
     });
@@ -129,9 +133,11 @@ describe('JWTService', () => {
 
       const token = expiredService.signAccessToken({
         userId: 'user-123',
+        roles: ['user'],
+        databaseName: 'test_db',
         email: 'test@example.com',
         role: 'user',
-        clientId: 'client-456',
+        tenantId: 'client-456',
       });
 
       // Wait a moment to ensure expiry
@@ -165,9 +171,11 @@ describe('JWTService', () => {
     it('should throw error for access token used as refresh token', () => {
       const accessToken = jwtService.signAccessToken({
         userId: 'user-123',
+        roles: ['user'],
+        databaseName: 'test_db',
         email: 'test@example.com',
         role: 'user',
-        clientId: 'client-456',
+        tenantId: 'client-456',
       });
 
       expect(() => {
@@ -181,9 +189,11 @@ describe('JWTService', () => {
       const tokens = jwtService.generateTokenPair(
         {
           userId: 'user-123',
+          roles: ['user'],
+          databaseName: 'test_db',
           email: 'test@example.com',
           role: 'user',
-          clientId: 'client-456',
+          tenantId: 'client-456',
         },
         'family-789'
       );
@@ -205,9 +215,11 @@ describe('JWTService', () => {
     it('should decode token without verification', () => {
       const token = jwtService.signAccessToken({
         userId: 'user-123',
+        roles: ['user'],
+        databaseName: 'test_db',
         email: 'test@example.com',
         role: 'user',
-        clientId: 'client-456',
+        tenantId: 'client-456',
       });
 
       const decoded = jwtService.decodeToken(token);

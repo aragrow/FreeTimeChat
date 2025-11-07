@@ -69,7 +69,7 @@ router.get('/', async (req: Request, res: Response) => {
         skip,
         take: limit,
         include: {
-          client: {
+          tenant: {
             select: {
               id: true,
               name: true,
@@ -127,7 +127,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
-        client: true,
+        tenant: true,
         roles: {
           include: {
             role: {
@@ -204,7 +204,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Verify client exists if provided
     if (clientId) {
-      const client = await prisma.client.findUnique({
+      const client = await prisma.tenant.findUnique({
         where: { id: clientId },
       });
 
@@ -223,12 +223,12 @@ router.post('/', async (req: Request, res: Response) => {
       passwordHash = await passwordService.hash(password);
     }
 
-    // Create user (clientId can be null for system admins)
+    // Create user (tenantId can be null for system admins)
     const user = await userService.create({
       email,
       name,
       passwordHash,
-      clientId: clientId || null,
+      tenantId: clientId || null,
     });
 
     // Assign roles if provided
@@ -246,7 +246,7 @@ router.post('/', async (req: Request, res: Response) => {
     const userWithRoles = await prisma.user.findUnique({
       where: { id: user.id },
       include: {
-        client: true,
+        tenant: true,
         roles: {
           include: {
             role: true,

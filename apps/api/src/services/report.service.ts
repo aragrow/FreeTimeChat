@@ -65,8 +65,8 @@ export class ReportService {
   /**
    * Generate time by user report
    */
-  async getTimeByUser(clientId: string, options: ReportOptions = {}): Promise<TimeByUserReport[]> {
-    const db = await this.databaseService.getClientDatabase(clientId);
+  async getTimeByUser(tenantId: string, options: ReportOptions = {}): Promise<TimeByUserReport[]> {
+    const db = await this.databaseService.getTenantDatabase(tenantId);
 
     const timeEntries = await db.timeEntry.findMany({
       where: {
@@ -162,10 +162,10 @@ export class ReportService {
    * Generate time by project report
    */
   async getTimeByProject(
-    clientId: string,
+    tenantId: string,
     options: ReportOptions = {}
   ): Promise<TimeByProjectReport[]> {
-    const db = await this.databaseService.getClientDatabase(clientId);
+    const db = await this.databaseService.getTenantDatabase(tenantId);
 
     const timeEntries = await db.timeEntry.findMany({
       where: {
@@ -258,8 +258,8 @@ export class ReportService {
   /**
    * Generate time by date report
    */
-  async getTimeByDate(clientId: string, options: ReportOptions = {}): Promise<TimeByDateReport[]> {
-    const db = await this.databaseService.getClientDatabase(clientId);
+  async getTimeByDate(tenantId: string, options: ReportOptions = {}): Promise<TimeByDateReport[]> {
+    const db = await this.databaseService.getTenantDatabase(tenantId);
 
     const timeEntries = await db.timeEntry.findMany({
       where: {
@@ -334,7 +334,7 @@ export class ReportService {
    * Get summary statistics
    */
   async getSummaryStats(
-    clientId: string,
+    tenantId: string,
     options: ReportOptions = {}
   ): Promise<{
     totalMinutes: number;
@@ -345,7 +345,7 @@ export class ReportService {
     userCount: number;
     projectCount: number;
   }> {
-    const db = await this.databaseService.getClientDatabase(clientId);
+    const db = await this.databaseService.getTenantDatabase(tenantId);
 
     const timeEntries = await db.timeEntry.findMany({
       where: {

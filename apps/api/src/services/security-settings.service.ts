@@ -7,7 +7,7 @@
 import { PrismaClient as MainPrismaClient, type SecuritySettings } from '../generated/prisma-main';
 
 interface CreateSecuritySettingsDto {
-  clientId: string;
+  tenantId: string;
   twoFactorGracePeriodDays?: number;
   twoFactorRequiredRoles?: string[];
   twoFactorBypassUrls?: string[];
@@ -33,16 +33,16 @@ export class SecuritySettingsService {
   }
 
   /**
-   * Get security settings for a client (creates default if not exists)
+   * Get security settings for a tenant (creates default if not exists)
    */
-  async getByClientId(clientId: string): Promise<SecuritySettings> {
+  async getByTenantId(tenantId: string): Promise<SecuritySettings> {
     let settings = await this.prisma.securitySettings.findUnique({
-      where: { clientId },
+      where: { tenantId },
     });
 
     // Create default settings if they don't exist
     if (!settings) {
-      settings = await this.create({ clientId });
+      settings = await this.create({ tenantId });
     }
 
     return settings;
@@ -54,7 +54,7 @@ export class SecuritySettingsService {
   async create(data: CreateSecuritySettingsDto): Promise<SecuritySettings> {
     return this.prisma.securitySettings.create({
       data: {
-        clientId: data.clientId,
+        tenantId: data.tenantId,
         twoFactorGracePeriodDays: data.twoFactorGracePeriodDays ?? 10,
         twoFactorRequiredRoles: data.twoFactorRequiredRoles ?? [],
         twoFactorBypassUrls: data.twoFactorBypassUrls ?? [],
@@ -68,9 +68,9 @@ export class SecuritySettingsService {
   /**
    * Update security settings for a client
    */
-  async update(clientId: string, data: UpdateSecuritySettingsDto): Promise<SecuritySettings> {
+  async update(tenantId: string, data: UpdateSecuritySettingsDto): Promise<SecuritySettings> {
     return this.prisma.securitySettings.update({
-      where: { clientId },
+      where: { tenantId },
       data: {
         ...(data.twoFactorGracePeriodDays !== undefined && {
           twoFactorGracePeriodDays: data.twoFactorGracePeriodDays,

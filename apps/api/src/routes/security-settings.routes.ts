@@ -22,8 +22,8 @@ router.get(
   requireCapability('security.settings.read'),
   async (req: Request, res: Response) => {
     try {
-      const clientId = req.user!.clientId;
-      const settings = await securitySettingsService.getByClientId(clientId);
+      const tenantId = req.user!.tenantId;
+      const settings = await securitySettingsService.getByTenantId(tenantId);
 
       res.status(200).json({
         status: 'success',
@@ -49,7 +49,7 @@ router.put(
   requireCapability('security.settings.write'),
   async (req: Request, res: Response) => {
     try {
-      const clientId = req.user!.clientId;
+      const tenantId = req.user!.tenantId;
       const {
         twoFactorGracePeriodDays,
         twoFactorRequiredRoles,
@@ -120,7 +120,7 @@ router.put(
         return;
       }
 
-      const settings = await securitySettingsService.update(clientId, {
+      const settings = await securitySettingsService.update(tenantId, {
         twoFactorGracePeriodDays,
         twoFactorRequiredRoles,
         twoFactorBypassUrls,

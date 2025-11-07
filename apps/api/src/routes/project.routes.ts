@@ -46,7 +46,7 @@ router.post('/', validate(createProjectSchema), async (req: Request, res: Respon
     const project = await projectService.create({
       name,
       description,
-      clientId: req.user.clientId,
+      clientId: req.user.tenantId,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
     });

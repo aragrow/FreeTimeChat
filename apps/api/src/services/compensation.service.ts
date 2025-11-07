@@ -153,10 +153,10 @@ export class CompensationService {
   /**
    * Get all users with compensation configured
    */
-  async listUsersWithCompensation(clientId: string): Promise<CompensationInfo[]> {
+  async listUsersWithCompensation(tenantId: string): Promise<CompensationInfo[]> {
     const users = await this.prisma.user.findMany({
       where: {
-        clientId,
+        tenantId,
         compensationType: { not: null },
         deletedAt: null,
       },

@@ -32,18 +32,48 @@ export class AuthService {
 
   /**
    * Authenticate user with email and password
+   * For non-admin users, tenantKey is required to identify the customer
    */
   async login(
     email: string,
     password: string,
+    tenantKey?: string,
     ipAddress?: string,
     userAgent?: string
   ): Promise<LoginResponse> {
-    // Find user by email
-    const user = await this.userService.findByEmail(email);
+    // Find user by email with customer relation
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { tenant: true },
+    });
 
     if (!user) {
       throw new Error('Invalid credentials');
+    }
+
+    // Get user's roles to check if admin
+    let roles = await this.userService.getUserRoles(user.id);
+    const isAdmin = roles.includes('admin');
+
+    // Non-admin users must provide tenantKey
+    if (!isAdmin && !tenantKey) {
+      throw new Error('Tenant key is required');
+    }
+
+    // If tenantKey provided, validate customer access
+    if (tenantKey) {
+      const customer = await this.prisma.tenant.findUnique({
+        where: { tenantKey },
+      });
+
+      if (!customer) {
+        throw new Error('Invalid tenant key');
+      }
+
+      // For non-admin users, verify they belong to the customer
+      if (!isAdmin && user.tenantId !== customer.id) {
+        throw new Error('Access denied: User does not belong to this customer');
+      }
     }
 
     // Check if account is locked
@@ -83,7 +113,7 @@ export class AuthService {
       // Check if account should be locked
       await this.loginTrackingService.checkAndLockIfNeeded(
         user.id,
-        user.clientId || null,
+        user.tenantId || 'system',
         AttemptType.PASSWORD
       );
 
@@ -110,8 +140,10 @@ export class AuthService {
       };
     }
 
-    // Get user's roles
-    const roles = await this.userService.getUserRoles(user.id);
+    // Get user's roles (if not already fetched for admin check)
+    if (!roles) {
+      roles = await this.userService.getUserRoles(user.id);
+    }
     const role = roles.length > 0 ? roles[0] : 'user';
 
     // Generate tokens
@@ -122,8 +154,8 @@ export class AuthService {
         email: user.email,
         role,
         roles: roles.length > 0 ? roles : ['user'],
-        clientId: user.clientId || undefined,
-        databaseName: user.client?.databaseName || undefined,
+        tenantId: user.tenantId || 'system',
+        databaseName: user.tenant?.databaseName || 'freetimechat_client_dev',
       },
       familyId
     );
@@ -139,12 +171,13 @@ export class AuthService {
       ...this.sanitizeUser(user),
       role,
       roles: roles.length > 0 ? roles : ['user'],
+      tenantId: user.tenantId || 'system',
     };
 
     return {
       accessToken,
       refreshToken,
-      user: userWithRoles,
+      user: userWithRoles as any, // Type assertion needed due to roles type mismatch
     };
   }
 
@@ -173,23 +206,23 @@ export class AuthService {
     // Hash password
     const passwordHash = await this.passwordService.hash(data.password);
 
-    // Determine client ID
-    let clientId = data.clientId;
-    if (!clientId) {
-      // Get default client or create one
-      const defaultClient = await this.prisma.client.findFirst({
+    // Determine customer ID
+    let tenantId = data.clientId;
+    if (!tenantId) {
+      // Get default customer or create one
+      const defaultCustomer = await this.prisma.tenant.findFirst({
         where: { slug: 'default' },
       });
 
-      if (!defaultClient) {
-        throw new Error('No default client found. Please specify a clientId.');
+      if (!defaultCustomer) {
+        throw new Error('No default customer found. Please specify a tenantId.');
       }
 
-      clientId = defaultClient.id;
+      tenantId = defaultCustomer.id;
     }
 
     // Get security settings for grace period
-    const securitySettings = await this.securitySettingsService.getByClientId(clientId);
+    const securitySettings = await this.securitySettingsService.getByTenantId(tenantId);
     const gracePeriodEndDate = this.securitySettingsService.calculateGracePeriodEndDate(
       securitySettings.twoFactorGracePeriodDays
     );
@@ -199,7 +232,7 @@ export class AuthService {
       email: data.email,
       passwordHash,
       name: data.name,
-      clientId,
+      tenantId,
     });
 
     // Set 2FA grace period for new user
@@ -212,9 +245,12 @@ export class AuthService {
     const roles = await this.userService.getUserRoles(user.id);
     const role = roles.length > 0 ? roles[0] : 'user';
 
-    // Get user with client info for database name
-    const userWithClient = await this.userService.findById(user.id);
-    if (!userWithClient) {
+    // Get user with customer info for database name
+    const userWithCustomer = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: { tenant: true },
+    });
+    if (!userWithCustomer) {
       throw new Error('User not found after creation');
     }
 
@@ -226,8 +262,8 @@ export class AuthService {
         email: user.email,
         role,
         roles: roles.length > 0 ? roles : ['user'],
-        clientId: user.clientId || undefined,
-        databaseName: userWithClient.client?.databaseName || undefined,
+        tenantId: user.tenantId || 'system',
+        databaseName: userWithCustomer.tenant?.databaseName || 'freetimechat_client_dev',
       },
       familyId
     );
@@ -240,12 +276,13 @@ export class AuthService {
       ...this.sanitizeUser(user),
       role,
       roles: roles.length > 0 ? roles : ['user'],
+      tenantId: user.tenantId || 'system',
     };
 
     return {
       accessToken,
       refreshToken,
-      user: userWithRoles,
+      user: userWithRoles as any, // Type assertion needed due to roles type mismatch
     };
   }
 
@@ -280,8 +317,11 @@ export class AuthService {
         throw new Error('Refresh token expired');
       }
 
-      // Get user
-      const user = await this.userService.findById(decoded.sub);
+      // Get user with customer relation
+      const user = await this.prisma.user.findUnique({
+        where: { id: decoded.sub },
+        include: { tenant: true },
+      });
       if (!user || !user.isActive || user.deletedAt) {
         throw new Error('User not found or inactive');
       }
@@ -301,8 +341,8 @@ export class AuthService {
           email: user.email,
           role,
           roles: roles.length > 0 ? roles : ['user'],
-          clientId: user.clientId || undefined,
-          databaseName: user.client?.databaseName || undefined,
+          tenantId: user.tenantId || 'system',
+          databaseName: user.tenant?.databaseName || 'freetimechat_client_dev',
         },
         newFamilyId
       );

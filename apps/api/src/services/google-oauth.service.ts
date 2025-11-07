@@ -7,12 +7,14 @@
 import crypto from 'crypto';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 import { getJWTService } from './jwt.service';
 import { getUserService } from './user.service';
 import type { GoogleUserInfo } from '@freetimechat/types';
 import type { VerifyCallback } from 'passport-google-oauth20';
 
 export class GoogleOAuthService {
+  private prisma: MainPrismaClient;
   private userService: ReturnType<typeof getUserService>;
   private jwtService: ReturnType<typeof getJWTService>;
   private clientID: string;
@@ -20,6 +22,7 @@ export class GoogleOAuthService {
   private callbackURL: string;
 
   constructor() {
+    this.prisma = new MainPrismaClient();
     this.userService = getUserService();
     this.jwtService = getJWTService();
 
@@ -133,7 +136,7 @@ export class GoogleOAuthService {
    */
   private async createGoogleUser(googleUserInfo: GoogleUserInfo) {
     // Get default client
-    const defaultClient = await this.userService['prisma'].client.findFirst({
+    const defaultClient = await this.userService['prisma'].tenant.findFirst({
       where: { slug: 'default' },
     });
 
@@ -144,7 +147,7 @@ export class GoogleOAuthService {
     return this.userService.create({
       email: googleUserInfo.email,
       name: googleUserInfo.name,
-      clientId: defaultClient.id,
+      tenantId: defaultClient.id,
       googleId: googleUserInfo.id,
     });
   }
@@ -177,8 +180,11 @@ export class GoogleOAuthService {
     accessToken: string;
     refreshToken: string;
   }> {
-    // Get user with client info
-    const userWithClient = await this.userService.findById(user.id);
+    // Get user with client relation
+    const userWithClient = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: { tenant: true },
+    });
     if (!userWithClient) {
       throw new Error('User not found');
     }
@@ -195,8 +201,8 @@ export class GoogleOAuthService {
         email: user.email,
         role,
         roles: roles.length > 0 ? roles : ['user'],
-        clientId: user.clientId,
-        databaseName: userWithClient.client.databaseName,
+        tenantId: user.tenantId || 'system',
+        databaseName: userWithClient.tenant?.databaseName || 'freetimechat_client_dev',
       },
       familyId
     );

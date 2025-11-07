@@ -101,7 +101,7 @@ export class LoginTrackingService {
    */
   async lockAccount(userId: string, clientId: string, reason: string): Promise<AccountLockout> {
     // Get security settings to determine lockout duration
-    const settings = await this.securitySettingsService.getByClientId(clientId);
+    const settings = await this.securitySettingsService.getByTenantId(clientId);
     const lockoutDuration = settings.accountLockoutDurationMinutes;
 
     const lockedUntil = new Date(Date.now() + lockoutDuration * 60 * 1000);
@@ -160,7 +160,7 @@ export class LoginTrackingService {
     attemptType: AttemptType
   ): Promise<boolean> {
     // Get security settings
-    const settings = await this.securitySettingsService.getByClientId(clientId);
+    const settings = await this.securitySettingsService.getByTenantId(clientId);
 
     // Determine max attempts based on type
     const maxAttempts =

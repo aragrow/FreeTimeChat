@@ -192,7 +192,7 @@ export class RoleService {
       include: {
         user: {
           include: {
-            client: true,
+            tenant: true,
           },
         },
       },

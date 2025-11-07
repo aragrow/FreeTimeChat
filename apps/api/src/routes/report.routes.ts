@@ -18,11 +18,11 @@ const reportService = new ReportService();
 router.get('/time-by-user', authenticateJWT, async (req, res, next) => {
   try {
     const { startDate, endDate, userId, projectId, format } = req.query;
-    if (!req.user || !req.user.clientId) {
+    if (!req.user || !req.user.tenantId) {
       res.status(401).json({ status: 'error', message: 'Unauthorized' });
       return;
     }
-    const clientId = req.user.clientId;
+    const clientId = req.user.tenantId;
 
     const options = {
       ...(startDate && { startDate: new Date(startDate as string) }),
@@ -58,11 +58,11 @@ router.get('/time-by-user', authenticateJWT, async (req, res, next) => {
 router.get('/time-by-project', authenticateJWT, async (req, res, next) => {
   try {
     const { startDate, endDate, userId, projectId, format } = req.query;
-    if (!req.user || !req.user.clientId) {
+    if (!req.user || !req.user.tenantId) {
       res.status(401).json({ status: 'error', message: 'Unauthorized' });
       return;
     }
-    const clientId = req.user.clientId;
+    const clientId = req.user.tenantId;
 
     const options = {
       ...(startDate && { startDate: new Date(startDate as string) }),
@@ -98,11 +98,11 @@ router.get('/time-by-project', authenticateJWT, async (req, res, next) => {
 router.get('/time-by-date', authenticateJWT, async (req, res, next) => {
   try {
     const { startDate, endDate, userId, projectId, format } = req.query;
-    if (!req.user || !req.user.clientId) {
+    if (!req.user || !req.user.tenantId) {
       res.status(401).json({ status: 'error', message: 'Unauthorized' });
       return;
     }
-    const clientId = req.user.clientId;
+    const clientId = req.user.tenantId;
 
     const options = {
       ...(startDate && { startDate: new Date(startDate as string) }),
@@ -138,11 +138,11 @@ router.get('/time-by-date', authenticateJWT, async (req, res, next) => {
 router.get('/summary', authenticateJWT, async (req, res, next) => {
   try {
     const { startDate, endDate, userId, projectId } = req.query;
-    if (!req.user || !req.user.clientId) {
+    if (!req.user || !req.user.tenantId) {
       res.status(401).json({ status: 'error', message: 'Unauthorized' });
       return;
     }
-    const clientId = req.user.clientId;
+    const clientId = req.user.tenantId;
 
     const options = {
       ...(startDate && { startDate: new Date(startDate as string) }),

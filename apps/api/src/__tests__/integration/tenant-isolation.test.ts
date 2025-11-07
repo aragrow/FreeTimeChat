@@ -52,8 +52,9 @@ describe('Multi-Tenant Isolation Integration Tests', () => {
 
     try {
       // Create two test clients
-      const client1 = await mainPrisma.client.create({
+      const client1 = await mainPrisma.tenant.create({
         data: {
+          tenantKey: 'TENANT-1-TEST',
           name: 'Test Client 1',
           slug: `test-client-1-${Date.now()}`,
           databaseName: 'freetimechat_client_dev',
@@ -62,8 +63,9 @@ describe('Multi-Tenant Isolation Integration Tests', () => {
       });
       client1Id = client1.id;
 
-      const client2 = await mainPrisma.client.create({
+      const client2 = await mainPrisma.tenant.create({
         data: {
+          tenantKey: 'TENANT-2-TEST',
           name: 'Test Client 2',
           slug: `test-client-2-${Date.now()}`,
           databaseName: 'freetimechat_client_dev',
@@ -147,10 +149,10 @@ describe('Multi-Tenant Isolation Integration Tests', () => {
           await mainPrisma.user.delete({ where: { id: user2.id } }).catch(() => {});
         }
         if (client1Id) {
-          await mainPrisma.client.delete({ where: { id: client1Id } }).catch(() => {});
+          await mainPrisma.tenant.delete({ where: { id: client1Id } }).catch(() => {});
         }
         if (client2Id) {
-          await mainPrisma.client.delete({ where: { id: client2Id } }).catch(() => {});
+          await mainPrisma.tenant.delete({ where: { id: client2Id } }).catch(() => {});
         }
 
         await mainPrisma.$disconnect();
@@ -232,7 +234,7 @@ describe('Multi-Tenant Isolation Integration Tests', () => {
         .set('Authorization', `Bearer ${user1Token}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.clientId).toBe(client1Id);
+      expect(res.body.tenantId).toBe(client1Id);
     });
 
     it('should not accept JWT with invalid clientId', async () => {
@@ -379,9 +381,9 @@ describe('Multi-Tenant Isolation Integration Tests', () => {
         where: { id: user2.id },
       });
 
-      expect(dbUser1?.clientId).toBe(client1Id);
-      expect(dbUser2?.clientId).toBe(client2Id);
-      expect(dbUser1?.clientId).not.toBe(dbUser2?.clientId);
+      expect(dbUser1?.tenantId).toBe(client1Id);
+      expect(dbUser2?.tenantId).toBe(client2Id);
+      expect(dbUser1?.tenantId).not.toBe(dbUser2?.tenantId);
     });
 
     it('should confirm projects are in correct client database', async () => {
@@ -409,7 +411,7 @@ describe('Multi-Tenant Isolation Integration Tests', () => {
       if (!dbAvailable) return;
 
       // Deactivate client 1
-      await mainPrisma.client.update({
+      await mainPrisma.tenant.update({
         where: { id: client1Id },
         data: { isActive: false },
       });
@@ -422,7 +424,7 @@ describe('Multi-Tenant Isolation Integration Tests', () => {
       expect([401, 403]).toContain(res.status);
 
       // Reactivate for cleanup
-      await mainPrisma.client.update({
+      await mainPrisma.tenant.update({
         where: { id: client1Id },
         data: { isActive: true },
       });

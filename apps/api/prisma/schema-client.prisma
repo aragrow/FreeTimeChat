@@ -1,7 +1,8 @@
 // Client Database Schema
-// Each client has their own database with this schema
+// Each customer has their own database with this schema
 //
-// This database contains client-specific data:
+// This database contains customer-specific data:
+// - Clients (the customer's clients)
 // - Projects and time tracking
 // - Tasks
 // - Chat conversations and messages
@@ -18,11 +19,45 @@ datasource db {
   url      = env("CLIENT_DATABASE_URL")
 }
 
+model Client {
+  id                   String    @id @default(uuid())
+  name                 String
+  slug                 String    @unique
+  isActive             Boolean   @default(true) @map("is_active")
+  hourlyRate           Decimal?  @map("hourly_rate") @db.Decimal(10, 2)
+  discountPercentage   Decimal?  @default(0) @map("discount_percentage") @db.Decimal(5, 2)
+  // Contact Information
+  email                String?
+  phone                String?
+  website              String?
+  contactPerson        String?   @map("contact_person")
+  // Billing Address
+  billingAddressLine1  String?   @map("billing_address_line1")
+  billingAddressLine2  String?   @map("billing_address_line2")
+  billingCity          String?   @map("billing_city")
+  billingState         String?   @map("billing_state")
+  billingPostalCode    String?   @map("billing_postal_code")
+  billingCountry       String?   @map("billing_country")
+  // Invoice Numbering
+  invoicePrefix        String?   @map("invoice_prefix") // e.g., "INV-", "ABC-"
+  invoiceNextNumber    Int       @default(1) @map("invoice_next_number")
+  invoiceNumberPadding Int       @default(5) @map("invoice_number_padding") // e.g., 5 = "00001"
+  projects             Project[]
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at")
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("clients")
+}
+
 model Project {
   id                String          @id @default(uuid())
   name              String
   description       String?
   clientId          String          @map("client_id")
+  client            Client          @relation(fields: [clientId], references: [id])
   isActive          Boolean         @default(true) @map("is_active")
   startDate         DateTime?       @map("start_date")
   endDate           DateTime?       @map("end_date")

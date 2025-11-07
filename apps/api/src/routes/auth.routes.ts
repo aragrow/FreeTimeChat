@@ -19,7 +19,7 @@ const authService = getAuthService();
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body as LoginRequest;
+    const { email, password, tenantKey } = req.body as LoginRequest;
 
     // Validate input
     if (!email || !password) {
@@ -30,7 +30,7 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await authService.login(email, password);
+    const result = await authService.login(email, password, tenantKey);
 
     res.status(200).json({
       status: 'success',
@@ -58,6 +58,38 @@ router.post('/login', async (req: Request, res: Response) => {
         res.status(400).json({
           status: 'error',
           message: 'Please use Google Sign-In for this account',
+        });
+        return;
+      }
+
+      if (error.message === 'Tenant key is required') {
+        res.status(400).json({
+          status: 'error',
+          message: 'Tenant key is required for non-admin users',
+        });
+        return;
+      }
+
+      if (error.message === 'Invalid tenant key') {
+        res.status(401).json({
+          status: 'error',
+          message: 'Invalid tenant key',
+        });
+        return;
+      }
+
+      if (error.message.includes('Access denied')) {
+        res.status(403).json({
+          status: 'error',
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error.message.includes('Account is temporarily locked')) {
+        res.status(429).json({
+          status: 'error',
+          message: error.message,
         });
         return;
       }

@@ -55,8 +55,8 @@ router.get('/', async (_req: Request, res: Response) => {
       }),
 
       // Client counts
-      prisma.client.count(),
-      prisma.client.count({
+      prisma.tenant.count(),
+      prisma.tenant.count({
         where: { isActive: true },
       }),
 
@@ -84,7 +84,7 @@ router.get('/', async (_req: Request, res: Response) => {
           name: true,
           isActive: true,
           createdAt: true,
-          client: {
+          tenant: {
             select: {
               id: true,
               name: true,
@@ -94,7 +94,7 @@ router.get('/', async (_req: Request, res: Response) => {
       }),
 
       // Recent clients (last 10)
-      prisma.client.findMany({
+      prisma.tenant.findMany({
         take: 10,
         orderBy: {
           createdAt: 'desc',
@@ -114,7 +114,7 @@ router.get('/', async (_req: Request, res: Response) => {
       }),
 
       // Users by client
-      prisma.client.findMany({
+      prisma.tenant.findMany({
         select: {
           id: true,
           name: true,
@@ -176,7 +176,7 @@ router.get('/', async (_req: Request, res: Response) => {
           },
         },
       }),
-      prisma.client.count({
+      prisma.tenant.count({
         where: {
           createdAt: {
             gte: sevenDaysAgo,
@@ -325,11 +325,11 @@ router.get('/users', async (_req: Request, res: Response) => {
 router.get('/clients', async (_req: Request, res: Response) => {
   try {
     const [totalClients, activeClients, clientsWithUsers] = await Promise.all([
-      prisma.client.count(),
-      prisma.client.count({
+      prisma.tenant.count(),
+      prisma.tenant.count({
         where: { isActive: true },
       }),
-      prisma.client.findMany({
+      prisma.tenant.findMany({
         select: {
           id: true,
           name: true,

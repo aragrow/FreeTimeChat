@@ -3,7 +3,6 @@
  *
  * Seeds the main database with:
  * - Default admin user (freetimechat)
- * - Default client
  * - Admin role with all capabilities
  */
 
@@ -54,11 +53,18 @@ async function main() {
   });
   console.log(`  ✓ Deleted ${deletedCapabilities.count} capabilities`);
 
-  // Note: Client is not deleted as it's shared infrastructure
-  console.log('  ℹ  Skipping client deletion (shared infrastructure)\n');
+  const deletedSecuritySettings = await prismaMain.securitySettings.deleteMany({
+    where: { tenant: { isSeeded: true } },
+  });
+  console.log(`  ✓ Deleted ${deletedSecuritySettings.count} security settings`);
+
+  const deletedTenants = await prismaMain.tenant.deleteMany({
+    where: { isSeeded: true },
+  });
+  console.log(`  ✓ Deleted ${deletedTenants.count} tenants\n`);
 
   // ============================================================================
-  // Step 1: Create Admin User (No Client Association)
+  // Step 1: Create Admin User
   // ============================================================================
   console.log('👤 Creating admin user...');
 
@@ -133,7 +139,7 @@ async function main() {
     // Security Settings
     { name: 'security.settings.read', description: 'View security settings' },
     { name: 'security.settings.write', description: 'Update security settings' },
-    { name: 'security.settings.read.all', description: 'View all client security settings' },
+    { name: 'security.settings.read.all', description: 'View all customer security settings' },
   ];
 
   await prismaMain.capability.createMany({
@@ -159,17 +165,19 @@ async function main() {
 
   console.log(`✓ User role created: ${userRole.name} (ID: ${userRole.id})`);
 
-  // Create "clientadmin" role (client administrator)
-  const clientAdminRole = await prismaMain.role.create({
+  // Create "customeradmin" role (customer administrator)
+  const customerAdminRole = await prismaMain.role.create({
     data: {
       id: '00000000-0000-0000-0000-000000000012',
-      name: 'clientadmin',
-      description: 'Client administrator with user management permissions',
+      name: 'customeradmin',
+      description: 'Customer administrator with user management permissions',
       isSeeded: true,
     },
   });
 
-  console.log(`✓ Client Admin role created: ${clientAdminRole.name} (ID: ${clientAdminRole.id})`);
+  console.log(
+    `✓ Customer Admin role created: ${customerAdminRole.name} (ID: ${customerAdminRole.id})`
+  );
 
   // Create "admin" role (full system administrator)
   const adminRole = await prismaMain.role.create({
@@ -209,8 +217,8 @@ async function main() {
 
   console.log(`✓ Assigned ${userRoleCapabilities.length} capabilities to user role`);
 
-  // Assign user management capabilities to "clientadmin" role
-  const clientAdminCapabilities = [
+  // Assign user management capabilities to "customeradmin" role
+  const customerAdminCapabilities = [
     'users:read',
     'users:create',
     'users:update',
@@ -222,20 +230,22 @@ async function main() {
     'reports:export',
   ];
 
-  const clientAdminRoleCapabilities = allCapabilities
-    .filter((c) => clientAdminCapabilities.includes(c.name))
+  const customerAdminRoleCapabilities = allCapabilities
+    .filter((c) => customerAdminCapabilities.includes(c.name))
     .map((c) => ({
-      roleId: clientAdminRole.id,
+      roleId: customerAdminRole.id,
       capabilityId: c.id,
       isAllowed: true,
       isSeeded: true,
     }));
 
   await prismaMain.roleCapability.createMany({
-    data: clientAdminRoleCapabilities,
+    data: customerAdminRoleCapabilities,
   });
 
-  console.log(`✓ Assigned ${clientAdminRoleCapabilities.length} capabilities to clientadmin role`);
+  console.log(
+    `✓ Assigned ${customerAdminRoleCapabilities.length} capabilities to customeradmin role`
+  );
 
   // Assign ALL capabilities to "admin" role
   const adminRoleCapabilities = allCapabilities.map((c) => ({
@@ -267,22 +277,87 @@ async function main() {
   console.log(`✓ Admin role assigned to user\n`);
 
   // ============================================================================
+  // Step 6: Create Test Tenant
+  // ============================================================================
+  console.log('🏢 Creating test tenant...');
+
+  const testTenant = await prismaMain.tenant.create({
+    data: {
+      id: '00000000-0000-0000-0000-000000000100',
+      name: 'Test Tenant',
+      slug: 'test-tenant',
+      tenantKey: 'TEST-TENANT-KEY',
+      databaseName: 'freetimechat_test_tenant',
+      databaseHost: 'localhost',
+      isActive: true,
+      isSeeded: true,
+    },
+  });
+
+  console.log(`✓ Test tenant created: ${testTenant.name} (ID: ${testTenant.id})`);
+  console.log(`  Tenant Key: ${testTenant.tenantKey}\n`);
+
+  // ============================================================================
+  // Step 7: Create Test User
+  // ============================================================================
+  console.log('👤 Creating test user...');
+
+  const testPassword = await bcrypt.hash('Test@2025', 10);
+
+  const testUser = await prismaMain.user.create({
+    data: {
+      email: 'testuser@freetimechat.local',
+      passwordHash: testPassword,
+      name: 'Test User',
+      tenantId: testTenant.id,
+      isActive: true,
+      isSeeded: true,
+      twoFactorEnabled: false,
+    },
+  });
+
+  console.log(`✓ Test user created: ${testUser.email} (ID: ${testUser.id})`);
+  console.log(`  Username: testuser@freetimechat.local`);
+  console.log(`  Password: Test@2025`);
+  console.log(`  Tenant: ${testTenant.name}\n`);
+
+  // ============================================================================
+  // Step 8: Assign User Role to Test User
+  // ============================================================================
+  console.log('👥 Assigning user role to test user...');
+
+  await prismaMain.userRole.create({
+    data: {
+      userId: testUser.id,
+      roleId: userRole.id,
+      isSeeded: true,
+    },
+  });
+
+  console.log(`✓ User role assigned to test user\n`);
+
+  // ============================================================================
   // Summary
   // ============================================================================
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('✅ Database seeded successfully!\n');
   console.log('📋 Summary:');
-  console.log(`   • Admin User: ${adminUser.email} (No client association)`);
+  console.log(`   • Admin User: ${adminUser.email}`);
   console.log(`   • Password: 0pen@2025`);
+  console.log(`   • Test User: ${testUser.email}`);
+  console.log(`   • Password: Test@2025`);
+  console.log(`   • Test Tenant: ${testTenant.name} (Key: ${testTenant.tenantKey})`);
   console.log(`   • Roles:`);
   console.log(`     - user (${userRoleCapabilities.length} capabilities)`);
-  console.log(`     - clientadmin (${clientAdminRoleCapabilities.length} capabilities)`);
+  console.log(`     - customeradmin (${customerAdminRoleCapabilities.length} capabilities)`);
   console.log(`     - admin (${adminRoleCapabilities.length} capabilities)`);
   console.log(`   • Total Capabilities: ${allCapabilities.length}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   console.log('🚀 You can now login at: http://localhost:3000/login');
-  console.log('   Email: admin@freetimechat.local');
-  console.log('   Password: 0pen@2025\n');
+  console.log('   Admin: admin@freetimechat.local / 0pen@2025');
+  console.log(
+    '   Test User: testuser@freetimechat.local / Test@2025 (Tenant Key: TEST-TENANT-KEY)\n'
+  );
 }
 
 main()

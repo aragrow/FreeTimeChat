@@ -92,7 +92,20 @@
       "Bash(pnpm --filter @freetimechat/api prisma:generate:main:*)",
       "Bash(pnpm --filter @freetimechat/api seed:*)",
       "Bash(npx tsc:*)",
-      "Bash(TOKEN=\"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZWU0MDg3NC00ZmJlLTQ3NTAtODg2ZC05MzI1OTdmNmUyNDciLCJlbWFpbCI6ImFkbWluQGZyZWV0aW1lY2hhdC5sb2NhbCIsInJvbGUiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIl0sImp0aSI6IjVlMGEwNDA3N2IyZTZjOWExNzBmZDgwMDkwY2I0NTU5IiwiaWF0IjoxNzYyNDgzMzY3LCJleHAiOjE3NjI0ODQyNjcsImF1ZCI6ImZyZWV0aW1lY2hhdC13ZWIiLCJpc3MiOiJmcmVldGltZWNoYXQtYXBpIn0.Jvq4qRVK2CS4YobtlurHsSmUmb4l8hvWdARLbkky1U1koAX3Bgj6XjhD3_atu_KQ0lNaMsAb7-vir-Ecu8vZhoXx2eNj7qGFDtkCsWLypGyBpehezSlbhbWxcV9CJ6dU-gtGT5X0N8Bved963JNUQ4BJwuIOPFeGvUK3NMF68G062ngUQdN2qWTHJCEwg_RshuJ8qIiIWadFPo4tBYkv1FpSvlRutdrQTqW8Qo1jSphNzaaOhwpRww6jMZl4bsNFO3xlesM8eMluinA01icQ_Jtf_6h8lIE3ehNxZCySkPhyGTjLvUPLlyoaMgOoi1Gu7IFgg-sErco_RyxHG8jM0g\")"
+      "Bash(TOKEN=\"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZWU0MDg3NC00ZmJlLTQ3NTAtODg2ZC05MzI1OTdmNmUyNDciLCJlbWFpbCI6ImFkbWluQGZyZWV0aW1lY2hhdC5sb2NhbCIsInJvbGUiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIl0sImp0aSI6IjVlMGEwNDA3N2IyZTZjOWExNzBmZDgwMDkwY2I0NTU5IiwiaWF0IjoxNzYyNDgzMzY3LCJleHAiOjE3NjI0ODQyNjcsImF1ZCI6ImZyZWV0aW1lY2hhdC13ZWIiLCJpc3MiOiJmcmVldGltZWNoYXQtYXBpIn0.Jvq4qRVK2CS4YobtlurHsSmUmb4l8hvWdARLbkky1U1koAX3Bgj6XjhD3_atu_KQ0lNaMsAb7-vir-Ecu8vZhoXx2eNj7qGFDtkCsWLypGyBpehezSlbhbWxcV9CJ6dU-gtGT5X0N8Bved963JNUQ4BJwuIOPFeGvUK3NMF68G062ngUQdN2qWTHJCEwg_RshuJ8qIiIWadFPo4tBYkv1FpSvlRutdrQTqW8Qo1jSphNzaaOhwpRww6jMZl4bsNFO3xlesM8eMluinA01icQ_Jtf_6h8lIE3ehNxZCySkPhyGTjLvUPLlyoaMgOoi1Gu7IFgg-sErco_RyxHG8jM0g\")",
+      "Bash(sort:*)",
+      "Bash(node -e:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm --filter @freetimechat/api tsc:*)",
+      "Bash(pnpm --filter @freetimechat/api prisma:seed:main:*)",
+      "Bash(npx tsx prisma/seed.ts)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx tsx:*)",
+      "Bash(pnpm --filter @freetimechat/api prisma:push:main:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(pnpm --filter @freetimechat/api test:integration:*)",
+      "Bash(/Users/david/Documents/nextjs/FreeTimeChat/apps/api/src/services/google-oauth.service.ts)",
+      "Bash(pnpm test:login:*)"
     ],
     "deny": [],
     "ask": []

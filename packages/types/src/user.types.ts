@@ -11,7 +11,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  clientId: string;
+  tenantId: string;
   passwordHash?: string; // Optional, not included in responses
   twoFactorEnabled: boolean;
   twoFactorSecret?: string; // Optional, not included in responses

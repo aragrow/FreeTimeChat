@@ -25,7 +25,11 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ requires2FA?: boolean; error?: string }>;
+  login: (
+    email: string,
+    password: string,
+    customerKey?: string
+  ) => Promise<{ requires2FA?: boolean; error?: string }>;
   logout: () => Promise<void>;
   verify2FA: (code: string) => Promise<{ success: boolean; error?: string }>;
   refreshUser: () => Promise<void>;
@@ -146,15 +150,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (
     email: string,
-    password: string
+    password: string,
+    customerKey?: string
   ): Promise<{ requires2FA?: boolean; error?: string }> => {
     try {
+      const body: { email: string; password: string; customerKey?: string } = {
+        email,
+        password,
+      };
+
+      if (customerKey) {
+        body.customerKey = customerKey;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();

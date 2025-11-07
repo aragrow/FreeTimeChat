@@ -21,7 +21,7 @@ export class UserService {
     return this.prisma.user.findUnique({
       where: { id },
       include: {
-        client: true,
+        tenant: true,
         roles: {
           include: {
             role: {
@@ -46,7 +46,7 @@ export class UserService {
     return this.prisma.user.findUnique({
       where: { email },
       include: {
-        client: true,
+        tenant: true,
         roles: {
           include: {
             role: {
@@ -71,7 +71,7 @@ export class UserService {
     return this.prisma.user.findUnique({
       where: { googleId },
       include: {
-        client: true,
+        tenant: true,
         roles: {
           include: {
             role: {
@@ -96,7 +96,7 @@ export class UserService {
     email: string;
     passwordHash?: string;
     name: string;
-    clientId: string;
+    tenantId: string;
     googleId?: string;
   }): Promise<User> {
     return this.prisma.user.create({
@@ -104,11 +104,11 @@ export class UserService {
         email: data.email,
         passwordHash: data.passwordHash,
         name: data.name,
-        clientId: data.clientId,
+        tenantId: data.tenantId,
         googleId: data.googleId,
       },
       include: {
-        client: true,
+        tenant: true,
         roles: {
           include: {
             role: {
@@ -144,7 +144,7 @@ export class UserService {
       where: { id },
       data,
       include: {
-        client: true,
+        tenant: true,
         roles: {
           include: {
             role: {
@@ -195,7 +195,7 @@ export class UserService {
       where: { id: userId },
       data: { googleId },
       include: {
-        client: true,
+        tenant: true,
         roles: {
           include: {
             role: {

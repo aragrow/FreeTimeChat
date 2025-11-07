@@ -19,6 +19,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, loginWithGoogle } = useAuth();
   const [formData, setFormData] = useState({
+    customerKey: '',
     email: '',
     password: '',
   });
@@ -67,7 +68,11 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await login(formData.email, formData.password);
+      const result = await login(
+        formData.email,
+        formData.password,
+        formData.customerKey || undefined
+      );
 
       if (result.error) {
         setGeneralError(result.error);
@@ -139,6 +144,24 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="customerKey" className="block text-sm font-medium text-gray-700 mb-1">
+                Tenant Key
+                <span className="text-gray-500 font-normal ml-1">(optional for admins)</span>
+              </label>
+              <Input
+                id="customerKey"
+                name="customerKey"
+                type="text"
+                autoComplete="off"
+                value={formData.customerKey}
+                onChange={handleInputChange}
+                error={errors.customerKey}
+                placeholder="TENANT-1234"
+                disabled={isLoading}
+              />
+            </div>
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email address

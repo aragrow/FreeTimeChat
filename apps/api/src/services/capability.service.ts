@@ -164,10 +164,11 @@ export class CapabilityService {
   /**
    * Invalidate permission cache for all users with a specific role
    */
-  private async invalidateRoleCache(roleId: string): Promise<void> {
+  private async invalidateRoleCache(_roleId: string): Promise<void> {
     try {
       const permissionCache = getPermissionCacheService();
-      await permissionCache.invalidateRole(roleId);
+      // Invalidate all permissions since role capabilities changed
+      await permissionCache.invalidateAll();
     } catch (error) {
       console.error('Error invalidating role cache:', error);
       // Don't throw - cache invalidation failure shouldn't break the operation

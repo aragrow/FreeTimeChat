@@ -1,10 +1,10 @@
 // Main Database Schema
-// Contains authentication, authorization, and client registry
+// Contains authentication, authorization, and tenant registry
 //
-// This database is shared across all clients and handles:
+// This database is shared across all tenants and handles:
 // - User accounts and authentication
 // - Roles and capabilities (RBAC)
-// - Client registry and database routing
+// - Tenant registry and database routing
 // - Refresh tokens for JWT
 
 generator client {
@@ -22,8 +22,8 @@ model User {
   email                      String            @unique
   passwordHash               String?           @map("password_hash")
   name                       String
-  clientId                   String?           @map("client_id")
-  client                     Client?           @relation(fields: [clientId], references: [id])
+  tenantId                   String?           @map("tenant_id")
+  tenant                     Tenant?           @relation(fields: [tenantId], references: [id])
   roles                      UserRole[]
   refreshTokens              RefreshToken[]
   loginAttempts              LoginAttempt[]
@@ -42,27 +42,31 @@ model User {
   deletedAt                  DateTime?         @map("deleted_at")
 
   @@index([email])
-  @@index([clientId])
+  @@index([tenantId])
   @@index([googleId])
   @@map("users")
 }
 
-model Client {
-  id           String   @id @default(uuid())
-  name         String
-  slug         String   @unique
-  databaseId   String?  @unique @map("database_id") // UUID4 for database identification
-  databaseName String   @unique @map("database_name")
-  databaseHost String   @default("localhost") @map("database_host")
-  isActive     Boolean  @default(true) @map("is_active")
-  users        User[]
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+model Tenant {
+  id               String             @id @default(uuid())
+  name             String
+  slug             String             @unique
+  tenantKey        String             @unique @map("tenant_key") // Unique short key for tenant authentication (e.g., TENANT-1234)
+  databaseId       String?            @unique @map("database_id") // UUID4 for database identification
+  databaseName     String?            @unique @map("database_name") // Database for this tenant's data
+  databaseHost     String             @default("localhost") @map("database_host")
+  isActive         Boolean            @default(true) @map("is_active")
+  isSeeded         Boolean            @default(false) @map("is_seeded") // Track if created by seed script
+  users            User[]
+  securitySettings SecuritySettings[]
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
 
   @@index([slug])
+  @@index([tenantKey])
   @@index([databaseId])
   @@index([databaseName])
-  @@map("clients")
+  @@map("tenants")
 }
 
 model Role {
@@ -166,7 +170,8 @@ enum AttemptType {
 
 model SecuritySettings {
   id                            String   @id @default(uuid())
-  clientId                      String   @unique @map("client_id")
+  tenantId                      String   @unique @map("tenant_id")
+  tenant                        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   twoFactorGracePeriodDays      Int      @default(10) @map("two_factor_grace_period_days")
   twoFactorRequiredRoles        String[] @map("two_factor_required_roles")
   twoFactorBypassUrls           String[] @map("two_factor_bypass_urls")
@@ -176,7 +181,7 @@ model SecuritySettings {
   createdAt                     DateTime @default(now()) @map("created_at")
   updatedAt                     DateTime @updatedAt @map("updated_at")
 
-  @@index([clientId])
+  @@index([tenantId])
   @@map("security_settings")
 }
 

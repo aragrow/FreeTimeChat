@@ -29,7 +29,7 @@ export async function seedTestDatabase(): Promise<void> {
 
   try {
     // Check if default client already exists (by slug or database name)
-    const existingClient = await prisma.client.findFirst({
+    const existingClient = await prisma.tenant.findFirst({
       where: {
         OR: [{ slug: 'default' }, { databaseName: 'freetimechat_client_dev' }],
       },
@@ -37,11 +37,12 @@ export async function seedTestDatabase(): Promise<void> {
 
     if (!existingClient) {
       // Create default client
-      await prisma.client.create({
+      await prisma.tenant.create({
         data: {
           id: '00000000-0000-0000-0000-000000000001',
           name: 'Default Client',
           slug: 'default',
+          tenantKey: 'DEFAULT-TENANT',
           databaseName: 'freetimechat_client_dev',
           databaseHost: 'localhost',
           isActive: true,
@@ -50,7 +51,7 @@ export async function seedTestDatabase(): Promise<void> {
       console.log('✅ Created default client for tests');
     } else if (existingClient.slug !== 'default') {
       // Update existing client to have slug='default'
-      await prisma.client.update({
+      await prisma.tenant.update({
         where: { id: existingClient.id },
         data: { slug: 'default' },
       });
@@ -144,4 +145,32 @@ export async function cleanupTestDatabase(): Promise<void> {
  */
 export function resetSeededFlag(): void {
   seeded = false;
+}
+
+/**
+ * Check if database is available for testing
+ */
+export async function isDatabaseAvailable(): Promise<boolean> {
+  if (process.env.SKIP_INTEGRATION_TESTS === 'true') {
+    return false;
+  }
+
+  const prisma = new MainPrismaClient({
+    datasources: {
+      db: {
+        url:
+          process.env.DATABASE_URL ||
+          'postgresql://freetimechat:freetimechat_dev_password@localhost:5432/freetimechat_main',
+      },
+    },
+  });
+
+  try {
+    await prisma.$connect();
+    await prisma.$disconnect();
+    return true;
+  } catch (error) {
+    console.log('⚠️  Database not available for integration tests');
+    return false;
+  }
 }

@@ -1,69 +1,69 @@
 /**
  * Client Service
  *
- * Handles client (tenant) management operations
+ * Handles client management for a customer (their clients)
+ * Operates on the customer's database (not main database)
  */
 
 import crypto from 'crypto';
-import { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
-import { getDatabaseService } from './database.service';
-import { getPasswordService } from './password.service';
-import { getRoleService } from './role.service';
-import { getUserService } from './user.service';
-import type { Client } from '../generated/prisma-main';
+import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
+import type { Client } from '../generated/prisma-client';
 
 export interface CreateClientRequest {
   name: string;
-  email: string;
-  adminName: string;
-  adminPassword: string;
-  roleIds: string[];
+  hourlyRate?: number;
+  discountPercentage?: number;
+  // Contact Information
+  email?: string;
+  phone?: string;
+  website?: string;
+  contactPerson?: string;
+  // Billing Address
+  billingAddressLine1?: string;
+  billingAddressLine2?: string;
+  billingCity?: string;
+  billingState?: string;
+  billingPostalCode?: string;
+  billingCountry?: string;
+  // Invoice Numbering
+  invoicePrefix?: string;
+  invoiceNextNumber?: number;
+  invoiceNumberPadding?: number;
 }
 
 export interface CreateClientResponse {
   client: Client;
-  adminUser: {
-    id: string;
-    email: string;
-    name: string;
-  };
-  databaseUrl: string;
 }
 
 export class ClientService {
-  private prisma: MainPrismaClient;
-  private databaseService: ReturnType<typeof getDatabaseService>;
-  private userService: ReturnType<typeof getUserService>;
-  private roleService: ReturnType<typeof getRoleService>;
-  private passwordService: ReturnType<typeof getPasswordService>;
+  private prisma: ClientPrismaClient;
 
-  constructor() {
-    this.prisma = new MainPrismaClient();
-    this.databaseService = getDatabaseService();
-    this.userService = getUserService();
-    this.roleService = getRoleService();
-    this.passwordService = getPasswordService();
+  constructor(prisma: ClientPrismaClient) {
+    this.prisma = prisma;
   }
 
   /**
-   * Create a new client (tenant) with database and admin user
+   * Create a new client (customer's client for billing)
    */
   async createClient(data: CreateClientRequest): Promise<CreateClientResponse> {
-    const { name, email, adminName, adminPassword, roleIds } = data;
-
-    // Validate email is unique
-    const existingUser = await this.userService.findByEmail(email);
-    if (existingUser) {
-      throw new Error('Email already in use');
-    }
-
-    // Validate all roleIds exist
-    for (const roleId of roleIds) {
-      const role = await this.roleService.findById(roleId);
-      if (!role) {
-        throw new Error(`Role with ID ${roleId} not found`);
-      }
-    }
+    const {
+      name,
+      hourlyRate,
+      discountPercentage,
+      email,
+      phone,
+      website,
+      contactPerson,
+      billingAddressLine1,
+      billingAddressLine2,
+      billingCity,
+      billingState,
+      billingPostalCode,
+      billingCountry,
+      invoicePrefix,
+      invoiceNextNumber,
+      invoiceNumberPadding,
+    } = data;
 
     // Generate client ID and slug
     const clientId = crypto.randomUUID();
@@ -71,57 +71,34 @@ export class ClientService {
       .toLowerCase()
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '');
-    const databaseName = `freetimechat_client_${slug}_${Date.now()}`;
 
-    // Create client record in main database
+    // Create client record in customer database
     const client = await this.prisma.client.create({
       data: {
         id: clientId,
         name,
         slug,
-        databaseName,
+        hourlyRate,
+        discountPercentage: discountPercentage ?? 0,
+        email,
+        phone,
+        website,
+        contactPerson,
+        billingAddressLine1,
+        billingAddressLine2,
+        billingCity,
+        billingState,
+        billingPostalCode,
+        billingCountry,
+        invoicePrefix,
+        invoiceNextNumber: invoiceNextNumber ?? 1,
+        invoiceNumberPadding: invoiceNumberPadding ?? 5,
       },
     });
 
-    try {
-      // Provision client database
-      const databaseUrl = await this.databaseService.provisionClientDatabase(clientId);
-
-      // Hash admin password
-      const hashedPassword = await this.passwordService.hash(adminPassword);
-
-      // Create admin user for this client
-      const adminUser = await this.userService.create({
-        email,
-        name: adminName,
-        passwordHash: hashedPassword,
-        clientId,
-      });
-
-      // Assign all selected roles to user
-      for (const roleId of roleIds) {
-        await this.roleService.assignToUser(adminUser.id, roleId);
-      }
-
-      return {
-        client,
-        adminUser: {
-          id: adminUser.id,
-          email: adminUser.email,
-          name: adminUser.name,
-        },
-        databaseUrl,
-      };
-    } catch (error) {
-      // Rollback: Delete client if database provisioning or user creation fails
-      await this.prisma.client.delete({
-        where: { id: clientId },
-      });
-
-      throw new Error(
-        `Failed to create client: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    return {
+      client,
+    };
   }
 
   /**
@@ -180,7 +157,27 @@ export class ClientService {
   /**
    * Update client
    */
-  async update(id: string, data: { name?: string }): Promise<Client> {
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      hourlyRate?: number;
+      discountPercentage?: number;
+      email?: string;
+      phone?: string;
+      website?: string;
+      contactPerson?: string;
+      billingAddressLine1?: string;
+      billingAddressLine2?: string;
+      billingCity?: string;
+      billingState?: string;
+      billingPostalCode?: string;
+      billingCountry?: string;
+      invoicePrefix?: string;
+      invoiceNextNumber?: number;
+      invoiceNumberPadding?: number;
+    }
+  ): Promise<Client> {
     return this.prisma.client.update({
       where: { id },
       data,
@@ -200,16 +197,15 @@ export class ClientService {
   }
 
   /**
-   * Permanently delete client and its database
-   * WARNING: This permanently deletes all client data
+   * Soft delete client
    */
-  async permanentDelete(id: string): Promise<void> {
-    // Delete client database
-    await this.databaseService.deleteClientDatabase(id);
-
-    // Delete client record
-    await this.prisma.client.delete({
+  async delete(id: string): Promise<Client> {
+    return this.prisma.client.update({
       where: { id },
+      data: {
+        deletedAt: new Date(),
+        isActive: false,
+      },
     });
   }
 
@@ -221,6 +217,7 @@ export class ClientService {
       where: { id },
       data: {
         isActive: true,
+        deletedAt: null,
       },
     });
   }
@@ -229,43 +226,35 @@ export class ClientService {
    * Get client statistics
    */
   async getStats(clientId: string): Promise<{
-    userCount: number;
-    activeUserCount: number;
-    databaseSize?: string;
+    projectCount: number;
+    activeProjectCount: number;
   }> {
-    const userCount = await this.prisma.user.count({
+    const projectCount = await this.prisma.project.count({
       where: {
         clientId,
         deletedAt: null,
       },
     });
 
-    const activeUserCount = await this.prisma.user.count({
+    const activeProjectCount = await this.prisma.project.count({
       where: {
         clientId,
+        isActive: true,
         deletedAt: null,
-        lastLoginAt: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-        },
       },
     });
 
     return {
-      userCount,
-      activeUserCount,
+      projectCount,
+      activeProjectCount,
     };
   }
 }
 
-// Singleton instance
-let clientServiceInstance: ClientService | null = null;
-
 /**
- * Get ClientService singleton instance
+ * Create ClientService instance for a specific customer database
+ * Note: This service should be instantiated per-request with the customer's database connection
  */
-export function getClientService(): ClientService {
-  if (!clientServiceInstance) {
-    clientServiceInstance = new ClientService();
-  }
-  return clientServiceInstance;
+export function getClientService(customerPrisma: ClientPrismaClient): ClientService {
+  return new ClientService(customerPrisma);
 }

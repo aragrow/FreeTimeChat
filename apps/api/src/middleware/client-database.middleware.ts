@@ -2,7 +2,7 @@
  * Client Database Middleware
  *
  * Attaches the appropriate client database connection to each request
- * based on the authenticated user's clientId
+ * based on the authenticated user's tenantId
  */
 
 import { getDatabaseService } from '../services/database.service';
@@ -27,10 +27,10 @@ export async function attachClientDatabase(
       return;
     }
 
-    // Get clientId from JWT payload
-    const { clientId } = req.user;
+    // Get tenantId from JWT payload
+    const { tenantId } = req.user;
 
-    if (!clientId) {
+    if (!tenantId) {
       res.status(400).json({
         status: 'error',
         message: 'User does not belong to a client',
@@ -43,7 +43,7 @@ export async function attachClientDatabase(
 
     // Get client database connection
     try {
-      const clientDb = await databaseService.getClientDatabase(clientId);
+      const clientDb = await databaseService.getTenantDatabase(tenantId);
       const mainDb = databaseService.getMainDatabase();
 
       // Attach to request
@@ -85,12 +85,12 @@ export async function attachClientDatabaseOptional(
   next: NextFunction
 ): Promise<void> {
   try {
-    // Only attach database if user is authenticated and has clientId
-    if (req.user && req.user.clientId) {
+    // Only attach database if user is authenticated and has tenantId
+    if (req.user && req.user.tenantId) {
       const databaseService = getDatabaseService();
 
       try {
-        const clientDb = await databaseService.getClientDatabase(req.user.clientId);
+        const clientDb = await databaseService.getTenantDatabase(req.user.tenantId);
         const mainDb = databaseService.getMainDatabase();
         req.clientDb = clientDb;
         req.mainDb = mainDb;

@@ -15,7 +15,7 @@ interface SignTokenOptions {
   email: string;
   role: string;
   roles: string[];
-  clientId: string;
+  tenantId: string;
   databaseName: string;
   impersonation?: ImpersonationMetadata;
 }
@@ -68,7 +68,7 @@ export class JWTService {
       email: options.email,
       role: options.role,
       roles: options.roles,
-      clientId: options.clientId,
+      tenantId: options.tenantId,
       databaseName: options.databaseName,
       jti,
     };

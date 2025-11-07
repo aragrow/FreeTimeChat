@@ -147,12 +147,12 @@ router.delete(
  */
 router.get('/list', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.clientId) {
+    if (!req.user?.tenantId) {
       res.status(500).json({ status: 'error', message: 'Client ID not available' });
       return;
     }
 
-    const users = await compensationService.listUsersWithCompensation(req.user.clientId);
+    const users = await compensationService.listUsersWithCompensation(req.user.tenantId);
 
     res.json({
       status: 'success',

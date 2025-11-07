@@ -2,22 +2,53 @@
  * Database Service
  *
  * Manages database connections for multi-tenant architecture
- * - Main database: Authentication, users, clients, roles
- * - Client databases: One database per tenant for data isolation
+ * - Main database: Authentication, users, customers, roles
+ * - Customer databases: One database per tenant for data isolation
  */
 
 import { execSync } from 'child_process';
+import { existsSync } from 'fs';
 import { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
-interface ClientDatabaseConnection {
+interface CustomerDatabaseConnection {
   prisma: ClientPrismaClient;
   lastAccessed: Date;
 }
 
+/**
+ * Find the psql executable path
+ * Checks environment variable first, then common Homebrew locations, then PATH
+ */
+function findPsqlPath(): string {
+  // Check environment variable
+  if (process.env.PSQL_PATH && existsSync(process.env.PSQL_PATH)) {
+    return process.env.PSQL_PATH;
+  }
+
+  // Check common Homebrew locations
+  const homebrewPaths = [
+    '/opt/homebrew/bin/psql',
+    '/usr/local/bin/psql',
+    '/opt/homebrew/Cellar/postgresql@16/16.10/bin/psql',
+    '/opt/homebrew/opt/postgresql@16/bin/psql',
+    '/opt/homebrew/Cellar/libpq/17.2/bin/psql',
+    '/opt/homebrew/opt/libpq/bin/psql',
+  ];
+
+  for (const path of homebrewPaths) {
+    if (existsSync(path)) {
+      return path;
+    }
+  }
+
+  // Fallback to psql in PATH
+  return 'psql';
+}
+
 export class DatabaseService {
   private mainPrisma: MainPrismaClient;
-  private clientConnections: Map<string, ClientDatabaseConnection>;
+  private customerConnections: Map<string, CustomerDatabaseConnection>;
   private readonly maxPoolSize: number = 10;
   private readonly connectionTTL: number = 30 * 60 * 1000; // 30 minutes
 
@@ -27,8 +58,8 @@ export class DatabaseService {
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
 
-    // Initialize client connection pool
-    this.clientConnections = new Map();
+    // Initialize customer connection pool
+    this.customerConnections = new Map();
 
     // Start cleanup interval for idle connections
     this.startConnectionCleanup();
@@ -42,12 +73,12 @@ export class DatabaseService {
   }
 
   /**
-   * Get client database connection
+   * Get tenant database connection
    * Uses connection pooling to reuse existing connections
    */
-  async getClientDatabase(clientId: string): Promise<ClientPrismaClient> {
-    // Check if we already have a connection for this client
-    const existing = this.clientConnections.get(clientId);
+  async getTenantDatabase(tenantId: string): Promise<ClientPrismaClient> {
+    // Check if we already have a connection for this tenant
+    const existing = this.customerConnections.get(tenantId);
 
     if (existing) {
       // Update last accessed time
@@ -55,23 +86,30 @@ export class DatabaseService {
       return existing.prisma;
     }
 
-    // Get client information from main database
-    const client = await this.mainPrisma.client.findUnique({
-      where: { id: clientId },
+    // Get tenant information from main database
+    const tenant = await this.mainPrisma.tenant.findUnique({
+      where: { id: tenantId },
     });
 
-    if (!client) {
-      throw new Error(`Client not found: ${clientId}`);
+    if (!tenant) {
+      throw new Error(`Tenant not found: ${tenantId}`);
     }
 
-    if (!client.databaseName) {
-      throw new Error(`Client ${clientId} does not have a database name configured`);
+    if (!tenant.databaseName) {
+      throw new Error(`Tenant ${tenantId} does not have a database name configured`);
     }
 
-    // Construct database URL from client configuration
-    const databaseUrl = `postgresql://${process.env.POSTGRES_USER || 'postgres'}:${process.env.POSTGRES_PASSWORD || 'postgres'}@${client.databaseHost}:${process.env.POSTGRES_PORT || '5432'}/${client.databaseName}`;
+    // Construct database URL from tenant configuration
+    const username = process.env.POSTGRES_USER || 'postgres';
+    const password = process.env.POSTGRES_PASSWORD || '';
+    const host = tenant.databaseHost;
+    const port = process.env.POSTGRES_PORT || '5432';
 
-    // Create new Prisma client for this client database
+    const databaseUrl = password
+      ? `postgresql://${username}:${password}@${host}:${port}/${tenant.databaseName}`
+      : `postgresql://${username}@${host}:${port}/${tenant.databaseName}`;
+
+    // Create new Prisma client for this customer database
     const prisma = new ClientPrismaClient({
       datasources: {
         db: {
@@ -86,12 +124,12 @@ export class DatabaseService {
       await prisma.$connect();
     } catch (error) {
       throw new Error(
-        `Failed to connect to client database for ${clientId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to connect to customer database for ${tenantId}: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
 
     // Store in connection pool
-    this.clientConnections.set(clientId, {
+    this.customerConnections.set(tenantId, {
       prisma,
       lastAccessed: new Date(),
     });
@@ -103,12 +141,12 @@ export class DatabaseService {
   }
 
   /**
-   * Provision a new client database
+   * Provision a new customer database
    * Creates database and runs migrations
    */
-  async provisionClientDatabase(clientId: string): Promise<string> {
+  async provisionCustomerDatabase(tenantId: string): Promise<string> {
     // Generate unique database name
-    const dbName = `freetimechat_client_${clientId.replace(/-/g, '_')}`;
+    const dbName = `freetimechat_customer_${tenantId.replace(/-/g, '_')}`;
 
     // Get database connection details from main database URL
     const mainDbUrl = process.env.DATABASE_URL;
@@ -117,16 +155,33 @@ export class DatabaseService {
     }
 
     // Parse database URL to get connection details
-    const urlMatch = mainDbUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+    // Supports both formats: postgresql://user:pass@host:port/db and postgresql://user@host:port/db
+    let urlMatch = mainDbUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+    let username: string;
+    let password: string;
+    let host: string;
+    let port: string;
 
-    if (!urlMatch) {
-      throw new Error('Invalid DATABASE_URL format');
+    if (urlMatch) {
+      // Format with password: postgresql://user:pass@host:port/db
+      [, username, password, host, port] = urlMatch;
+    } else {
+      // Try format without password: postgresql://user@host:port/db
+      urlMatch = mainDbUrl.match(/postgresql:\/\/([^@]+)@([^:]+):(\d+)\/(.+)/);
+      if (!urlMatch) {
+        throw new Error('Invalid DATABASE_URL format');
+      }
+      [, username, host, port] = urlMatch;
+      password = ''; // No password
     }
 
-    const [, username, password, host, port] = urlMatch;
+    // Get psql path
+    const psqlPath = findPsqlPath();
 
     // Create database using psql command
-    const createDbCommand = `PGPASSWORD="${password}" psql -h ${host} -p ${port} -U ${username} -d postgres -c "CREATE DATABASE ${dbName};"`;
+    const createDbCommand = password
+      ? `PGPASSWORD="${password}" ${psqlPath} -h ${host} -p ${port} -U ${username} -d postgres -c "CREATE DATABASE ${dbName};"`
+      : `${psqlPath} -h ${host} -p ${port} -U ${username} -d postgres -c "CREATE DATABASE ${dbName};"`;
 
     try {
       execSync(createDbCommand, { stdio: 'pipe' });
@@ -148,7 +203,9 @@ export class DatabaseService {
     ];
 
     for (const ext of extensions) {
-      const extCommand = `PGPASSWORD="${password}" psql -h ${host} -p ${port} -U ${username} -d ${dbName} -c "${ext}"`;
+      const extCommand = password
+        ? `PGPASSWORD="${password}" ${psqlPath} -h ${host} -p ${port} -U ${username} -d ${dbName} -c "${ext}"`
+        : `${psqlPath} -h ${host} -p ${port} -U ${username} -d ${dbName} -c "${ext}"`;
       try {
         execSync(extCommand, { stdio: 'pipe' });
       } catch (error) {
@@ -156,52 +213,60 @@ export class DatabaseService {
       }
     }
 
-    // Construct database URL for this client
-    const clientDatabaseUrl = `postgresql://${username}:${password}@${host}:${port}/${dbName}`;
+    // Construct database URL for this customer
+    const customerDatabaseUrl = password
+      ? `postgresql://${username}:${password}@${host}:${port}/${dbName}`
+      : `postgresql://${username}@${host}:${port}/${dbName}`;
 
-    // Run Prisma migrations
+    // Get the apps/api directory (where prisma schema files are located)
+    const apiDir = process.cwd().includes('/apps/api')
+      ? process.cwd()
+      : `${process.cwd()}/apps/api`;
+
+    // Use db push for development (syncs schema directly without migrations)
+    // For production, you should create proper migrations with `prisma migrate dev`
     try {
-      const migrateCommand = `DATABASE_URL="${clientDatabaseUrl}" pnpm prisma:migrate:deploy:client`;
-      execSync(migrateCommand, { cwd: process.cwd(), stdio: 'inherit' });
+      const pushCommand = `DATABASE_URL="${customerDatabaseUrl}" pnpm prisma db push --schema=./prisma/schema-client.prisma --accept-data-loss --skip-generate`;
+      execSync(pushCommand, { cwd: apiDir, stdio: 'inherit' });
     } catch (error) {
       throw new Error(
-        `Failed to run migrations for ${dbName}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to sync schema for ${dbName}: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
 
-    // Update client record with database name
-    await this.mainPrisma.client.update({
-      where: { id: clientId },
+    // Update customer record with database name
+    await this.mainPrisma.tenant.update({
+      where: { id: tenantId },
       data: {
         databaseName: dbName,
       },
     });
 
-    return clientDatabaseUrl;
+    return customerDatabaseUrl;
   }
 
   /**
-   * Delete a client database
-   * WARNING: This permanently deletes all client data
+   * Delete a customer database
+   * WARNING: This permanently deletes all customer data
    */
-  async deleteClientDatabase(clientId: string): Promise<void> {
-    const client = await this.mainPrisma.client.findUnique({
-      where: { id: clientId },
+  async deleteCustomerDatabase(tenantId: string): Promise<void> {
+    const customer = await this.mainPrisma.tenant.findUnique({
+      where: { id: tenantId },
     });
 
-    if (!client) {
-      throw new Error(`Client not found: ${clientId}`);
+    if (!customer) {
+      throw new Error(`Customer not found: ${tenantId}`);
     }
 
-    if (!client.databaseName) {
-      throw new Error(`Client ${clientId} does not have a database`);
+    if (!customer.databaseName) {
+      throw new Error(`Customer ${tenantId} does not have a database`);
     }
 
     // Close connection if exists
-    const connection = this.clientConnections.get(clientId);
+    const connection = this.customerConnections.get(tenantId);
     if (connection) {
       await connection.prisma.$disconnect();
-      this.clientConnections.delete(clientId);
+      this.customerConnections.delete(tenantId);
     }
 
     // Get database connection details
@@ -210,16 +275,34 @@ export class DatabaseService {
       throw new Error('DATABASE_URL not configured');
     }
 
-    const urlMatch = mainDbUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+    // Parse database URL to get connection details
+    // Supports both formats: postgresql://user:pass@host:port/db and postgresql://user@host:port/db
+    let urlMatch = mainDbUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+    let username: string;
+    let password: string;
+    let host: string;
+    let port: string;
 
-    if (!urlMatch) {
-      throw new Error('Invalid DATABASE_URL format');
+    if (urlMatch) {
+      // Format with password: postgresql://user:pass@host:port/db
+      [, username, password, host, port] = urlMatch;
+    } else {
+      // Try format without password: postgresql://user@host:port/db
+      urlMatch = mainDbUrl.match(/postgresql:\/\/([^@]+)@([^:]+):(\d+)\/(.+)/);
+      if (!urlMatch) {
+        throw new Error('Invalid DATABASE_URL format');
+      }
+      [, username, host, port] = urlMatch;
+      password = ''; // No password
     }
 
-    const [, username, password, host, port] = urlMatch;
+    // Get psql path
+    const psqlPath = findPsqlPath();
 
     // Terminate all connections to the database
-    const terminateCommand = `PGPASSWORD="${password}" psql -h ${host} -p ${port} -U ${username} -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${client.databaseName}';"`;
+    const terminateCommand = password
+      ? `PGPASSWORD="${password}" ${psqlPath} -h ${host} -p ${port} -U ${username} -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${customer.databaseName}';"`
+      : `${psqlPath} -h ${host} -p ${port} -U ${username} -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${customer.databaseName}';"`;
 
     try {
       execSync(terminateCommand, { stdio: 'pipe' });
@@ -228,7 +311,9 @@ export class DatabaseService {
     }
 
     // Drop database
-    const dropDbCommand = `PGPASSWORD="${password}" psql -h ${host} -p ${port} -U ${username} -d postgres -c "DROP DATABASE IF EXISTS ${client.databaseName};"`;
+    const dropDbCommand = password
+      ? `PGPASSWORD="${password}" ${psqlPath} -h ${host} -p ${port} -U ${username} -d postgres -c "DROP DATABASE IF EXISTS ${customer.databaseName};"`
+      : `${psqlPath} -h ${host} -p ${port} -U ${username} -d postgres -c "DROP DATABASE IF EXISTS ${customer.databaseName};"`;
 
     try {
       execSync(dropDbCommand, { stdio: 'pipe' });
@@ -238,9 +323,9 @@ export class DatabaseService {
       );
     }
 
-    // Clear database name from client record
-    await this.mainPrisma.client.update({
-      where: { id: clientId },
+    // Clear database name from customer record
+    await this.mainPrisma.tenant.update({
+      where: { id: tenantId },
       data: {
         databaseName: undefined,
       },
@@ -252,12 +337,12 @@ export class DatabaseService {
    */
   getConnectionStats(): {
     activeConnections: number;
-    clients: Array<{ clientId: string; lastAccessed: Date }>;
+    customers: Array<{ tenantId: string; lastAccessed: Date }>;
   } {
     return {
-      activeConnections: this.clientConnections.size,
-      clients: Array.from(this.clientConnections.entries()).map(([clientId, conn]) => ({
-        clientId,
+      activeConnections: this.customerConnections.size,
+      customers: Array.from(this.customerConnections.entries()).map(([tenantId, conn]) => ({
+        tenantId,
         lastAccessed: conn.lastAccessed,
       })),
     };
@@ -267,21 +352,21 @@ export class DatabaseService {
    * Enforce maximum pool size by removing oldest connections
    */
   private enforcePoolSize(): void {
-    if (this.clientConnections.size <= this.maxPoolSize) {
+    if (this.customerConnections.size <= this.maxPoolSize) {
       return;
     }
 
     // Sort connections by last accessed time
-    const connections = Array.from(this.clientConnections.entries()).sort(
+    const connections = Array.from(this.customerConnections.entries()).sort(
       (a, b) => a[1].lastAccessed.getTime() - b[1].lastAccessed.getTime()
     );
 
     // Remove oldest connections until we're at max pool size
-    const toRemove = connections.slice(0, this.clientConnections.size - this.maxPoolSize);
+    const toRemove = connections.slice(0, this.customerConnections.size - this.maxPoolSize);
 
-    for (const [clientId, conn] of toRemove) {
+    for (const [tenantId, conn] of toRemove) {
       conn.prisma.$disconnect().catch(console.error);
-      this.clientConnections.delete(clientId);
+      this.customerConnections.delete(tenantId);
     }
   }
 
@@ -293,12 +378,12 @@ export class DatabaseService {
       () => {
         const now = new Date().getTime();
 
-        for (const [clientId, conn] of this.clientConnections.entries()) {
+        for (const [tenantId, conn] of this.customerConnections.entries()) {
           const idleTime = now - conn.lastAccessed.getTime();
 
           if (idleTime > this.connectionTTL) {
             conn.prisma.$disconnect().catch(console.error);
-            this.clientConnections.delete(clientId);
+            this.customerConnections.delete(tenantId);
           }
         }
       },
@@ -314,14 +399,14 @@ export class DatabaseService {
     // Disconnect main database
     await this.mainPrisma.$disconnect();
 
-    // Disconnect all client databases
-    const disconnectPromises = Array.from(this.clientConnections.values()).map((conn) =>
+    // Disconnect all customer databases
+    const disconnectPromises = Array.from(this.customerConnections.values()).map((conn) =>
       conn.prisma.$disconnect()
     );
 
     await Promise.all(disconnectPromises);
 
-    this.clientConnections.clear();
+    this.customerConnections.clear();
   }
 }
 

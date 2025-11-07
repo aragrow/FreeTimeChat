@@ -20,6 +20,8 @@ interface Client extends Record<string, unknown> {
   slug: string;
   databaseName: string;
   isActive: boolean;
+  hourlyRate?: number | string;
+  discountPercentage?: number | string;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -27,25 +29,16 @@ interface Client extends Record<string, unknown> {
   projectCount?: number;
 }
 
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-}
-
 interface CreateClientData {
   name: string;
-  email: string;
-  adminName: string;
-  adminPassword: string;
-  roleIds: string[];
+  hourlyRate: string;
+  discountPercentage: string;
 }
 
 export default function ClientsPage() {
   const { getAuthHeaders } = useAuth();
 
   const [clients, setClients] = useState<Client[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -56,16 +49,17 @@ export default function ClientsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [createFormData, setCreateFormData] = useState<CreateClientData>({
     name: '',
-    email: '',
-    adminName: '',
-    adminPassword: '',
-    roleIds: [],
+    hourlyRate: '',
+    discountPercentage: '0',
   });
-  const [editFormData, setEditFormData] = useState({ name: '' });
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    hourlyRate: '',
+    discountPercentage: '',
+  });
 
   useEffect(() => {
     fetchClients();
-    fetchRoles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, statusFilter]);
 
@@ -98,38 +92,31 @@ export default function ClientsPage() {
     }
   };
 
-  const fetchRoles = async () => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setRoles(data.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch roles:', error);
-    }
-  };
-
   const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
+      // Convert string values to numbers for API
+      const payload = {
+        name: createFormData.name,
+        hourlyRate: createFormData.hourlyRate ? parseFloat(createFormData.hourlyRate) : undefined,
+        discountPercentage: createFormData.discountPercentage
+          ? parseFloat(createFormData.discountPercentage)
+          : 0,
+      };
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients`, {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(createFormData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
         setShowCreateModal(false);
-        setCreateFormData({ name: '', email: '', adminName: '', adminPassword: '', roleIds: [] });
+        setCreateFormData({ name: '', hourlyRate: '', discountPercentage: '0' });
         fetchClients();
       } else {
         const errorData = await response.json();
@@ -147,22 +134,31 @@ export default function ClientsPage() {
     if (!editingClient) return;
 
     try {
+      // Convert string values to numbers for API
+      const payload = {
+        name: editFormData.name || undefined,
+        hourlyRate: editFormData.hourlyRate ? parseFloat(editFormData.hourlyRate) : undefined,
+        discountPercentage: editFormData.discountPercentage
+          ? parseFloat(editFormData.discountPercentage)
+          : undefined,
+      };
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${editingClient.id}`,
         {
-          method: 'PATCH',
+          method: 'PUT',
           headers: {
             ...getAuthHeaders(),
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(editFormData),
+          body: JSON.stringify(payload),
         }
       );
 
       if (response.ok) {
         setShowEditModal(false);
         setEditingClient(null);
-        setEditFormData({ name: '' });
+        setEditFormData({ name: '', hourlyRate: '', discountPercentage: '' });
         fetchClients();
       } else {
         const errorData = await response.json();
@@ -262,6 +258,28 @@ export default function ClientsPage() {
       ),
     },
     {
+      key: 'hourlyRate',
+      header: 'Hourly Rate',
+      sortable: true,
+      render: (client) => (
+        <span className="text-sm text-gray-900">
+          {client.hourlyRate ? `$${parseFloat(client.hourlyRate.toString()).toFixed(2)}` : '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'discountPercentage',
+      header: 'Discount',
+      sortable: true,
+      render: (client) => (
+        <span className="text-sm text-gray-900">
+          {client.discountPercentage
+            ? `${parseFloat(client.discountPercentage.toString()).toFixed(2)}%`
+            : '0%'}
+        </span>
+      ),
+    },
+    {
       key: 'isActive',
       header: 'Status',
       sortable: true,
@@ -292,7 +310,11 @@ export default function ClientsPage() {
             onClick={(e) => {
               e.stopPropagation();
               setEditingClient(client);
-              setEditFormData({ name: client.name });
+              setEditFormData({
+                name: client.name,
+                hourlyRate: client.hourlyRate?.toString() || '',
+                discountPercentage: client.discountPercentage?.toString() || '',
+              });
               setShowEditModal(true);
             }}
           >
@@ -479,90 +501,44 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Admin Email *
+                <label
+                  htmlFor="hourlyRate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Hourly Rate (Optional)
                 </label>
                 <Input
-                  id="email"
-                  type="email"
-                  required
-                  value={createFormData.email}
-                  onChange={(e) => setCreateFormData({ ...createFormData, email: e.target.value })}
-                  placeholder="admin@acme.com"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="adminName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Admin Name *
-                </label>
-                <Input
-                  id="adminName"
-                  type="text"
-                  required
-                  value={createFormData.adminName}
+                  id="hourlyRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={createFormData.hourlyRate}
                   onChange={(e) =>
-                    setCreateFormData({ ...createFormData, adminName: e.target.value })
+                    setCreateFormData({ ...createFormData, hourlyRate: e.target.value })
                   }
-                  placeholder="John Doe"
+                  placeholder="150.00"
                 />
               </div>
 
               <div>
                 <label
-                  htmlFor="adminPassword"
+                  htmlFor="discountPercentage"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Admin Password *
+                  Discount Percentage (0-100)
                 </label>
                 <Input
-                  id="adminPassword"
-                  type="password"
-                  required
-                  minLength={8}
-                  value={createFormData.adminPassword}
+                  id="discountPercentage"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={createFormData.discountPercentage}
                   onChange={(e) =>
-                    setCreateFormData({ ...createFormData, adminPassword: e.target.value })
+                    setCreateFormData({ ...createFormData, discountPercentage: e.target.value })
                   }
-                  placeholder="Minimum 8 characters"
+                  placeholder="0.00"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Admin Roles *
-                </label>
-                <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                  {roles.map((role) => (
-                    <label key={role.id} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={createFormData.roleIds.includes(role.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setCreateFormData({
-                              ...createFormData,
-                              roleIds: [...createFormData.roleIds, role.id],
-                            });
-                          } else {
-                            setCreateFormData({
-                              ...createFormData,
-                              roleIds: createFormData.roleIds.filter((id) => id !== role.id),
-                            });
-                          }
-                        }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-900">{role.name}</span>
-                      {role.description && (
-                        <span className="text-xs text-gray-500">- {role.description}</span>
-                      )}
-                    </label>
-                  ))}
-                </div>
-                {createFormData.roleIds.length === 0 && (
-                  <p className="text-xs text-red-600 mt-1">Please select at least one role</p>
-                )}
               </div>
 
               <div className="flex gap-3 pt-4">
@@ -607,7 +583,46 @@ export default function ClientsPage() {
                   type="text"
                   required
                   value={editFormData.name}
-                  onChange={(e) => setEditFormData({ name: e.target.value })}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="editHourlyRate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Hourly Rate (Optional)
+                </label>
+                <Input
+                  id="editHourlyRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editFormData.hourlyRate}
+                  onChange={(e) => setEditFormData({ ...editFormData, hourlyRate: e.target.value })}
+                  placeholder="150.00"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="editDiscountPercentage"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Discount Percentage (0-100)
+                </label>
+                <Input
+                  id="editDiscountPercentage"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={editFormData.discountPercentage}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, discountPercentage: e.target.value })
+                  }
+                  placeholder="0.00"
                 />
               </div>
 
@@ -621,7 +636,7 @@ export default function ClientsPage() {
                   onClick={() => {
                     setShowEditModal(false);
                     setEditingClient(null);
-                    setEditFormData({ name: '' });
+                    setEditFormData({ name: '', hourlyRate: '', discountPercentage: '' });
                   }}
                   className="flex-1"
                 >
