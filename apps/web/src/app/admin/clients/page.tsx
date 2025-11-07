@@ -27,17 +27,25 @@ interface Client extends Record<string, unknown> {
   projectCount?: number;
 }
 
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+}
+
 interface CreateClientData {
   name: string;
   email: string;
   adminName: string;
   adminPassword: string;
+  roleIds: string[];
 }
 
 export default function ClientsPage() {
   const { getAuthHeaders } = useAuth();
 
   const [clients, setClients] = useState<Client[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -51,11 +59,13 @@ export default function ClientsPage() {
     email: '',
     adminName: '',
     adminPassword: '',
+    roleIds: [],
   });
   const [editFormData, setEditFormData] = useState({ name: '' });
 
   useEffect(() => {
     fetchClients();
+    fetchRoles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, statusFilter]);
 
@@ -78,13 +88,29 @@ export default function ClientsPage() {
 
       if (response.ok) {
         const result = await response.json();
-        setClients(result.data || []);
-        setTotalPages(result.meta?.totalPages || 1);
+        setClients(result.data.clients || []);
+        setTotalPages(result.data.pagination?.totalPages || 1);
       }
     } catch (error) {
       console.error('Failed to fetch clients:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRoles(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch roles:', error);
     }
   };
 
@@ -103,7 +129,7 @@ export default function ClientsPage() {
 
       if (response.ok) {
         setShowCreateModal(false);
-        setCreateFormData({ name: '', email: '', adminName: '', adminPassword: '' });
+        setCreateFormData({ name: '', email: '', adminName: '', adminPassword: '', roleIds: [] });
         fetchClients();
       } else {
         const errorData = await response.json();
@@ -502,6 +528,43 @@ export default function ClientsPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Admin Roles *
+                </label>
+                <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                  {roles.map((role) => (
+                    <label key={role.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={createFormData.roleIds.includes(role.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setCreateFormData({
+                              ...createFormData,
+                              roleIds: [...createFormData.roleIds, role.id],
+                            });
+                          } else {
+                            setCreateFormData({
+                              ...createFormData,
+                              roleIds: createFormData.roleIds.filter((id) => id !== role.id),
+                            });
+                          }
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-900">{role.name}</span>
+                      {role.description && (
+                        <span className="text-xs text-gray-500">- {role.description}</span>
+                      )}
+                    </label>
+                  ))}
+                </div>
+                {createFormData.roleIds.length === 0 && (
+                  <p className="text-xs text-red-600 mt-1">Please select at least one role</p>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <Button type="submit" className="flex-1">
                   Create Client
@@ -511,7 +574,13 @@ export default function ClientsPage() {
                   variant="outline"
                   onClick={() => {
                     setShowCreateModal(false);
-                    setCreateFormData({ name: '', email: '', adminName: '', adminPassword: '' });
+                    setCreateFormData({
+                      name: '',
+                      email: '',
+                      adminName: '',
+                      adminPassword: '',
+                      roleIds: [],
+                    });
                   }}
                   className="flex-1"
                 >

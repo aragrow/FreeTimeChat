@@ -17,6 +17,7 @@ export interface CreateClientRequest {
   email: string;
   adminName: string;
   adminPassword: string;
+  roleIds: string[];
 }
 
 export interface CreateClientResponse {
@@ -48,12 +49,20 @@ export class ClientService {
    * Create a new client (tenant) with database and admin user
    */
   async createClient(data: CreateClientRequest): Promise<CreateClientResponse> {
-    const { name, email, adminName, adminPassword } = data;
+    const { name, email, adminName, adminPassword, roleIds } = data;
 
     // Validate email is unique
     const existingUser = await this.userService.findByEmail(email);
     if (existingUser) {
       throw new Error('Email already in use');
+    }
+
+    // Validate all roleIds exist
+    for (const roleId of roleIds) {
+      const role = await this.roleService.findById(roleId);
+      if (!role) {
+        throw new Error(`Role with ID ${roleId} not found`);
+      }
     }
 
     // Generate client ID and slug
@@ -89,10 +98,9 @@ export class ClientService {
         clientId,
       });
 
-      // Assign admin role to user
-      const adminRole = await this.roleService.findByName('admin');
-      if (adminRole) {
-        await this.roleService.assignToUser(adminUser.id, adminRole.id);
+      // Assign all selected roles to user
+      for (const roleId of roleIds) {
+        await this.roleService.assignToUser(adminUser.id, roleId);
       }
 
       return {

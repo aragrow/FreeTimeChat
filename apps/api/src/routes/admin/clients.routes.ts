@@ -157,7 +157,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { name, adminEmail, adminName, adminPassword } = req.body;
+    const { name, adminEmail, adminName, adminPassword, roleIds } = req.body;
 
     // Validate required fields
     if (!name || !adminEmail || !adminName || !adminPassword) {
@@ -168,12 +168,22 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    // Validate roleIds
+    if (!roleIds || !Array.isArray(roleIds) || roleIds.length === 0) {
+      res.status(400).json({
+        status: 'error',
+        message: 'At least one role is required',
+      });
+      return;
+    }
+
     // Create client with full provisioning (database + admin user)
     const result = await clientService.createClient({
       name,
       email: adminEmail,
       adminName,
       adminPassword,
+      roleIds,
     });
 
     res.status(201).json({

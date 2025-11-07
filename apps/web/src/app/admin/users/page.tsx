@@ -25,14 +25,27 @@ interface User extends Record<string, unknown> {
   isTwoFactorEnabled: boolean;
   createdAt: string;
   lastLoginAt?: string;
-  roles: Array<{ name: string }>;
+  roles: Array<{ role: { id: string; name: string } }>;
+}
+
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 interface CreateUserData {
   email: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   password: string;
+  clientId?: string;
+  roleIds: string[];
 }
 
 export default function UsersPage() {
@@ -40,6 +53,8 @@ export default function UsersPage() {
   const router = useRouter();
 
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -55,13 +70,16 @@ export default function UsersPage() {
 
   const [createFormData, setCreateFormData] = useState<CreateUserData>({
     email: '',
-    firstName: '',
-    lastName: '',
+    name: '',
     password: '',
+    clientId: '',
+    roleIds: [],
   });
 
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
+    fetchClients();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, statusFilter]);
 
@@ -71,8 +89,8 @@ export default function UsersPage() {
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        take: '20',
-        ...(statusFilter !== 'all' && { isActive: (statusFilter === 'active').toString() }),
+        limit: '20',
+        ...(statusFilter !== 'all' && { status: statusFilter }),
       });
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users?${params}`, {
@@ -92,22 +110,66 @@ export default function UsersPage() {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRoles(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch roles:', error);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data.data.clients || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch clients:', error);
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
+      // Prepare data, omit clientId if empty
+      const payload = {
+        ...createFormData,
+        clientId: createFormData.clientId || undefined,
+      };
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users`, {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(createFormData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
         setShowCreateModal(false);
-        setCreateFormData({ email: '', firstName: '', lastName: '', password: '' });
+        setCreateFormData({
+          email: '',
+          name: '',
+          password: '',
+          clientId: '',
+          roleIds: [],
+        });
         fetchUsers();
       } else {
         const errorData = await response.json();
@@ -180,10 +242,7 @@ export default function UsersPage() {
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
-      searchTerm === '' ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase());
+      searchTerm === '' || user.email.toLowerCase().includes(searchTerm.toLowerCase());
 
     return matchesSearch;
   });
@@ -193,32 +252,37 @@ export default function UsersPage() {
       key: 'name',
       header: 'Name',
       sortable: true,
-      render: (user) => (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
-            {user.firstName[0]}
-            {user.lastName[0]}
+      render: (user) => {
+        const initials = user.email
+          .split('@')[0]
+          .split('.')
+          .map((part) => part[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 2);
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
+              {initials}
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">{user.email}</p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-gray-900">
-              {user.firstName} {user.lastName}
-            </p>
-            <p className="text-sm text-gray-500">{user.email}</p>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'roles',
       header: 'Roles',
       render: (user) => (
         <div className="flex flex-wrap gap-1">
-          {user.roles.map((role, index) => (
+          {user.roles.map((userRole, index) => (
             <span
               key={index}
               className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded"
             >
-              {role.name}
+              {userRole.role.name}
             </span>
           ))}
           {user.roles.length === 0 && (
@@ -392,35 +456,16 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name *
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name *
                 </label>
                 <input
-                  id="firstName"
+                  id="name"
                   type="text"
                   required
-                  value={createFormData.firstName}
-                  onChange={(e) =>
-                    setCreateFormData({ ...createFormData, firstName: e.target.value })
-                  }
-                  placeholder="John"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name *
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  required
-                  value={createFormData.lastName}
-                  onChange={(e) =>
-                    setCreateFormData({ ...createFormData, lastName: e.target.value })
-                  }
-                  placeholder="Doe"
+                  value={createFormData.name}
+                  onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
+                  placeholder="John Doe"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -443,6 +488,61 @@ export default function UsersPage() {
                 />
               </div>
 
+              <div>
+                <label htmlFor="clientId" className="block text-sm font-medium text-gray-700 mb-1">
+                  Client (Optional - leave empty for system admin)
+                </label>
+                <select
+                  id="clientId"
+                  value={createFormData.clientId}
+                  onChange={(e) =>
+                    setCreateFormData({ ...createFormData, clientId: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">No Client (System Admin)</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Roles (Select multiple)
+                </label>
+                <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                  {roles.map((role) => (
+                    <label key={role.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={createFormData.roleIds.includes(role.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setCreateFormData({
+                              ...createFormData,
+                              roleIds: [...createFormData.roleIds, role.id],
+                            });
+                          } else {
+                            setCreateFormData({
+                              ...createFormData,
+                              roleIds: createFormData.roleIds.filter((id) => id !== role.id),
+                            });
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-900">{role.name}</span>
+                      {role.description && (
+                        <span className="text-xs text-gray-500">- {role.description}</span>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <Button type="submit" className="flex-1">
                   Create User
@@ -452,7 +552,13 @@ export default function UsersPage() {
                   variant="outline"
                   onClick={() => {
                     setShowCreateModal(false);
-                    setCreateFormData({ email: '', firstName: '', lastName: '', password: '' });
+                    setCreateFormData({
+                      email: '',
+                      name: '',
+                      password: '',
+                      clientId: '',
+                      roleIds: [],
+                    });
                   }}
                   className="flex-1"
                 >

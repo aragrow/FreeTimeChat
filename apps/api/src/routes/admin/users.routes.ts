@@ -184,10 +184,10 @@ router.post('/', async (req: Request, res: Response) => {
     const { email, name, password, clientId, roleIds } = req.body;
 
     // Validate required fields
-    if (!email || !name || !clientId) {
+    if (!email || !name) {
       res.status(400).json({
         status: 'error',
-        message: 'Email, name, and clientId are required',
+        message: 'Email and name are required',
       });
       return;
     }
@@ -202,17 +202,19 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    // Verify client exists
-    const client = await prisma.client.findUnique({
-      where: { id: clientId },
-    });
-
-    if (!client) {
-      res.status(404).json({
-        status: 'error',
-        message: 'Client not found',
+    // Verify client exists if provided
+    if (clientId) {
+      const client = await prisma.client.findUnique({
+        where: { id: clientId },
       });
-      return;
+
+      if (!client) {
+        res.status(404).json({
+          status: 'error',
+          message: 'Client not found',
+        });
+        return;
+      }
     }
 
     // Hash password if provided
@@ -221,12 +223,12 @@ router.post('/', async (req: Request, res: Response) => {
       passwordHash = await passwordService.hash(password);
     }
 
-    // Create user
+    // Create user (clientId can be null for system admins)
     const user = await userService.create({
       email,
       name,
       passwordHash,
-      clientId,
+      clientId: clientId || null,
     });
 
     // Assign roles if provided
