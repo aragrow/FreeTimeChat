@@ -10,6 +10,7 @@ import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import passport from 'passport';
+import { sanitizeInput, setSecurityHeaders } from './sanitization.middleware';
 import type { Application, RequestHandler } from 'express';
 
 /**
@@ -107,13 +108,17 @@ export function configureCompression(): RequestHandler {
  * Setup all middleware for the Express app
  */
 export function setupMiddleware(app: Application): void {
-  // Security
+  // Security Headers
+  app.use(setSecurityHeaders);
   app.use(configureHelmet());
   app.use(configureCors());
 
   // Parsing
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // Input Sanitization (CRITICAL: Prevents XSS, SQL Injection)
+  app.use(sanitizeInput);
 
   // Compression
   app.use(configureCompression());

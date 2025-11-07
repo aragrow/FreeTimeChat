@@ -105,7 +105,8 @@
       "Bash(npx prisma generate:*)",
       "Bash(pnpm --filter @freetimechat/api test:integration:*)",
       "Bash(/Users/david/Documents/nextjs/FreeTimeChat/apps/api/src/services/google-oauth.service.ts)",
-      "Bash(pnpm test:login:*)"
+      "Bash(pnpm test:login:*)",
+      "Bash(pnpm --filter @freetimechat/api add:*)"
     ],
     "deny": [],
     "ask": []
