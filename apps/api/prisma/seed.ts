@@ -103,6 +103,12 @@ async function main() {
     { name: 'roles:update', description: 'Update roles' },
     { name: 'roles:delete', description: 'Delete roles' },
 
+    // Tenant Management
+    { name: 'tenants:read', description: 'View tenants' },
+    { name: 'tenants:create', description: 'Create tenants' },
+    { name: 'tenants:update', description: 'Update tenants' },
+    { name: 'tenants:delete', description: 'Delete tenants' },
+
     // Project Management
     { name: 'projects:read', description: 'View projects' },
     { name: 'projects:create', description: 'Create projects' },
