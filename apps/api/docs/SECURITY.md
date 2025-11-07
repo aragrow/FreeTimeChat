@@ -91,9 +91,31 @@ const hash = await bcrypt.hash(password, saltRounds);
 
 #### Token Storage
 
-- Access tokens: Memory or session storage (client-side)
-- Refresh tokens: HttpOnly cookies (prevents XSS)
+**Client-Side** (Frontend):
+
+- **Access tokens**: localStorage for persistence across page refreshes
+- **Refresh tokens**: localStorage for automatic token refresh
+- Tokens are loaded from localStorage on application mount
+- Tokens are cleared from localStorage on logout
+
+**Benefits**:
+
+- User remains authenticated across page refreshes and browser tabs
+- Seamless authentication experience
+- Automatic token refresh maintains session
+
+**Security Considerations**:
+
+- localStorage is vulnerable to XSS attacks - ensure Content Security Policy is
+  enforced
+- Tokens are accessible to JavaScript - sanitize all user inputs
+- Alternative: HttpOnly cookies (more secure but requires server-side rendering)
+
+**Server-Side** (Backend):
+
 - Token revocation: Database tracking with `isRevoked` flag
+- Token families tracked for refresh token rotation
+- Expired tokens automatically rejected
 
 ### Refresh Token Security
 
@@ -710,6 +732,7 @@ with:
 
 ## Changelog
 
-| Date       | Version | Changes                        |
-| ---------- | ------- | ------------------------------ |
-| 2025-01-05 | 1.0     | Initial security documentation |
+| Date       | Version | Changes                                                   |
+| ---------- | ------- | --------------------------------------------------------- |
+| 2025-11-07 | 1.1     | Updated token storage to use localStorage for persistence |
+| 2025-01-05 | 1.0     | Initial security documentation                            |

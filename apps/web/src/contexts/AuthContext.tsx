@@ -42,10 +42,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
-  // Check authentication status on mount
+  // Load tokens from localStorage on mount
+  useEffect(() => {
+    const storedAccessToken = localStorage.getItem('accessToken');
+    const storedRefreshToken = localStorage.getItem('refreshToken');
+
+    if (storedAccessToken) {
+      setAccessToken(storedAccessToken);
+    }
+    if (storedRefreshToken) {
+      setRefreshToken(storedRefreshToken);
+    }
+  }, []);
+
+  // Check authentication status when accessToken changes
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [accessToken]);
 
   // Set up token refresh interval
   useEffect(() => {
@@ -116,8 +129,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         setAccessToken(data.data.accessToken);
+        localStorage.setItem('accessToken', data.data.accessToken);
         if (data.data.refreshToken) {
           setRefreshToken(data.data.refreshToken);
+          localStorage.setItem('refreshToken', data.data.refreshToken);
         }
       } else {
         // Refresh failed, logout user
@@ -153,10 +168,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { requires2FA: true };
       }
 
-      // Successful login - store tokens
+      // Successful login - store tokens in state and localStorage
       setAccessToken(data.data.accessToken);
       setRefreshToken(data.data.refreshToken);
       setUser(data.data.user);
+      localStorage.setItem('accessToken', data.data.accessToken);
+      localStorage.setItem('refreshToken', data.data.refreshToken);
       return {};
     } catch (error) {
       console.error('Login error:', error);
@@ -178,6 +195,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setAccessToken(null);
       setRefreshToken(null);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       router.push('/login');
     }
   };
@@ -198,10 +217,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.message || 'Verification failed' };
       }
 
-      // Successful verification - store tokens
+      // Successful verification - store tokens in state and localStorage
       setAccessToken(data.data.accessToken);
       setRefreshToken(data.data.refreshToken);
       setUser(data.data.user);
+      localStorage.setItem('accessToken', data.data.accessToken);
+      localStorage.setItem('refreshToken', data.data.refreshToken);
       return { success: true };
     } catch (error) {
       console.error('2FA verification error:', error);

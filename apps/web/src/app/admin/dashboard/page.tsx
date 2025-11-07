@@ -1,7 +1,7 @@
 /**
  * Admin Dashboard
  *
- * Displays key metrics, statistics, and recent activity
+ * Displays key metrics and statistics
  */
 
 'use client';
@@ -10,32 +10,9 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
 
-interface DashboardStats {
-  totalUsers: number;
-  activeUsers: number;
-  totalProjects: number;
-  totalTimeEntries: number;
-  totalHoursLogged: number;
-}
-
-interface RecentActivity {
-  id: string;
-  type: string;
-  description: string;
-  timestamp: string;
-  user: string;
-}
-
 export default function AdminDashboard() {
   const { getAuthHeaders } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 0,
-    activeUsers: 0,
-    totalProjects: 0,
-    totalTimeEntries: 0,
-    totalHoursLogged: 0,
-  });
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -47,31 +24,16 @@ export default function AdminDashboard() {
       setIsLoading(true);
 
       // Fetch dashboard stats
-      const statsResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard/stats`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
 
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
-        setStats(statsData.data || {});
-      }
-
-      // Fetch recent activity
-      const activityResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard/activity?take=10`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (activityResponse.ok) {
-        const activityData = await activityResponse.json();
-        setRecentActivity(activityData.data || []);
+        setStats(statsData.data);
+      } else {
+        console.error('Failed to fetch stats:', await statsResponse.text());
       }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
@@ -79,76 +41,6 @@ export default function AdminDashboard() {
       setIsLoading(false);
     }
   };
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString();
-  };
-
-  const statCards = [
-    {
-      title: 'Total Users',
-      value: stats.totalUsers,
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      ),
-      color: 'bg-blue-500',
-      subtitle: `${stats.activeUsers} active`,
-    },
-    {
-      title: 'Total Projects',
-      value: stats.totalProjects,
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-          />
-        </svg>
-      ),
-      color: 'bg-green-500',
-    },
-    {
-      title: 'Time Entries',
-      value: stats.totalTimeEntries,
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-          />
-        </svg>
-      ),
-      color: 'bg-purple-500',
-    },
-    {
-      title: 'Total Hours',
-      value: stats.totalHoursLogged.toFixed(1),
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
-      color: 'bg-orange-500',
-      subtitle: 'hours logged',
-    },
-  ];
 
   if (isLoading) {
     return (
@@ -160,6 +52,83 @@ export default function AdminDashboard() {
       </div>
     );
   }
+
+  if (!stats) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-gray-600">Failed to load dashboard data</p>
+        </div>
+      </div>
+    );
+  }
+
+  const statCards = [
+    {
+      title: 'Total Users',
+      value: stats.users?.total || 0,
+      subtitle: `${stats.users?.active || 0} active`,
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+          />
+        </svg>
+      ),
+      color: 'bg-blue-500',
+    },
+    {
+      title: 'Total Clients',
+      value: stats.clients?.total || 0,
+      subtitle: `${stats.clients?.active || 0} active`,
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+          />
+        </svg>
+      ),
+      color: 'bg-green-500',
+    },
+    {
+      title: 'Total Roles',
+      value: stats.roles?.total || 0,
+      subtitle: `${stats.roles?.custom || 0} custom`,
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+          />
+        </svg>
+      ),
+      color: 'bg-purple-500',
+    },
+    {
+      title: 'Total Capabilities',
+      value: stats.capabilities?.total || 0,
+      subtitle: `${stats.capabilities?.custom || 0} custom`,
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+          />
+        </svg>
+      ),
+      color: 'bg-orange-500',
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -185,144 +154,136 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Recent Activity */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-          <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-            View All
-          </button>
-        </div>
+      {/* Growth Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">User Activity</h2>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Active in last 30 days</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {stats.users?.activeInLast30Days || 0}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">New in last 7 days</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {stats.users?.newInLast7Days || 0}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Inactive users</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {stats.users?.inactive || 0}
+              </span>
+            </div>
+          </div>
+        </Card>
 
-        {recentActivity.length === 0 ? (
-          <div className="text-center py-12">
-            <svg
-              className="w-12 h-12 text-gray-300 mx-auto mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <p className="text-gray-600">No recent activity</p>
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Client Growth</h2>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Active clients</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {stats.clients?.active || 0}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">New in last 7 days</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {stats.clients?.newInLast7Days || 0}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Inactive clients</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {stats.clients?.inactive || 0}
+              </span>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {recentActivity.map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-5 h-5 text-blue-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{activity.description}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-gray-500">{activity.user}</p>
-                    <span className="text-xs text-gray-400">•</span>
-                    <p className="text-xs text-gray-500">{formatTimestamp(activity.timestamp)}</p>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded border border-gray-200">
-                  {activity.type}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+        </Card>
+      </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-blue-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                />
-              </svg>
+        <a href="/admin/users" className="block">
+          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-blue-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-900">Manage Users</h3>
+                <p className="text-xs text-gray-500 mt-1">View and manage user accounts</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-900">Add New User</h3>
-              <p className="text-xs text-gray-500 mt-1">Create a new user account</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </a>
 
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-green-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                />
-              </svg>
+        <a href="/admin/roles" className="block">
+          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-900">Manage Roles</h3>
+                <p className="text-xs text-gray-500 mt-1">Configure roles and permissions</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-900">Create Project</h3>
-              <p className="text-xs text-gray-500 mt-1">Set up a new project</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </a>
 
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-purple-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
+        <a href="/admin/clients" className="block">
+          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-purple-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-900">Manage Clients</h3>
+                <p className="text-xs text-gray-500 mt-1">Manage client tenants</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-900">View Reports</h3>
-              <p className="text-xs text-gray-500 mt-1">Access analytics & reports</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </a>
       </div>
     </div>
   );

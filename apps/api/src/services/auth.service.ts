@@ -83,7 +83,7 @@ export class AuthService {
       // Check if account should be locked
       await this.loginTrackingService.checkAndLockIfNeeded(
         user.id,
-        user.clientId,
+        user.clientId || null,
         AttemptType.PASSWORD
       );
 
@@ -122,8 +122,8 @@ export class AuthService {
         email: user.email,
         role,
         roles: roles.length > 0 ? roles : ['user'],
-        clientId: user.clientId,
-        databaseName: user.client.databaseName,
+        clientId: user.clientId || undefined,
+        databaseName: user.client?.databaseName || undefined,
       },
       familyId
     );
@@ -134,10 +134,17 @@ export class AuthService {
     // Update last login
     await this.userService.updateLastLogin(user.id);
 
+    // Add roles to user object for frontend
+    const userWithRoles = {
+      ...this.sanitizeUser(user),
+      role,
+      roles: roles.length > 0 ? roles : ['user'],
+    };
+
     return {
       accessToken,
       refreshToken,
-      user: this.sanitizeUser(user),
+      user: userWithRoles,
     };
   }
 
@@ -219,8 +226,8 @@ export class AuthService {
         email: user.email,
         role,
         roles: roles.length > 0 ? roles : ['user'],
-        clientId: user.clientId,
-        databaseName: userWithClient.client.databaseName,
+        clientId: user.clientId || undefined,
+        databaseName: userWithClient.client?.databaseName || undefined,
       },
       familyId
     );
@@ -228,10 +235,17 @@ export class AuthService {
     // Store refresh token
     await this.storeRefreshToken(user.id, refreshToken, familyId);
 
+    // Add roles to user object for frontend
+    const userWithRoles = {
+      ...this.sanitizeUser(user),
+      role,
+      roles: roles.length > 0 ? roles : ['user'],
+    };
+
     return {
       accessToken,
       refreshToken,
-      user: this.sanitizeUser(user),
+      user: userWithRoles,
     };
   }
 
@@ -287,8 +301,8 @@ export class AuthService {
           email: user.email,
           role,
           roles: roles.length > 0 ? roles : ['user'],
-          clientId: user.clientId,
-          databaseName: user.client.databaseName,
+          clientId: user.clientId || undefined,
+          databaseName: user.client?.databaseName || undefined,
         },
         newFamilyId
       );

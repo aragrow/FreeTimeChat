@@ -16,42 +16,61 @@ async function main() {
   console.log('🌱 Starting database seed...\n');
 
   // ============================================================================
-  // Step 1: Create Default Client
+  // Step 0: Clean Existing Seeded Data
   // ============================================================================
-  console.log('📦 Creating default client...');
+  console.log('🧹 Cleaning existing seeded data...');
 
-  const client = await prismaMain.client.upsert({
-    where: { slug: 'freetimechat' },
-    update: {},
-    create: {
-      name: 'FreeTimeChat',
-      slug: 'freetimechat',
-      databaseName: 'freetimechat_client_dev',
-      databaseHost: 'localhost',
-      isActive: true,
-    },
+  // Delete only seeded records in correct order to avoid foreign key constraint violations
+  await prismaMain.impersonationSession.deleteMany({});
+  console.log('  ✓ Deleted impersonation sessions (all)');
+
+  const deletedRefreshTokens = await prismaMain.refreshToken.deleteMany({
+    where: { user: { isSeeded: true } },
   });
+  console.log(`  ✓ Deleted ${deletedRefreshTokens.count} refresh tokens (seeded users)`);
 
-  console.log(`✓ Client created: ${client.name} (ID: ${client.id})\n`);
+  const deletedUserRoles = await prismaMain.userRole.deleteMany({
+    where: { isSeeded: true },
+  });
+  console.log(`  ✓ Deleted ${deletedUserRoles.count} user roles`);
+
+  const deletedRoleCapabilities = await prismaMain.roleCapability.deleteMany({
+    where: { isSeeded: true },
+  });
+  console.log(`  ✓ Deleted ${deletedRoleCapabilities.count} role capabilities`);
+
+  const deletedUsers = await prismaMain.user.deleteMany({
+    where: { isSeeded: true },
+  });
+  console.log(`  ✓ Deleted ${deletedUsers.count} users`);
+
+  const deletedRoles = await prismaMain.role.deleteMany({
+    where: { isSeeded: true },
+  });
+  console.log(`  ✓ Deleted ${deletedRoles.count} roles`);
+
+  const deletedCapabilities = await prismaMain.capability.deleteMany({
+    where: { isSeeded: true },
+  });
+  console.log(`  ✓ Deleted ${deletedCapabilities.count} capabilities`);
+
+  // Note: Client is not deleted as it's shared infrastructure
+  console.log('  ℹ  Skipping client deletion (shared infrastructure)\n');
 
   // ============================================================================
-  // Step 2: Create Admin User
+  // Step 1: Create Admin User (No Client Association)
   // ============================================================================
   console.log('👤 Creating admin user...');
 
   const hashedPassword = await bcrypt.hash('0pen@2025', 10);
 
-  const adminUser = await prismaMain.user.upsert({
-    where: { email: 'admin@freetimechat.local' },
-    update: {
-      passwordHash: hashedPassword, // Update password in case it changed
-    },
-    create: {
+  const adminUser = await prismaMain.user.create({
+    data: {
       email: 'admin@freetimechat.local',
       passwordHash: hashedPassword,
       name: 'FreeTimeChat Admin',
-      clientId: client.id,
       isActive: true,
+      isSeeded: true,
       twoFactorEnabled: false,
     },
   });
@@ -61,7 +80,7 @@ async function main() {
   console.log(`  Password: 0pen@2025\n`);
 
   // ============================================================================
-  // Step 3: Create Capabilities
+  // Step 2: Create Capabilities
   // ============================================================================
   console.log('🔐 Creating capabilities...');
 
@@ -109,84 +128,139 @@ async function main() {
     { name: 'admin:impersonate', description: 'Impersonate users' },
     { name: 'admin:audit-logs', description: 'View audit logs' },
     { name: 'admin:system-settings', description: 'Manage system settings' },
+    { name: 'isadmin', description: 'Administrator status - grants full system access' },
+
+    // Security Settings
+    { name: 'security.settings.read', description: 'View security settings' },
+    { name: 'security.settings.write', description: 'Update security settings' },
+    { name: 'security.settings.read.all', description: 'View all client security settings' },
   ];
 
-  let createdCapabilities = 0;
-  for (const cap of capabilities) {
-    await prismaMain.capability.upsert({
-      where: { name: cap.name },
-      update: { description: cap.description },
-      create: cap,
-    });
-    createdCapabilities++;
-  }
+  await prismaMain.capability.createMany({
+    data: capabilities.map((cap) => ({ ...cap, isSeeded: true })),
+  });
 
-  console.log(`✓ Created/updated ${createdCapabilities} capabilities\n`);
+  console.log(`✓ Created ${capabilities.length} capabilities\n`);
 
   // ============================================================================
-  // Step 4: Create Admin Role
+  // Step 3: Create Roles
   // ============================================================================
-  console.log('👑 Creating admin role...');
+  console.log('👑 Creating roles...');
 
-  const adminRole = await prismaMain.role.upsert({
-    where: { name: 'Admin' },
-    update: {
-      description: 'Full system administrator with all permissions',
+  // Create "user" role (basic user permissions)
+  const userRole = await prismaMain.role.create({
+    data: {
+      id: '00000000-0000-0000-0000-000000000010',
+      name: 'user',
+      description: 'Standard user with chat-only permissions',
+      isSeeded: true,
     },
-    create: {
-      name: 'Admin',
+  });
+
+  console.log(`✓ User role created: ${userRole.name} (ID: ${userRole.id})`);
+
+  // Create "clientadmin" role (client administrator)
+  const clientAdminRole = await prismaMain.role.create({
+    data: {
+      id: '00000000-0000-0000-0000-000000000012',
+      name: 'clientadmin',
+      description: 'Client administrator with user management permissions',
+      isSeeded: true,
+    },
+  });
+
+  console.log(`✓ Client Admin role created: ${clientAdminRole.name} (ID: ${clientAdminRole.id})`);
+
+  // Create "admin" role (full system administrator)
+  const adminRole = await prismaMain.role.create({
+    data: {
+      id: '00000000-0000-0000-0000-000000000011',
+      name: 'admin',
       description: 'Full system administrator with all permissions',
+      isSeeded: true,
     },
   });
 
   console.log(`✓ Admin role created: ${adminRole.name} (ID: ${adminRole.id})\n`);
 
   // ============================================================================
-  // Step 5: Assign All Capabilities to Admin Role
+  // Step 4: Assign Capabilities to Roles
   // ============================================================================
-  console.log('🔗 Assigning capabilities to admin role...');
+  console.log('🔗 Assigning capabilities to roles...');
 
   const allCapabilities = await prismaMain.capability.findMany();
 
-  let assignedCapabilities = 0;
-  for (const capability of allCapabilities) {
-    await prismaMain.roleCapability.upsert({
-      where: {
-        roleId_capabilityId: {
-          roleId: adminRole.id,
-          capabilityId: capability.id,
-        },
-      },
-      update: {
-        isAllowed: true,
-      },
-      create: {
-        roleId: adminRole.id,
-        capabilityId: capability.id,
-        isAllowed: true,
-      },
-    });
-    assignedCapabilities++;
-  }
+  // Assign chat-only capabilities to "user" role
+  const userCapabilities = ['conversations:read', 'conversations:create', 'conversations:delete'];
 
-  console.log(`✓ Assigned ${assignedCapabilities} capabilities to admin role\n`);
+  // Prepare user role capabilities
+  const userRoleCapabilities = allCapabilities
+    .filter((c) => userCapabilities.includes(c.name))
+    .map((c) => ({
+      roleId: userRole.id,
+      capabilityId: c.id,
+      isAllowed: true,
+      isSeeded: true,
+    }));
+
+  await prismaMain.roleCapability.createMany({
+    data: userRoleCapabilities,
+  });
+
+  console.log(`✓ Assigned ${userRoleCapabilities.length} capabilities to user role`);
+
+  // Assign user management capabilities to "clientadmin" role
+  const clientAdminCapabilities = [
+    'users:read',
+    'users:create',
+    'users:update',
+    'users:delete',
+    'conversations:read',
+    'conversations:create',
+    'conversations:delete',
+    'reports:read',
+    'reports:export',
+  ];
+
+  const clientAdminRoleCapabilities = allCapabilities
+    .filter((c) => clientAdminCapabilities.includes(c.name))
+    .map((c) => ({
+      roleId: clientAdminRole.id,
+      capabilityId: c.id,
+      isAllowed: true,
+      isSeeded: true,
+    }));
+
+  await prismaMain.roleCapability.createMany({
+    data: clientAdminRoleCapabilities,
+  });
+
+  console.log(`✓ Assigned ${clientAdminRoleCapabilities.length} capabilities to clientadmin role`);
+
+  // Assign ALL capabilities to "admin" role
+  const adminRoleCapabilities = allCapabilities.map((c) => ({
+    roleId: adminRole.id,
+    capabilityId: c.id,
+    isAllowed: true,
+    isSeeded: true,
+  }));
+
+  await prismaMain.roleCapability.createMany({
+    data: adminRoleCapabilities,
+  });
+
+  console.log(`✓ Assigned ${adminRoleCapabilities.length} capabilities to admin role\n`);
 
   // ============================================================================
-  // Step 6: Assign Admin Role to User
+  // Step 5: Assign Admin Role to User
   // ============================================================================
   console.log('👥 Assigning admin role to user...');
 
-  await prismaMain.userRole.upsert({
-    where: {
-      userId_roleId: {
-        userId: adminUser.id,
-        roleId: adminRole.id,
-      },
-    },
-    update: {},
-    create: {
+  await prismaMain.userRole.create({
+    data: {
       userId: adminUser.id,
       roleId: adminRole.id,
+      isSeeded: true,
     },
   });
 
@@ -198,11 +272,13 @@ async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('✅ Database seeded successfully!\n');
   console.log('📋 Summary:');
-  console.log(`   • Client: ${client.name}`);
-  console.log(`   • Admin User: ${adminUser.email}`);
+  console.log(`   • Admin User: ${adminUser.email} (No client association)`);
   console.log(`   • Password: 0pen@2025`);
-  console.log(`   • Role: ${adminRole.name}`);
-  console.log(`   • Capabilities: ${allCapabilities.length}`);
+  console.log(`   • Roles:`);
+  console.log(`     - user (${userRoleCapabilities.length} capabilities)`);
+  console.log(`     - clientadmin (${clientAdminRoleCapabilities.length} capabilities)`);
+  console.log(`     - admin (${adminRoleCapabilities.length} capabilities)`);
+  console.log(`   • Total Capabilities: ${allCapabilities.length}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   console.log('🚀 You can now login at: http://localhost:3000/login');
   console.log('   Email: admin@freetimechat.local');

@@ -8,7 +8,6 @@ import { Router } from 'express';
 import adminRoutes from './admin.routes';
 import authRoutes from './auth.routes';
 import chatRoutes from './chat.routes';
-import clientRoutes from './client.routes';
 import compensationRoutes from './compensation.routes';
 import conversationRoutes from './conversation.routes';
 import healthRoutes from './health.routes';
@@ -35,11 +34,19 @@ v1Router.use('/health', healthRoutes);
 v1Router.use('/auth', authRoutes);
 v1Router.use('/oauth', oauthRoutes);
 v1Router.use('/2fa', twoFactorRoutes);
+
+// Admin routes (includes users, roles, clients, capabilities, stats)
 v1Router.use('/admin', adminRoutes);
-v1Router.use('/admin/clients', clientRoutes);
+
+// Legacy routes - kept for backward compatibility
+// Note: These may be deprecated in future versions in favor of the new admin routes structure
 v1Router.use('/admin', compensationRoutes);
 v1Router.use('/admin/security-settings', securitySettingsRoutes);
+
+// Impersonation routes
 v1Router.use('/impersonate', impersonationRoutes);
+
+// Application routes
 v1Router.use('/projects', projectRoutes);
 v1Router.use('/projects', projectMemberRoutes);
 v1Router.use('/time-entries', timeEntryRoutes);

@@ -22,8 +22,8 @@ model User {
   email                      String            @unique
   passwordHash               String?           @map("password_hash")
   name                       String
-  clientId                   String            @map("client_id")
-  client                     Client            @relation(fields: [clientId], references: [id])
+  clientId                   String?           @map("client_id")
+  client                     Client?           @relation(fields: [clientId], references: [id])
   roles                      UserRole[]
   refreshTokens              RefreshToken[]
   loginAttempts              LoginAttempt[]
@@ -33,6 +33,7 @@ model User {
   twoFactorSecret            String?           @map("two_factor_secret")
   twoFactorGracePeriodEndsAt DateTime?         @map("two_factor_grace_period_ends_at")
   isActive                   Boolean           @default(true) @map("is_active")
+  isSeeded                   Boolean           @default(false) @map("is_seeded")
   lastLoginAt                DateTime?         @map("last_login_at")
   compensationType           CompensationType? @map("compensation_type")
   hourlyRate                 Decimal?          @map("hourly_rate") @db.Decimal(10, 2)
@@ -68,6 +69,7 @@ model Role {
   id           String           @id @default(uuid())
   name         String           @unique
   description  String?
+  isSeeded     Boolean          @default(false) @map("is_seeded")
   users        UserRole[]
   capabilities RoleCapability[]
   createdAt    DateTime         @default(now()) @map("created_at")
@@ -79,6 +81,7 @@ model Capability {
   id          String           @id @default(uuid())
   name        String           @unique
   description String?
+  isSeeded    Boolean          @default(false) @map("is_seeded")
   roles       RoleCapability[]
   createdAt   DateTime         @default(now()) @map("created_at")
 
@@ -89,6 +92,7 @@ model UserRole {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
   roleId    String   @map("role_id")
+  isSeeded  Boolean  @default(false) @map("is_seeded")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
@@ -104,6 +108,7 @@ model RoleCapability {
   roleId       String     @map("role_id")
   capabilityId String     @map("capability_id")
   isAllowed    Boolean    @default(true) @map("is_allowed")
+  isSeeded     Boolean    @default(false) @map("is_seeded")
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   capability   Capability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
   createdAt    DateTime   @default(now()) @map("created_at")

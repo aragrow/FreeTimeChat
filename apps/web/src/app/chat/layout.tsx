@@ -150,7 +150,6 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
               {(() => {
                 console.log('Chat Layout - User object:', user);
                 console.log('Chat Layout - User roles:', user?.roles);
-                console.log('Chat Layout - User role:', user?.role);
                 const isAdmin =
                   user?.roles?.some(
                     (role) => role && typeof role === 'string' && role.toLowerCase() === 'admin'

@@ -49,6 +49,17 @@ else
   echo -e "${GREEN}  ✓ No Web server running on port 3001${NC}"
 fi
 
+# Stop Prisma Studio (port 5555)
+PRISMA_PID=$(lsof -ti:5555 || true)
+if [ ! -z "$PRISMA_PID" ]; then
+  echo -e "${YELLOW}  • Stopping Prisma Studio (PID: $PRISMA_PID)${NC}"
+  kill -9 $PRISMA_PID 2>/dev/null || true
+  sleep 1
+  echo -e "${GREEN}  ✓ Prisma Studio stopped${NC}"
+else
+  echo -e "${GREEN}  ✓ No Prisma Studio running on port 5555${NC}"
+fi
+
 echo ""
 
 # ============================================================================
@@ -159,6 +170,16 @@ end tell
 EOF
 
 echo -e "${GREEN}  ✓ Web server starting in new terminal${NC}"
+sleep 2
+
+# Start Prisma Studio in new terminal
+osascript <<EOF
+tell application "Terminal"
+    do script "cd \"$(pwd)/apps/api\" && echo \"Starting Prisma Studio (Main DB)...\" && pnpm prisma:studio:main"
+end tell
+EOF
+
+echo -e "${GREEN}  ✓ Prisma Studio starting in new terminal${NC}"
 
 echo ""
 echo -e "${GREEN}✨ All services restarted!${NC}"
@@ -223,8 +244,8 @@ echo ""
 
 echo -e "${BOLD}🛠️  Development Tools${NC}"
 echo -e "   ${GREEN}Prisma Studio (Main DB):${NC}"
-echo -e "      cd apps/api && pnpm prisma:studio:main"
-echo -e "      Opens at: http://localhost:5555"
+echo -e "      URL: http://localhost:5555"
+echo -e "      Status: Check the Prisma Studio terminal window"
 echo ""
 echo -e "   ${GREEN}Prisma Studio (Client DB):${NC}"
 echo -e "      cd apps/api && pnpm prisma:studio:client"
