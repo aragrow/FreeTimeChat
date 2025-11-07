@@ -13,6 +13,7 @@ import clientsRoutes from './admin/clients.routes';
 import rolesRoutes from './admin/roles.routes';
 import statsRoutes from './admin/stats.routes';
 import usersRoutes from './admin/users.routes';
+import tenantRoutes from './tenant.routes';
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.use('/roles', rolesRoutes);
 router.use('/clients', clientsRoutes);
 router.use('/capabilities', capabilitiesRoutes);
 router.use('/stats', statsRoutes);
+router.use('/tenants', tenantRoutes);
 
 // Admin dashboard root endpoint
 router.get('/', (_req, res) => {
@@ -36,6 +38,7 @@ router.get('/', (_req, res) => {
       users: '/api/v1/admin/users',
       roles: '/api/v1/admin/roles',
       clients: '/api/v1/admin/clients',
+      tenants: '/api/v1/admin/tenants',
       capabilities: '/api/v1/admin/capabilities',
       stats: '/api/v1/admin/stats',
     },

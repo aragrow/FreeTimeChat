@@ -48,15 +48,29 @@ model User {
 }
 
 model Tenant {
-  id               String             @id @default(uuid())
-  name             String
-  slug             String             @unique
-  tenantKey        String             @unique @map("tenant_key") // Unique short key for tenant authentication (e.g., TENANT-1234)
-  databaseId       String?            @unique @map("database_id") // UUID4 for database identification
-  databaseName     String?            @unique @map("database_name") // Database for this tenant's data
-  databaseHost     String             @default("localhost") @map("database_host")
-  isActive         Boolean            @default(true) @map("is_active")
-  isSeeded         Boolean            @default(false) @map("is_seeded") // Track if created by seed script
+  id           String  @id @default(uuid())
+  name         String
+  slug         String  @unique
+  tenantKey    String  @unique @map("tenant_key") // Unique short key for tenant authentication (e.g., TENANT-1234)
+  databaseId   String? @unique @map("database_id") // UUID4 for database identification
+  databaseName String? @unique @map("database_name") // Database for this tenant's data
+  databaseHost String  @default("localhost") @map("database_host")
+  isActive     Boolean @default(true) @map("is_active")
+  isSeeded     Boolean @default(false) @map("is_seeded") // Track if created by seed script
+
+  // Contact Information
+  contactName  String? @map("contact_name")
+  contactEmail String? @map("contact_email")
+  contactPhone String? @map("contact_phone")
+
+  // Billing Address
+  billingStreet  String? @map("billing_street")
+  billingCity    String? @map("billing_city")
+  billingState   String? @map("billing_state")
+  billingZip     String? @map("billing_zip")
+  billingCountry String? @map("billing_country")
+  billingEmail   String? @map("billing_email") // If different from contact email
+
   users            User[]
   securitySettings SecuritySettings[]
   createdAt        DateTime           @default(now()) @map("created_at")
@@ -66,6 +80,7 @@ model Tenant {
   @@index([tenantKey])
   @@index([databaseId])
   @@index([databaseName])
+  @@index([contactEmail])
   @@map("tenants")
 }
 
