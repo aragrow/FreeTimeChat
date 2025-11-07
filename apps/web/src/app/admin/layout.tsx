@@ -9,6 +9,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { UserMenu } from '@/components/ui/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -33,6 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Users', href: '/admin/users', icon: 'users' },
     { name: 'Roles', href: '/admin/roles', icon: 'shield' },
     { name: 'Clients', href: '/admin/clients', icon: 'building' },
+    { name: 'Tenants', href: '/admin/tenants', icon: 'server' },
     { name: 'Capabilities', href: '/admin/capabilities', icon: 'key' },
   ];
 
@@ -93,6 +95,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             />
           </svg>
         );
+      case 'server':
+        return (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"
+            />
+          </svg>
+        );
       default:
         return null;
     }
@@ -142,34 +155,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </svg>
               Back to Chat
             </a>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
-                  {user?.firstName?.[0]}
-                  {user?.lastName?.[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => logout()}
-                className="text-gray-400 hover:text-gray-600"
-                aria-label="Logout"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-              </button>
-            </div>
+            <UserMenu user={user} onLogout={logout} />
           </div>
         </aside>
 

@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
 import { useAuth } from '@/hooks/useAuth';
+import { useCapabilities } from '@/hooks/useCapabilities';
 
 interface User extends Record<string, unknown> {
   id: string;
@@ -51,10 +52,18 @@ interface CreateUserData {
 export default function UsersPage() {
   const { getAuthHeaders } = useAuth();
   const router = useRouter();
+  const { hasCapability } = useCapabilities();
 
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+
+  // Check capabilities
+  const canRead = hasCapability('users:read');
+  const canCreate = hasCapability('users:create');
+  const _canUpdate = hasCapability('users:update'); // Reserved for future use
+  const canDelete = hasCapability('users:delete');
+  const canImpersonate = hasCapability('impersonate:start');
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -77,11 +86,15 @@ export default function UsersPage() {
   });
 
   useEffect(() => {
-    fetchUsers();
-    fetchRoles();
-    fetchClients();
+    if (canRead) {
+      fetchUsers();
+    }
+    if (canCreate) {
+      fetchRoles();
+      fetchClients();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, statusFilter]);
+  }, [currentPage, statusFilter, canRead, canCreate]);
 
   const fetchUsers = async () => {
     try {
@@ -350,35 +363,56 @@ export default function UsersPage() {
       header: 'Actions',
       render: (user) => (
         <div className="flex items-center gap-2">
-          <Link href={`/admin/users/${user.id}`}>
-            <Button size="sm" variant="outline">
-              View
+          {canRead && (
+            <Link href={`/admin/users/${user.id}`}>
+              <Button size="sm" variant="outline">
+                View
+              </Button>
+            </Link>
+          )}
+          {canImpersonate && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleImpersonate(user.id, user.email);
+              }}
+            >
+              Impersonate
             </Button>
-          </Link>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleImpersonate(user.id, user.email);
-            }}
-          >
-            Impersonate
-          </Button>
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteUser(user.id, user.email);
-            }}
-          >
-            Deactivate
-          </Button>
+          )}
+          {canDelete && (
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteUser(user.id, user.email);
+              }}
+            >
+              Deactivate
+            </Button>
+          )}
         </div>
       ),
     },
   ];
+
+  // Access denied state
+  if (!canRead) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Card className="p-6 text-center">
+          <p className="text-red-600 font-semibold mb-2">Access Denied</p>
+          <p className="text-gray-600">You do not have permission to view users.</p>
+          <Link href="/admin/dashboard" className="mt-4 inline-block">
+            <Button variant="outline">Go to Dashboard</Button>
+          </Link>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -388,12 +422,19 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold text-gray-900">Users</h1>
           <p className="text-gray-600 mt-1">Manage user accounts and permissions</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add User
-        </Button>
+        {canCreate && (
+          <Button onClick={() => setShowCreateModal(true)}>
+            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Add User
+          </Button>
+        )}
       </div>
 
       {/* Filters */}

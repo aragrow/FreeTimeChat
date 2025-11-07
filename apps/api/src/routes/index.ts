@@ -20,6 +20,8 @@ import securitySettingsRoutes from './security-settings.routes';
 import taskRoutes from './task.routes';
 import timeEntryRoutes from './time-entry.routes';
 import twoFactorRoutes from './two-factor.routes';
+import userProfileRoutes from './user/profile.routes';
+import userSecurityRoutes from './user/security.routes';
 
 // Create main API router
 const apiRouter: Router = Router();
@@ -55,8 +57,9 @@ v1Router.use('/conversations', conversationRoutes);
 v1Router.use('/chat', chatRoutes);
 v1Router.use('/reports', reportRoutes);
 
-// Future routes will be added here:
-// v1Router.use('/users', usersRoutes);
+// User profile and security routes
+v1Router.use('/user/profile', userProfileRoutes);
+v1Router.use('/user/security', userSecurityRoutes);
 
 // Mount v1 router under /api/v1
 apiRouter.use('/v1', v1Router);

@@ -9,7 +9,6 @@ import { AttemptType, PrismaClient as MainPrismaClient, type User } from '../gen
 import { getJWTService } from './jwt.service';
 import { getLoginTrackingService } from './login-tracking.service';
 import { getPasswordService } from './password.service';
-import { getSecuritySettingsService } from './security-settings.service';
 import { getUserService } from './user.service';
 import type { LoginResponse, RegisterRequest, UserPublic } from '@freetimechat/types';
 
@@ -19,7 +18,6 @@ export class AuthService {
   private passwordService: ReturnType<typeof getPasswordService>;
   private jwtService: ReturnType<typeof getJWTService>;
   private loginTrackingService: ReturnType<typeof getLoginTrackingService>;
-  private securitySettingsService: ReturnType<typeof getSecuritySettingsService>;
 
   constructor() {
     this.prisma = new MainPrismaClient();
@@ -27,7 +25,28 @@ export class AuthService {
     this.passwordService = getPasswordService();
     this.jwtService = getJWTService();
     this.loginTrackingService = getLoginTrackingService();
-    this.securitySettingsService = getSecuritySettingsService();
+  }
+
+  /**
+   * Calculate 2FA grace period based on user roles
+   * Admin and CustomerAdmin: 2 hours
+   * Regular users: 10 days
+   */
+  private calculateRoleBasedGracePeriod(roles: string[]): Date {
+    const now = new Date();
+
+    // Check if user has admin or customeradmin role
+    const hasAdminRole = roles.some(
+      (role) => role.toLowerCase() === 'admin' || role.toLowerCase() === 'customeradmin'
+    );
+
+    if (hasAdminRole) {
+      // 2 hours for admin and customeradmin
+      return new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    }
+
+    // 10 days for regular users
+    return new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
   }
 
   /**
@@ -129,6 +148,33 @@ export class AuthService {
       userAgent,
     });
 
+    // Set 2FA grace period on first login
+    if (!user.lastLoginAt && !user.twoFactorGracePeriodEndsAt) {
+      const gracePeriodEndDate = this.calculateRoleBasedGracePeriod(roles);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { twoFactorGracePeriodEndsAt: gracePeriodEndDate },
+      });
+      // Update user object with new grace period
+      user.twoFactorGracePeriodEndsAt = gracePeriodEndDate;
+    }
+
+    // Check if 2FA grace period has expired
+    if (!user.twoFactorEnabled && user.twoFactorGracePeriodEndsAt) {
+      const now = new Date();
+      if (now > user.twoFactorGracePeriodEndsAt) {
+        // Grace period expired, deactivate account
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { isActive: false },
+        });
+
+        throw new Error(
+          `Account deactivated: 2FA must be enabled within the grace period. Please contact your administrator to reactivate your account.`
+        );
+      }
+    }
+
     // Check if 2FA is enabled
     if (user.twoFactorEnabled) {
       // Return partial response indicating 2FA is required
@@ -221,12 +267,6 @@ export class AuthService {
       tenantId = defaultCustomer.id;
     }
 
-    // Get security settings for grace period
-    const securitySettings = await this.securitySettingsService.getByTenantId(tenantId);
-    const gracePeriodEndDate = this.securitySettingsService.calculateGracePeriodEndDate(
-      securitySettings.twoFactorGracePeriodDays
-    );
-
     // Create user
     const user = await this.userService.create({
       email: data.email,
@@ -235,15 +275,20 @@ export class AuthService {
       tenantId,
     });
 
+    // Get user's roles (or assign default role)
+    const roles = await this.userService.getUserRoles(user.id);
+    const role = roles.length > 0 ? roles[0] : 'user';
+
+    // Calculate role-based 2FA grace period
+    const gracePeriodEndDate = this.calculateRoleBasedGracePeriod(
+      roles.length > 0 ? roles : ['user']
+    );
+
     // Set 2FA grace period for new user
     await this.prisma.user.update({
       where: { id: user.id },
       data: { twoFactorGracePeriodEndsAt: gracePeriodEndDate },
     });
-
-    // Get user's roles (or assign default role)
-    const roles = await this.userService.getUserRoles(user.id);
-    const role = roles.length > 0 ? roles[0] : 'user';
 
     // Get user with customer info for database name
     const userWithCustomer = await this.prisma.user.findUnique({

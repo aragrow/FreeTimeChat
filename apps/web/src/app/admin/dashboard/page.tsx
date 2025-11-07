@@ -97,6 +97,22 @@ export default function AdminDashboard() {
       color: 'bg-green-500',
     },
     {
+      title: 'Total Tenants',
+      value: stats.tenants?.total || 0,
+      subtitle: `${stats.tenants?.active || 0} active`,
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"
+          />
+        </svg>
+      ),
+      color: 'bg-indigo-500',
+    },
+    {
       title: 'Total Roles',
       value: stats.roles?.total || 0,
       subtitle: `${stats.roles?.custom || 0} custom`,
@@ -111,22 +127,6 @@ export default function AdminDashboard() {
         </svg>
       ),
       color: 'bg-purple-500',
-    },
-    {
-      title: 'Total Capabilities',
-      value: stats.capabilities?.total || 0,
-      subtitle: `${stats.capabilities?.custom || 0} custom`,
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-          />
-        </svg>
-      ),
-      color: 'bg-orange-500',
     },
   ];
 
@@ -206,7 +206,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <a href="/admin/users" className="block">
           <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <div className="flex items-center gap-4">
@@ -279,7 +279,33 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Manage Clients</h3>
-                <p className="text-xs text-gray-500 mt-1">Manage client tenants</p>
+                <p className="text-xs text-gray-500 mt-1">Manage client accounts</p>
+              </div>
+            </div>
+          </Card>
+        </a>
+
+        <a href="/admin/tenants" className="block">
+          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-indigo-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-900">Manage Tenants</h3>
+                <p className="text-xs text-gray-500 mt-1">Configure tenant databases</p>
               </div>
             </div>
           </Card>

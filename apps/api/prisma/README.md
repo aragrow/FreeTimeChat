@@ -84,12 +84,20 @@ pnpm prisma:push:client
 Browse your data with Prisma Studio:
 
 ```bash
-# Open studio for main database
+# Open studio for main database (navigate to http://localhost:5555)
 pnpm prisma:studio:main
 
-# Open studio for client database
+# Open studio for client database (navigate to http://localhost:5556)
 pnpm prisma:studio:client
 ```
+
+**Note:** Prisma Studio will not auto-open your browser. Instead, manually
+navigate to:
+
+- Main database: http://localhost:5555
+- Client database: http://localhost:5556
+
+This prevents new tabs from opening on each restart.
 
 ### Schema Management
 

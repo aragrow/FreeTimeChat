@@ -7,7 +7,7 @@
 import crypto from 'crypto';
 import { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 import { getDatabaseService } from './database.service';
-import type { Customer } from '../generated/prisma-main';
+import type { Tenant } from '../generated/prisma-main';
 
 export interface CreateCustomerRequest {
   name: string;
@@ -32,7 +32,7 @@ export interface CreateCustomerRequest {
 }
 
 export interface CreateCustomerResponse {
-  customer: Customer;
+  customer: Tenant;
 }
 
 export class CustomerService {
@@ -132,7 +132,7 @@ export class CustomerService {
   /**
    * Find customer by ID
    */
-  async findById(id: string): Promise<Customer | null> {
+  async findById(id: string): Promise<Tenant | null> {
     return this.prisma.tenant.findUnique({
       where: { id },
     });
@@ -141,7 +141,7 @@ export class CustomerService {
   /**
    * Find customer by name
    */
-  async findByName(name: string): Promise<Customer | null> {
+  async findByName(name: string): Promise<Tenant | null> {
     return this.prisma.tenant.findFirst({
       where: { name },
     });
@@ -150,7 +150,7 @@ export class CustomerService {
   /**
    * Find customer by tenantKey
    */
-  async findByCustomerKey(tenantKey: string): Promise<Customer | null> {
+  async findByCustomerKey(tenantKey: string): Promise<Tenant | null> {
     return this.prisma.tenant.findUnique({
       where: { tenantKey },
     });
@@ -163,7 +163,7 @@ export class CustomerService {
     skip?: number;
     take?: number;
     includeInactive?: boolean;
-  }): Promise<Customer[]> {
+  }): Promise<Tenant[]> {
     return this.prisma.tenant.findMany({
       where: options?.includeInactive
         ? {}
@@ -214,7 +214,7 @@ export class CustomerService {
       invoiceNextNumber?: number;
       invoiceNumberPadding?: number;
     }
-  ): Promise<Customer> {
+  ): Promise<Tenant> {
     return this.prisma.tenant.update({
       where: { id },
       data,
@@ -224,7 +224,7 @@ export class CustomerService {
   /**
    * Deactivate customer
    */
-  async deactivate(id: string): Promise<Customer> {
+  async deactivate(id: string): Promise<Tenant> {
     return this.prisma.tenant.update({
       where: { id },
       data: {
@@ -250,7 +250,7 @@ export class CustomerService {
   /**
    * Reactivate customer
    */
-  async reactivate(id: string): Promise<Customer> {
+  async reactivate(id: string): Promise<Tenant> {
     return this.prisma.tenant.update({
       where: { id },
       data: {
