@@ -1,7 +1,7 @@
 /**
- * Clients List Page
+ * Tenants Management Page
  *
- * Admin CRUD interface for managing client/tenant accounts
+ * Admin interface for managing tenant/client accounts with contact and billing information
  */
 
 'use client';
@@ -14,31 +14,68 @@ import { Input } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
 import { useAuth } from '@/hooks/useAuth';
 
-interface Client extends Record<string, unknown> {
+interface Tenant extends Record<string, unknown> {
   id: string;
   name: string;
   slug: string;
+  tenantKey: string;
   databaseName: string;
+  databaseHost: string;
   isActive: boolean;
-  hourlyRate?: number | string;
-  discountPercentage?: number | string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  billingStreet?: string;
+  billingCity?: string;
+  billingState?: string;
+  billingZip?: string;
+  billingCountry?: string;
+  billingEmail?: string;
   createdAt: string;
   updatedAt: string;
-  deletedAt?: string | null;
-  userCount?: number;
-  projectCount?: number;
+  _count?: {
+    users: number;
+  };
 }
 
-interface CreateClientData {
+interface CreateTenantData {
   name: string;
-  hourlyRate: string;
-  discountPercentage: string;
+  slug: string;
+  tenantKey: string;
+  databaseName: string;
+  databaseHost: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  billingStreet: string;
+  billingCity: string;
+  billingState: string;
+  billingZip: string;
+  billingCountry: string;
+  billingEmail: string;
 }
 
-export default function ClientsPage() {
+interface EditTenantData {
+  name?: string;
+  slug?: string;
+  tenantKey?: string;
+  databaseName?: string;
+  databaseHost?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  billingStreet?: string;
+  billingCity?: string;
+  billingState?: string;
+  billingZip?: string;
+  billingCountry?: string;
+  billingEmail?: string;
+}
+
+export default function TenantsPage() {
   const { getAuthHeaders } = useAuth();
 
-  const [clients, setClients] = useState<Client[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -46,24 +83,31 @@ export default function ClientsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [createFormData, setCreateFormData] = useState<CreateClientData>({
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [createFormData, setCreateFormData] = useState<CreateTenantData>({
     name: '',
-    hourlyRate: '',
-    discountPercentage: '0',
+    slug: '',
+    tenantKey: '',
+    databaseName: '',
+    databaseHost: 'localhost',
+    contactName: '',
+    contactEmail: '',
+    contactPhone: '',
+    billingStreet: '',
+    billingCity: '',
+    billingState: '',
+    billingZip: '',
+    billingCountry: 'USA',
+    billingEmail: '',
   });
-  const [editFormData, setEditFormData] = useState({
-    name: '',
-    hourlyRate: '',
-    discountPercentage: '',
-  });
+  const [editFormData, setEditFormData] = useState<EditTenantData>({});
 
   useEffect(() => {
-    fetchClients();
+    fetchTenants();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, statusFilter]);
 
-  const fetchClients = async () => {
+  const fetchTenants = async () => {
     try {
       setIsLoading(true);
 
@@ -71,225 +115,229 @@ export default function ClientsPage() {
         page: currentPage.toString(),
         limit: '20',
         ...(statusFilter !== 'all' && {
-          includeInactive: (statusFilter === 'inactive').toString(),
+          isActive: (statusFilter === 'active').toString(),
         }),
+        ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?${params}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants?${params}`, {
         method: 'GET',
         headers: getAuthHeaders(),
       });
 
       if (response.ok) {
         const result = await response.json();
-        setClients(result.data.clients || []);
-        setTotalPages(result.data.pagination?.totalPages || 1);
+        setTenants(result.data.tenants || []);
+        setTotalPages(Math.ceil(result.data.total / result.data.limit) || 1);
       }
     } catch (error) {
-      console.error('Failed to fetch clients:', error);
+      console.error('Failed to fetch tenants:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCreateClient = async (e: React.FormEvent) => {
+  const handleCreateTenant = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      // Convert string values to numbers for API
-      const payload = {
-        name: createFormData.name,
-        hourlyRate: createFormData.hourlyRate ? parseFloat(createFormData.hourlyRate) : undefined,
-        discountPercentage: createFormData.discountPercentage
-          ? parseFloat(createFormData.discountPercentage)
-          : 0,
-      };
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`, {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(createFormData),
       });
 
       if (response.ok) {
         setShowCreateModal(false);
-        setCreateFormData({ name: '', hourlyRate: '', discountPercentage: '0' });
-        fetchClients();
+        setCreateFormData({
+          name: '',
+          slug: '',
+          tenantKey: '',
+          databaseName: '',
+          databaseHost: 'localhost',
+          contactName: '',
+          contactEmail: '',
+          contactPhone: '',
+          billingStreet: '',
+          billingCity: '',
+          billingState: '',
+          billingZip: '',
+          billingCountry: 'USA',
+          billingEmail: '',
+        });
+        fetchTenants();
       } else {
         const errorData = await response.json();
-        alert(`Failed to create client: ${errorData.message}`);
+        alert(`Failed to create tenant: ${errorData.message}`);
       }
     } catch (error) {
-      console.error('Create client error:', error);
-      alert('An error occurred while creating the client.');
+      console.error('Create tenant error:', error);
+      alert('An error occurred while creating the tenant.');
     }
   };
 
-  const handleEditClient = async (e: React.FormEvent) => {
+  const handleEditTenant = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!editingClient) return;
+    if (!editingTenant) return;
 
     try {
-      // Convert string values to numbers for API
-      const payload = {
-        name: editFormData.name || undefined,
-        hourlyRate: editFormData.hourlyRate ? parseFloat(editFormData.hourlyRate) : undefined,
-        discountPercentage: editFormData.discountPercentage
-          ? parseFloat(editFormData.discountPercentage)
-          : undefined,
-      };
-
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${editingClient.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${editingTenant.id}`,
         {
           method: 'PUT',
           headers: {
             ...getAuthHeaders(),
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(editFormData),
         }
       );
 
       if (response.ok) {
         setShowEditModal(false);
-        setEditingClient(null);
-        setEditFormData({ name: '', hourlyRate: '', discountPercentage: '' });
-        fetchClients();
+        setEditingTenant(null);
+        setEditFormData({});
+        fetchTenants();
       } else {
         const errorData = await response.json();
-        alert(`Failed to update client: ${errorData.message}`);
+        alert(`Failed to update tenant: ${errorData.message}`);
       }
     } catch (error) {
-      console.error('Update client error:', error);
-      alert('An error occurred while updating the client.');
+      console.error('Update tenant error:', error);
+      alert('An error occurred while updating the tenant.');
     }
   };
 
-  const handleDeleteClient = async (clientId: string, clientName: string) => {
+  const handleToggleStatus = async (tenantId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${tenantId}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ isActive: !currentStatus }),
+        }
+      );
+
+      if (response.ok) {
+        fetchTenants();
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to update tenant status: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Update tenant status error:', error);
+      alert('An error occurred while updating the tenant status.');
+    }
+  };
+
+  const handleDeleteTenant = async (tenantId: string, tenantName: string) => {
     if (
       !confirm(
-        `Are you sure you want to deactivate "${clientName}"? The client will be soft-deleted and can be restored later.`
+        `Are you sure you want to delete "${tenantName}"? This will permanently delete all associated data. This action cannot be undone.`
       )
     ) {
       return;
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${clientId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${tenantId}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
 
       if (response.ok) {
-        fetchClients();
+        fetchTenants();
       } else {
         const errorData = await response.json();
-        alert(`Failed to deactivate client: ${errorData.message}`);
+        alert(`Failed to delete tenant: ${errorData.message}`);
       }
     } catch (error) {
-      console.error('Delete client error:', error);
-      alert('An error occurred while deactivating the client.');
+      console.error('Delete tenant error:', error);
+      alert('An error occurred while deleting the tenant.');
     }
   };
 
-  const handleRestoreClient = async (clientId: string, clientName: string) => {
-    if (!confirm(`Are you sure you want to restore "${clientName}"?`)) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${clientId}/restore`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (response.ok) {
-        fetchClients();
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to restore client: ${errorData.message}`);
-      }
-    } catch (error) {
-      console.error('Restore client error:', error);
-      alert('An error occurred while restoring the client.');
-    }
-  };
-
-  const filteredClients = clients.filter((client) => {
+  const filteredTenants = tenants.filter((tenant) => {
     const matchesSearch =
       searchTerm === '' ||
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.databaseName.toLowerCase().includes(searchTerm.toLowerCase());
+      tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tenant.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tenant.tenantKey.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tenant.contactEmail?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === 'all' ||
-      (statusFilter === 'active' && client.isActive) ||
-      (statusFilter === 'inactive' && !client.isActive);
+      (statusFilter === 'active' && tenant.isActive) ||
+      (statusFilter === 'inactive' && !tenant.isActive);
 
     return matchesSearch && matchesStatus;
   });
 
-  const columns: TableColumn<Client>[] = [
+  const columns: TableColumn<Tenant>[] = [
     {
       key: 'name',
-      header: 'Client Name',
+      header: 'Tenant Name',
       sortable: true,
-      render: (client) => (
+      render: (tenant) => (
         <div>
-          <p className="font-medium text-gray-900">{client.name}</p>
-          <p className="text-sm text-gray-500">{client.slug}</p>
+          <p className="font-medium text-gray-900">{tenant.name}</p>
+          <p className="text-sm text-gray-500">{tenant.slug}</p>
+          <p className="text-xs text-gray-400 font-mono">{tenant.tenantKey}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'contactEmail',
+      header: 'Contact',
+      render: (tenant) => (
+        <div>
+          {tenant.contactName && (
+            <p className="text-sm font-medium text-gray-900">{tenant.contactName}</p>
+          )}
+          {tenant.contactEmail && <p className="text-sm text-gray-600">{tenant.contactEmail}</p>}
+          {tenant.contactPhone && <p className="text-xs text-gray-500">{tenant.contactPhone}</p>}
+          {!tenant.contactName && !tenant.contactEmail && (
+            <span className="text-sm text-gray-400">-</span>
+          )}
         </div>
       ),
     },
     {
       key: 'databaseName',
       header: 'Database',
-      render: (client) => (
-        <span className="text-sm font-mono text-gray-600">{client.databaseName}</span>
+      render: (tenant) => (
+        <div>
+          <span className="text-sm font-mono text-gray-600">{tenant.databaseName}</span>
+          <p className="text-xs text-gray-400">{tenant.databaseHost}</p>
+        </div>
       ),
     },
     {
-      key: 'hourlyRate',
-      header: 'Hourly Rate',
-      sortable: true,
-      render: (client) => (
-        <span className="text-sm text-gray-900">
-          {client.hourlyRate ? `$${parseFloat(client.hourlyRate.toString()).toFixed(2)}` : '-'}
-        </span>
-      ),
-    },
-    {
-      key: 'discountPercentage',
-      header: 'Discount',
-      sortable: true,
-      render: (client) => (
-        <span className="text-sm text-gray-900">
-          {client.discountPercentage
-            ? `${parseFloat(client.discountPercentage.toString()).toFixed(2)}%`
-            : '0%'}
-        </span>
+      key: '_count',
+      header: 'Users',
+      render: (tenant) => (
+        <span className="text-sm font-medium text-gray-900">{tenant._count?.users || 0}</span>
       ),
     },
     {
       key: 'isActive',
       header: 'Status',
       sortable: true,
-      render: (client) => (
+      render: (tenant) => (
         <span
           className={`px-2 py-1 text-xs font-medium rounded ${
-            client.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+            tenant.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
           }`}
         >
-          {client.isActive ? 'Active' : 'Inactive'}
+          {tenant.isActive ? 'Active' : 'Inactive'}
         </span>
       ),
     },
@@ -297,52 +345,60 @@ export default function ClientsPage() {
       key: 'createdAt',
       header: 'Created',
       sortable: true,
-      render: (client) => new Date(client.createdAt).toLocaleDateString(),
+      render: (tenant) => new Date(tenant.createdAt).toLocaleDateString(),
     },
     {
       key: 'actions',
       header: 'Actions',
-      render: (client) => (
+      render: (tenant) => (
         <div className="flex items-center gap-2">
           <Button
             size="sm"
             variant="outline"
             onClick={(e) => {
               e.stopPropagation();
-              setEditingClient(client);
+              setEditingTenant(tenant);
               setEditFormData({
-                name: client.name,
-                hourlyRate: client.hourlyRate?.toString() || '',
-                discountPercentage: client.discountPercentage?.toString() || '',
+                name: tenant.name,
+                slug: tenant.slug,
+                tenantKey: tenant.tenantKey,
+                databaseName: tenant.databaseName,
+                databaseHost: tenant.databaseHost,
+                contactName: tenant.contactName,
+                contactEmail: tenant.contactEmail,
+                contactPhone: tenant.contactPhone,
+                billingStreet: tenant.billingStreet,
+                billingCity: tenant.billingCity,
+                billingState: tenant.billingState,
+                billingZip: tenant.billingZip,
+                billingCountry: tenant.billingCountry,
+                billingEmail: tenant.billingEmail,
               });
               setShowEditModal(true);
             }}
           >
             Edit
           </Button>
-          {client.isActive ? (
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteClient(client.id, client.name);
-              }}
-            >
-              Deactivate
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRestoreClient(client.id, client.name);
-              }}
-            >
-              Restore
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant={tenant.isActive ? 'secondary' : 'primary'}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleStatus(tenant.id, tenant.isActive);
+            }}
+          >
+            {tenant.isActive ? 'Deactivate' : 'Activate'}
+          </Button>
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteTenant(tenant.id, tenant.name);
+            }}
+          >
+            Delete
+          </Button>
         </div>
       ),
     },
@@ -353,14 +409,14 @@ export default function ClientsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-          <p className="text-gray-600 mt-1">Manage client/tenant accounts</p>
+          <h1 className="text-2xl font-bold text-gray-900">Tenants</h1>
+          <p className="text-gray-600 mt-1">Manage tenant/client accounts</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Create Client
+          Create Tenant
         </Button>
       </div>
 
@@ -384,8 +440,8 @@ export default function ClientsPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Clients</p>
-              <p className="text-2xl font-bold text-gray-900">{clients.length}</p>
+              <p className="text-sm text-gray-600">Total Tenants</p>
+              <p className="text-2xl font-bold text-gray-900">{tenants.length}</p>
             </div>
           </div>
         </Card>
@@ -408,9 +464,9 @@ export default function ClientsPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Active Clients</p>
+              <p className="text-sm text-gray-600">Active Tenants</p>
               <p className="text-2xl font-bold text-gray-900">
-                {clients.filter((c) => c.isActive).length}
+                {tenants.filter((c) => c.isActive).length}
               </p>
             </div>
           </div>
@@ -434,9 +490,9 @@ export default function ClientsPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Inactive Clients</p>
+              <p className="text-sm text-gray-600">Inactive Tenants</p>
               <p className="text-2xl font-bold text-gray-900">
-                {clients.filter((c) => !c.isActive).length}
+                {tenants.filter((c) => !c.isActive).length}
               </p>
             </div>
           </div>
@@ -449,7 +505,7 @@ export default function ClientsPage() {
           <div className="flex-1">
             <Input
               type="text"
-              placeholder="Search by name, slug, or database..."
+              placeholder="Search by name, slug, key, or contact email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -463,16 +519,27 @@ export default function ClientsPage() {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
+          <Button variant="outline" onClick={fetchTenants}>
+            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            Refresh
+          </Button>
         </div>
       </Card>
 
-      {/* Clients Table */}
-      <Table<Client>
+      {/* Tenants Table */}
+      <Table<Tenant>
         columns={columns}
-        data={filteredClients}
-        keyExtractor={(client) => client.id}
+        data={filteredTenants}
+        keyExtractor={(tenant) => tenant.id}
         isLoading={isLoading}
-        emptyMessage="No clients found"
+        emptyMessage="No tenants found"
         pagination={{
           currentPage,
           totalPages,
@@ -480,70 +547,291 @@ export default function ClientsPage() {
         }}
       />
 
-      {/* Create Client Modal */}
+      {/* Create Tenant Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Create New Client</h2>
-            <form onSubmit={handleCreateClient} className="space-y-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 my-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Create New Tenant</h2>
+            <form onSubmit={handleCreateTenant} className="space-y-6">
+              {/* Basic Information */}
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Client Name *
-                </label>
-                <Input
-                  id="name"
-                  type="text"
-                  required
-                  value={createFormData.name}
-                  onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
-                  placeholder="Acme Corporation"
-                />
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Tenant Name *
+                    </label>
+                    <Input
+                      id="name"
+                      type="text"
+                      required
+                      value={createFormData.name}
+                      onChange={(e) =>
+                        setCreateFormData({ ...createFormData, name: e.target.value })
+                      }
+                      placeholder="Acme Corporation"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
+                      Slug * (lowercase, no spaces)
+                    </label>
+                    <Input
+                      id="slug"
+                      type="text"
+                      required
+                      value={createFormData.slug}
+                      onChange={(e) =>
+                        setCreateFormData({ ...createFormData, slug: e.target.value.toLowerCase() })
+                      }
+                      placeholder="acme-corp"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="tenantKey"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Tenant Key * (uppercase)
+                    </label>
+                    <Input
+                      id="tenantKey"
+                      type="text"
+                      required
+                      value={createFormData.tenantKey}
+                      onChange={(e) =>
+                        setCreateFormData({
+                          ...createFormData,
+                          tenantKey: e.target.value.toUpperCase(),
+                        })
+                      }
+                      placeholder="ACME-CORP"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="databaseName"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Database Name *
+                    </label>
+                    <Input
+                      id="databaseName"
+                      type="text"
+                      required
+                      value={createFormData.databaseName}
+                      onChange={(e) =>
+                        setCreateFormData({ ...createFormData, databaseName: e.target.value })
+                      }
+                      placeholder="freetimechat_acme"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label
+                      htmlFor="databaseHost"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Database Host
+                    </label>
+                    <Input
+                      id="databaseHost"
+                      type="text"
+                      value={createFormData.databaseHost}
+                      onChange={(e) =>
+                        setCreateFormData({ ...createFormData, databaseHost: e.target.value })
+                      }
+                      placeholder="localhost"
+                    />
+                  </div>
+                </div>
               </div>
 
+              {/* Contact Information */}
               <div>
-                <label
-                  htmlFor="hourlyRate"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Hourly Rate (Optional)
-                </label>
-                <Input
-                  id="hourlyRate"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={createFormData.hourlyRate}
-                  onChange={(e) =>
-                    setCreateFormData({ ...createFormData, hourlyRate: e.target.value })
-                  }
-                  placeholder="150.00"
-                />
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="contactName"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Contact Name
+                    </label>
+                    <Input
+                      id="contactName"
+                      type="text"
+                      value={createFormData.contactName}
+                      onChange={(e) =>
+                        setCreateFormData({ ...createFormData, contactName: e.target.value })
+                      }
+                      placeholder="John Doe"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="contactEmail"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Contact Email
+                    </label>
+                    <Input
+                      id="contactEmail"
+                      type="email"
+                      value={createFormData.contactEmail}
+                      onChange={(e) =>
+                        setCreateFormData({ ...createFormData, contactEmail: e.target.value })
+                      }
+                      placeholder="john@acme.com"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label
+                      htmlFor="contactPhone"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Contact Phone
+                    </label>
+                    <Input
+                      id="contactPhone"
+                      type="tel"
+                      value={createFormData.contactPhone}
+                      onChange={(e) =>
+                        setCreateFormData({ ...createFormData, contactPhone: e.target.value })
+                      }
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+                </div>
               </div>
 
+              {/* Billing Address */}
               <div>
-                <label
-                  htmlFor="discountPercentage"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Discount Percentage (0-100)
-                </label>
-                <Input
-                  id="discountPercentage"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={createFormData.discountPercentage}
-                  onChange={(e) =>
-                    setCreateFormData({ ...createFormData, discountPercentage: e.target.value })
-                  }
-                  placeholder="0.00"
-                />
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Billing Address</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label
+                      htmlFor="billingStreet"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Street Address
+                    </label>
+                    <Input
+                      id="billingStreet"
+                      type="text"
+                      value={createFormData.billingStreet}
+                      onChange={(e) =>
+                        setCreateFormData({ ...createFormData, billingStreet: e.target.value })
+                      }
+                      placeholder="123 Main Street"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label
+                        htmlFor="billingCity"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        City
+                      </label>
+                      <Input
+                        id="billingCity"
+                        type="text"
+                        value={createFormData.billingCity}
+                        onChange={(e) =>
+                          setCreateFormData({ ...createFormData, billingCity: e.target.value })
+                        }
+                        placeholder="New York"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="billingState"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        State/Province
+                      </label>
+                      <Input
+                        id="billingState"
+                        type="text"
+                        value={createFormData.billingState}
+                        onChange={(e) =>
+                          setCreateFormData({ ...createFormData, billingState: e.target.value })
+                        }
+                        placeholder="NY"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="billingZip"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        ZIP/Postal Code
+                      </label>
+                      <Input
+                        id="billingZip"
+                        type="text"
+                        value={createFormData.billingZip}
+                        onChange={(e) =>
+                          setCreateFormData({ ...createFormData, billingZip: e.target.value })
+                        }
+                        placeholder="10001"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="billingCountry"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Country
+                      </label>
+                      <Input
+                        id="billingCountry"
+                        type="text"
+                        value={createFormData.billingCountry}
+                        onChange={(e) =>
+                          setCreateFormData({ ...createFormData, billingCountry: e.target.value })
+                        }
+                        placeholder="USA"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="billingEmail"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Billing Email
+                      </label>
+                      <Input
+                        id="billingEmail"
+                        type="email"
+                        value={createFormData.billingEmail}
+                        onChange={(e) =>
+                          setCreateFormData({ ...createFormData, billingEmail: e.target.value })
+                        }
+                        placeholder="billing@acme.com"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              {/* Form Actions */}
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <Button type="submit" className="flex-1">
-                  Create Client
+                  Create Tenant
                 </Button>
                 <Button
                   type="button"
@@ -552,10 +840,19 @@ export default function ClientsPage() {
                     setShowCreateModal(false);
                     setCreateFormData({
                       name: '',
-                      email: '',
-                      adminName: '',
-                      adminPassword: '',
-                      roleIds: [],
+                      slug: '',
+                      tenantKey: '',
+                      databaseName: '',
+                      databaseHost: 'localhost',
+                      contactName: '',
+                      contactEmail: '',
+                      contactPhone: '',
+                      billingStreet: '',
+                      billingCity: '',
+                      billingState: '',
+                      billingZip: '',
+                      billingCountry: 'USA',
+                      billingEmail: '',
                     });
                   }}
                   className="flex-1"
@@ -568,75 +865,272 @@ export default function ClientsPage() {
         </div>
       )}
 
-      {/* Edit Client Modal */}
-      {showEditModal && editingClient && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Edit Client</h2>
-            <form onSubmit={handleEditClient} className="space-y-4">
+      {/* Edit Tenant Modal */}
+      {showEditModal && editingTenant && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 my-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Edit Tenant</h2>
+            <form onSubmit={handleEditTenant} className="space-y-6">
+              {/* Basic Information */}
               <div>
-                <label htmlFor="editName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Client Name *
-                </label>
-                <Input
-                  id="editName"
-                  type="text"
-                  required
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                />
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="editName"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Tenant Name
+                    </label>
+                    <Input
+                      id="editName"
+                      type="text"
+                      value={editFormData.name || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="editSlug"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Slug
+                    </label>
+                    <Input
+                      id="editSlug"
+                      type="text"
+                      value={editFormData.slug || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, slug: e.target.value })}
+                      disabled
+                      className="bg-gray-100"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Slug cannot be changed</p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="editTenantKey"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Tenant Key
+                    </label>
+                    <Input
+                      id="editTenantKey"
+                      type="text"
+                      value={editFormData.tenantKey || ''}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, tenantKey: e.target.value })
+                      }
+                      disabled
+                      className="bg-gray-100"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Tenant key cannot be changed</p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="editDatabaseName"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Database Name
+                    </label>
+                    <Input
+                      id="editDatabaseName"
+                      type="text"
+                      value={editFormData.databaseName || ''}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, databaseName: e.target.value })
+                      }
+                      disabled
+                      className="bg-gray-100"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Database name cannot be changed</p>
+                  </div>
+                </div>
               </div>
 
+              {/* Contact Information */}
               <div>
-                <label
-                  htmlFor="editHourlyRate"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Hourly Rate (Optional)
-                </label>
-                <Input
-                  id="editHourlyRate"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={editFormData.hourlyRate}
-                  onChange={(e) => setEditFormData({ ...editFormData, hourlyRate: e.target.value })}
-                  placeholder="150.00"
-                />
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="editContactName"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Contact Name
+                    </label>
+                    <Input
+                      id="editContactName"
+                      type="text"
+                      value={editFormData.contactName || ''}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, contactName: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="editContactEmail"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Contact Email
+                    </label>
+                    <Input
+                      id="editContactEmail"
+                      type="email"
+                      value={editFormData.contactEmail || ''}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, contactEmail: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label
+                      htmlFor="editContactPhone"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Contact Phone
+                    </label>
+                    <Input
+                      id="editContactPhone"
+                      type="tel"
+                      value={editFormData.contactPhone || ''}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, contactPhone: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
               </div>
 
+              {/* Billing Address */}
               <div>
-                <label
-                  htmlFor="editDiscountPercentage"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Discount Percentage (0-100)
-                </label>
-                <Input
-                  id="editDiscountPercentage"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={editFormData.discountPercentage}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, discountPercentage: e.target.value })
-                  }
-                  placeholder="0.00"
-                />
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Billing Address</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label
+                      htmlFor="editBillingStreet"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Street Address
+                    </label>
+                    <Input
+                      id="editBillingStreet"
+                      type="text"
+                      value={editFormData.billingStreet || ''}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, billingStreet: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label
+                        htmlFor="editBillingCity"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        City
+                      </label>
+                      <Input
+                        id="editBillingCity"
+                        type="text"
+                        value={editFormData.billingCity || ''}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, billingCity: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="editBillingState"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        State/Province
+                      </label>
+                      <Input
+                        id="editBillingState"
+                        type="text"
+                        value={editFormData.billingState || ''}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, billingState: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="editBillingZip"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        ZIP/Postal Code
+                      </label>
+                      <Input
+                        id="editBillingZip"
+                        type="text"
+                        value={editFormData.billingZip || ''}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, billingZip: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="editBillingCountry"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Country
+                      </label>
+                      <Input
+                        id="editBillingCountry"
+                        type="text"
+                        value={editFormData.billingCountry || ''}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, billingCountry: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="editBillingEmail"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Billing Email
+                      </label>
+                      <Input
+                        id="editBillingEmail"
+                        type="email"
+                        value={editFormData.billingEmail || ''}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, billingEmail: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              {/* Form Actions */}
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <Button type="submit" className="flex-1">
-                  Update Client
+                  Update Tenant
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => {
                     setShowEditModal(false);
-                    setEditingClient(null);
-                    setEditFormData({ name: '', hourlyRate: '', discountPercentage: '' });
+                    setEditingTenant(null);
+                    setEditFormData({});
                   }}
                   className="flex-1"
                 >
