@@ -56,9 +56,14 @@ export default function RoleDetailPage() {
   const [description, setDescription] = useState('');
   const [selectedCapabilities, setSelectedCapabilities] = useState<Set<string>>(new Set());
 
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteNameConfirmation, setDeleteNameConfirmation] = useState('');
+
   useEffect(() => {
     fetchRole();
     fetchAllCapabilities();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleId]);
 
   const fetchRole = async () => {
@@ -75,7 +80,7 @@ export default function RoleDetailPage() {
         setDescription(roleData.description || '');
 
         // Set initially selected capabilities
-        const capIds = new Set(roleData.capabilities.map((c: Capability) => c.id));
+        const capIds = new Set<string>(roleData.capabilities.map((c: Capability) => c.id));
         setSelectedCapabilities(capIds);
       } else {
         alert('Failed to load role');
@@ -151,7 +156,7 @@ export default function RoleDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (role?.isSeeded) {
       alert('Cannot delete seeded roles');
       return;
@@ -162,11 +167,16 @@ export default function RoleDetailPage() {
       return;
     }
 
-    if (
-      !confirm(
-        `Are you sure you want to delete the role "${role?.name}"? This action cannot be undone.`
-      )
-    ) {
+    setDeleteNameConfirmation('');
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteRole = async () => {
+    if (!role) return;
+
+    // Check if role name matches
+    if (deleteNameConfirmation !== role.name) {
+      alert('Role name does not match. Please enter the exact role name to confirm deletion.');
       return;
     }
 
@@ -349,6 +359,81 @@ export default function RoleDetailPage() {
             </Button>
           </div>
         </Card>
+      )}
+
+      {/* Delete Role Confirmation Modal */}
+      {showDeleteModal && role && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <svg
+                  className="h-6 w-6 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mt-3 text-center">Delete Role</h2>
+              <p className="text-sm text-gray-600 mt-2 text-center">
+                This will permanently delete the role and remove it from all users who have it
+                assigned.
+              </p>
+            </div>
+
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Warning:</strong> To confirm, please type the role name:{' '}
+                <span className="font-mono font-semibold">{role.name}</span>
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="confirmName" className="block text-sm font-medium text-gray-700 mb-1">
+                Enter role name to confirm
+              </label>
+              <input
+                id="confirmName"
+                type="text"
+                value={deleteNameConfirmation}
+                onChange={(e) => setDeleteNameConfirmation(e.target.value)}
+                placeholder={role.name}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="danger"
+                onClick={confirmDeleteRole}
+                disabled={deleteNameConfirmation !== role.name}
+                className="flex-1"
+              >
+                Delete Role
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteNameConfirmation('');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

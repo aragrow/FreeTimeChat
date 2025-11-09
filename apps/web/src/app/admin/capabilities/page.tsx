@@ -39,6 +39,22 @@ export default function CapabilitiesPage() {
     description: '',
   });
 
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingCapability, setEditingCapability] = useState<Capability | null>(null);
+  const [editFormData, setEditFormData] = useState<CreateCapabilityData>({
+    name: '',
+    description: '',
+  });
+
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [capabilityToDelete, setCapabilityToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [deleteNameConfirmation, setDeleteNameConfirmation] = useState('');
+
   useEffect(() => {
     fetchCapabilities();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,6 +107,81 @@ export default function CapabilitiesPage() {
     }
   };
 
+  const handleEditCapability = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!editingCapability) return;
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/capabilities/${editingCapability.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(editFormData),
+        }
+      );
+
+      if (response.ok) {
+        setShowEditModal(false);
+        setEditingCapability(null);
+        setEditFormData({ name: '', description: '' });
+        fetchCapabilities();
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to update capability: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Update capability error:', error);
+      alert('An error occurred while updating the capability.');
+    }
+  };
+
+  const handleDeleteCapability = (capabilityId: string, capabilityName: string) => {
+    setCapabilityToDelete({ id: capabilityId, name: capabilityName });
+    setDeleteNameConfirmation('');
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCapability = async () => {
+    if (!capabilityToDelete) return;
+
+    // Check if capability name matches
+    if (deleteNameConfirmation !== capabilityToDelete.name) {
+      alert(
+        'Capability name does not match. Please enter the exact capability name to confirm deletion.'
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/capabilities/${capabilityToDelete.id}`,
+        {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (response.ok) {
+        setShowDeleteModal(false);
+        setCapabilityToDelete(null);
+        setDeleteNameConfirmation('');
+        fetchCapabilities();
+        alert('Capability deleted successfully.');
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to delete capability: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Delete capability error:', error);
+      alert('An error occurred while deleting the capability.');
+    }
+  };
+
   const filteredCapabilities = capabilities.filter((capability) => {
     const matchesSearch =
       searchTerm === '' ||
@@ -129,6 +220,39 @@ export default function CapabilitiesPage() {
       header: 'Created',
       sortable: true,
       render: (capability) => new Date(capability.createdAt).toLocaleDateString(),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (capability) => (
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingCapability(capability);
+              setEditFormData({
+                name: capability.name,
+                description: capability.description || '',
+              });
+              setShowEditModal(true);
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteCapability(capability.id, capability.name);
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      ),
     },
   ];
 
@@ -311,6 +435,145 @@ export default function CapabilitiesPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Capability Modal */}
+      {showEditModal && editingCapability && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Edit Capability</h2>
+            <form onSubmit={handleEditCapability} className="space-y-4">
+              <div>
+                <label htmlFor="editName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Capability Name *
+                </label>
+                <Input
+                  id="editName"
+                  type="text"
+                  required
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  placeholder="e.g., users.read, projects.create"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="editDescription"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Description
+                </label>
+                <textarea
+                  id="editDescription"
+                  rows={3}
+                  value={editFormData.description}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, description: e.target.value })
+                  }
+                  placeholder="Describe what this capability allows..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button type="submit" className="flex-1">
+                  Update Capability
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingCapability(null);
+                    setEditFormData({ name: '', description: '' });
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Capability Confirmation Modal */}
+      {showDeleteModal && capabilityToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <svg
+                  className="h-6 w-6 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mt-3 text-center">
+                Delete Capability
+              </h2>
+              <p className="text-sm text-gray-600 mt-2 text-center">
+                This will permanently delete the capability and remove it from all roles that have
+                it assigned.
+              </p>
+            </div>
+
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Warning:</strong> To confirm, please type the capability name:{' '}
+                <span className="font-mono font-semibold">{capabilityToDelete.name}</span>
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="confirmName" className="block text-sm font-medium text-gray-700 mb-1">
+                Enter capability name to confirm
+              </label>
+              <input
+                id="confirmName"
+                type="text"
+                value={deleteNameConfirmation}
+                onChange={(e) => setDeleteNameConfirmation(e.target.value)}
+                placeholder={capabilityToDelete.name}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="danger"
+                onClick={confirmDeleteCapability}
+                disabled={deleteNameConfirmation !== capabilityToDelete.name}
+                className="flex-1"
+              >
+                Delete Capability
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setCapabilityToDelete(null);
+                  setDeleteNameConfirmation('');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       )}

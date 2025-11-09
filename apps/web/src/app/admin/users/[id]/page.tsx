@@ -65,6 +65,10 @@ export default function UserDetailPage() {
     roleIds: [] as string[],
   });
 
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteEmailConfirmation, setDeleteEmailConfirmation] = useState('');
+
   // Check if user has necessary capabilities
   const canRead = hasCapability('users:read');
   const canUpdate = hasCapability('users:update');
@@ -75,6 +79,7 @@ export default function UserDetailPage() {
       fetchUser();
       fetchRoles();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, canRead]);
 
   const fetchUser = async () => {
@@ -92,6 +97,7 @@ export default function UserDetailPage() {
           name: data.data.name || '',
           email: data.data.email || '',
           isActive: data.data.isActive,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           roleIds: data.data.roles.map((ur: any) => ur.role.id),
         });
       } else if (response.status === 403) {
@@ -163,17 +169,22 @@ export default function UserDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!canDelete) {
       alert('You do not have permission to delete users');
       return;
     }
 
-    if (
-      !confirm(
-        `Are you sure you want to deactivate user "${user?.email}"? The user will no longer be able to log in.`
-      )
-    ) {
+    setDeleteEmailConfirmation('');
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!user) return;
+
+    // Check if email matches
+    if (deleteEmailConfirmation !== user.email) {
+      alert('Email does not match. Please enter the exact email address to confirm deletion.');
       return;
     }
 
@@ -502,6 +513,83 @@ export default function UserDetailPage() {
             Deactivate User
           </Button>
         </Card>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {showDeleteModal && user && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <svg
+                  className="h-6 w-6 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mt-3 text-center">Deactivate User</h2>
+              <p className="text-sm text-gray-600 mt-2 text-center">
+                This will deactivate the user account. The user will no longer be able to log in.
+              </p>
+            </div>
+
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Warning:</strong> To confirm, please type the user&apos;s email address:{' '}
+                <span className="font-mono font-semibold">{user.email}</span>
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label
+                htmlFor="confirmEmail"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Enter email to confirm
+              </label>
+              <input
+                id="confirmEmail"
+                type="text"
+                value={deleteEmailConfirmation}
+                onChange={(e) => setDeleteEmailConfirmation(e.target.value)}
+                placeholder={user.email}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="danger"
+                onClick={confirmDeleteUser}
+                disabled={deleteEmailConfirmation !== user.email}
+                className="flex-1"
+              >
+                Deactivate User
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteEmailConfirmation('');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

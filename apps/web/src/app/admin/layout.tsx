@@ -17,26 +17,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Check if user has admin role
+  // Check if user has admin or tenantadmin role
+  const hasAdminAccess = user?.roles?.includes('admin') || user?.roles?.includes('tenantadmin');
+  const isAdmin = user?.roles?.includes('admin');
+
   useEffect(() => {
-    if (user && !user.roles?.includes('admin')) {
+    if (user && !hasAdminAccess) {
       router.push('/chat');
     }
-  }, [user, router]);
+  }, [user, hasAdminAccess, router]);
 
-  // If user is not admin, don't render
-  if (!user?.roles?.includes('admin')) {
+  // If user doesn't have admin access, don't render
+  if (!hasAdminAccess) {
     return null;
   }
 
-  const navigation = [
+  // Navigation items accessible to both admin and tenantadmin
+  const commonNavigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: 'chart' },
     { name: 'Users', href: '/admin/users', icon: 'users' },
-    { name: 'Roles', href: '/admin/roles', icon: 'shield' },
     { name: 'Clients', href: '/admin/clients', icon: 'building' },
+    { name: 'Projects', href: '/admin/projects', icon: 'folder' },
+  ];
+
+  // Navigation items only accessible to admin
+  const adminOnlyNavigation = [
+    { name: 'Roles', href: '/admin/roles', icon: 'shield' },
     { name: 'Tenants', href: '/admin/tenants', icon: 'server' },
     { name: 'Capabilities', href: '/admin/capabilities', icon: 'key' },
   ];
+
+  // Combine navigation based on user role
+  const navigation = isAdmin ? [...commonNavigation, ...adminOnlyNavigation] : commonNavigation;
 
   const renderIcon = (icon: string) => {
     switch (icon) {
@@ -106,6 +118,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             />
           </svg>
         );
+      case 'folder':
+        return (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            />
+          </svg>
+        );
       default:
         return null;
     }
@@ -155,7 +178,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </svg>
               Back to Chat
             </a>
-            <UserMenu user={user} onLogout={logout} />
+            {user && <UserMenu user={user} onLogout={logout} />}
           </div>
         </aside>
 

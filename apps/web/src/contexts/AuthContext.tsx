@@ -14,6 +14,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  tenantId?: string | null; // Tenant this user belongs to (null for system admins)
   role: string;
   roles?: string[]; // Array of role names: ["Admin", "User"]
   isTwoFactorEnabled: boolean;
@@ -64,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Set up token refresh interval
@@ -78,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return () => clearInterval(interval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, refreshToken]);
 
   const getAuthHeaders = (token?: string) => {
@@ -278,6 +281,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     await checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loginWithGoogle = () => {

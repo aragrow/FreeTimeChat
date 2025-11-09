@@ -6,7 +6,6 @@
 
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -33,8 +32,7 @@ export function useImpersonation() {
 }
 
 export function ImpersonationProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const { user, refreshUser, getAuthHeaders } = useAuth();
+  const { user, refreshUser, getAuthHeaders, logout } = useAuth();
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [targetUser, setTargetUser] = useState<ImpersonationContextType['targetUser']>(null);
 
@@ -99,23 +97,22 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
       );
 
       if (response.ok) {
-        const data = await response.json();
-        // Store the restored admin token
-        localStorage.setItem('accessToken', data.data.accessToken);
+        // eslint-disable-next-line no-console
+        console.log('Stop impersonation successful');
 
         setIsImpersonating(false);
         setTargetUser(null);
 
-        // Refresh auth context to restore admin user
-        await refreshUser();
-
-        // Redirect back to admin panel
-        router.push('/admin/users');
+        // Completely log out the user and redirect to login screen
+        await logout();
       } else {
-        console.error('Failed to end impersonation');
+        const errorData = await response.json();
+        console.error('Failed to end impersonation:', errorData.message);
+        alert(`Failed to end impersonation: ${errorData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('End impersonation error:', error);
+      alert('An error occurred while ending impersonation. Please try again.');
     }
   };
 

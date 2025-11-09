@@ -426,6 +426,7 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
       email: user.email,
       firstName,
       lastName,
+      tenantId: user.tenantId, // Add tenantId for tenant scoping
       role: req.user.role, // Use role from JWT
       roles: req.user.roles, // Use roles from JWT
       capabilities, // Add capabilities array
