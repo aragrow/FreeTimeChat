@@ -78,7 +78,21 @@ export default function TimeEntriesPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setEntries(data.data.timeEntries || []);
+        // Map the API response to match our frontend interface
+        const mappedEntries = (data.data.entries || []).map((entry: any) => ({
+          id: entry.id,
+          description: entry.description || 'No description',
+          startTime: entry.startTime,
+          endTime: entry.endTime,
+          duration: entry.duration ? Math.floor(entry.duration / 60) : 0, // Convert seconds to minutes
+          isRunning: !entry.endTime,
+          userId: entry.userId,
+          userName: 'User', // TODO: Fetch user name from main DB
+          projectId: entry.projectId,
+          projectName: entry.project?.name || 'No Project',
+          createdAt: entry.createdAt,
+        }));
+        setEntries(mappedEntries);
         setTotalPages(data.data.pagination?.totalPages || 1);
       }
     } catch (error) {
