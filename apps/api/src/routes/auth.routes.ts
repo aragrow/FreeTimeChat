@@ -5,6 +5,7 @@
  */
 
 import { Router } from 'express';
+import { PrismaClient as PrismaMainClient } from '../generated/prisma-main';
 import { authenticateJWT } from '../middleware/auth.middleware';
 import { getAuthService } from '../services/auth.service';
 import type { LoginRequest, RefreshTokenRequest, RegisterRequest } from '@freetimechat/types';
@@ -383,6 +384,37 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
       return;
     }
 
+    // Fetch user's capabilities through their roles
+    const prismaMain = new PrismaMainClient();
+    const userRoles = await prismaMain.userRole.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        role: {
+          include: {
+            capabilities: {
+              where: {
+                isAllowed: true,
+              },
+              include: {
+                capability: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Extract all unique capabilities from all roles
+    const capabilitiesSet = new Set<string>();
+    for (const userRole of userRoles) {
+      for (const roleCapability of userRole.role.capabilities) {
+        capabilitiesSet.add(roleCapability.capability.name);
+      }
+    }
+    const capabilities = Array.from(capabilitiesSet);
+
     // Split name into firstName and lastName for frontend
     const nameParts = user.name.split(' ');
     const firstName = nameParts[0] || '';
@@ -396,6 +428,7 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
       lastName,
       role: req.user.role, // Use role from JWT
       roles: req.user.roles, // Use roles from JWT
+      capabilities, // Add capabilities array
       isTwoFactorEnabled: user.twoFactorEnabled,
       isImpersonating: req.user.impersonation?.isImpersonating,
       originalUserId: req.user.impersonation?.adminUserId,
@@ -413,6 +446,7 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
       data: userData,
     });
   } catch (error) {
+    console.error('Error in /auth/me:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get user information',

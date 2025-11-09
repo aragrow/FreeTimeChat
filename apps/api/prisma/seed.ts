@@ -350,17 +350,125 @@ async function main() {
   console.log(`✓ User role assigned to test user\n`);
 
   // ============================================================================
+  // Step 9: Create ARAGROW-LLC Tenant
+  // ============================================================================
+  console.log('🏢 Creating ARAGROW-LLC tenant...');
+
+  // Check if ARAGROW-LLC tenant already exists (created outside of seed)
+  const existingAragrowTenant = await prismaMain.tenant.findUnique({
+    where: { slug: 'aragrow-llc' },
+  });
+
+  let aragrowTenant;
+  if (existingAragrowTenant) {
+    console.log('  ℹ ARAGROW-LLC tenant already exists, skipping creation');
+    aragrowTenant = existingAragrowTenant;
+  } else {
+    aragrowTenant = await prismaMain.tenant.create({
+      data: {
+        id: '00000000-0000-0000-0000-000000000101',
+        name: 'ARAGROW LLC',
+        slug: 'aragrow-llc',
+        tenantKey: 'ARAGROW-LLC',
+        databaseName: 'freetimechat_aragrow_llc',
+        databaseHost: 'localhost',
+        isActive: true,
+        isSeeded: true,
+      },
+    });
+    console.log(`✓ ARAGROW-LLC tenant created: ${aragrowTenant.name} (ID: ${aragrowTenant.id})`);
+  }
+
+  console.log(`  Tenant Key: ${aragrowTenant.tenantKey}\n`);
+
+  // ============================================================================
+  // Step 10: Create ARAGROW-LLC Tenant Admin User
+  // ============================================================================
+  console.log('👤 Creating ARAGROW-LLC tenant admin user...');
+
+  // Check if user already exists
+  const existingAragrowUser = await prismaMain.user.findUnique({
+    where: { email: '000002@aragrow-llc.local' },
+  });
+
+  let aragrowUser;
+  if (existingAragrowUser) {
+    console.log('  ℹ ARAGROW-LLC user already exists, updating password and tenant');
+    const aragrowPassword = await bcrypt.hash('Open@2025', 10);
+    aragrowUser = await prismaMain.user.update({
+      where: { email: '000002@aragrow-llc.local' },
+      data: {
+        passwordHash: aragrowPassword,
+        tenantId: aragrowTenant.id,
+        isActive: true,
+        twoFactorEnabled: false,
+      },
+    });
+    console.log(`✓ ARAGROW-LLC user updated: ${aragrowUser.email} (ID: ${aragrowUser.id})`);
+  } else {
+    const aragrowPassword = await bcrypt.hash('Open@2025', 10);
+    aragrowUser = await prismaMain.user.create({
+      data: {
+        email: '000002@aragrow-llc.local',
+        passwordHash: aragrowPassword,
+        name: 'ARAGROW Admin',
+        tenantId: aragrowTenant.id,
+        isActive: true,
+        isSeeded: true,
+        twoFactorEnabled: false,
+      },
+    });
+    console.log(`✓ ARAGROW-LLC user created: ${aragrowUser.email} (ID: ${aragrowUser.id})`);
+  }
+
+  console.log(`  Username: 000002@aragrow-llc.local`);
+  console.log(`  Password: Open@2025`);
+  console.log(`  Tenant: ${aragrowTenant.name}\n`);
+
+  // ============================================================================
+  // Step 11: Assign Tenant Admin Role to ARAGROW-LLC User
+  // ============================================================================
+  console.log('👥 Assigning tenant admin role to ARAGROW-LLC user...');
+
+  // Check if role is already assigned
+  const existingUserRole = await prismaMain.userRole.findFirst({
+    where: {
+      userId: aragrowUser.id,
+      roleId: tenantAdminRole.id,
+    },
+  });
+
+  if (!existingUserRole) {
+    await prismaMain.userRole.create({
+      data: {
+        userId: aragrowUser.id,
+        roleId: tenantAdminRole.id,
+        isSeeded: true,
+      },
+    });
+    console.log(`✓ Tenant admin role assigned to ARAGROW-LLC user\n`);
+  } else {
+    console.log(`  ℹ Tenant admin role already assigned to ARAGROW-LLC user\n`);
+  }
+
+  // ============================================================================
   // Summary
   // ============================================================================
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('✅ Database seeded successfully!\n');
   console.log('📋 Summary:');
-  console.log(`   • Admin User: ${adminUser.email}`);
-  console.log(`   • Password: 0pen@2025`);
-  console.log(`   • Test User: ${testUser.email}`);
-  console.log(`   • Password: Test@2025`);
-  console.log(`   • Test Tenant: ${testTenant.name} (Key: ${testTenant.tenantKey})`);
-  console.log(`   • Roles:`);
+  console.log(`\n   🔐 Admin User:`);
+  console.log(`      Email: ${adminUser.email}`);
+  console.log(`      Password: 0pen@2025`);
+  console.log(`\n   👤 Test User:`);
+  console.log(`      Email: ${testUser.email}`);
+  console.log(`      Password: Test@2025`);
+  console.log(`      Tenant: ${testTenant.name} (Key: ${testTenant.tenantKey})`);
+  console.log(`\n   👤 ARAGROW-LLC Tenant Admin:`);
+  console.log(`      Email: ${aragrowUser.email}`);
+  console.log(`      Password: Open@2025`);
+  console.log(`      Tenant: ${aragrowTenant.name} (Key: ${aragrowTenant.tenantKey})`);
+  console.log(`\n   • Roles:`);
   console.log(`     - user (${userRoleCapabilities.length} capabilities)`);
   console.log(`     - tenantadmin (${tenantAdminRoleCapabilities.length} capabilities)`);
   console.log(`     - admin (${adminRoleCapabilities.length} capabilities)`);
