@@ -11,6 +11,7 @@ import { attachClientDatabase } from '../middleware/client-database.middleware';
 import { requireAnyRole } from '../middleware/permission.middleware';
 import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
+import projectMembersRoutes from './admin/project-members.routes';
 import projectsRoutes from './admin/projects.routes';
 import rolesRoutes from './admin/roles.routes';
 import statsRoutes from './admin/stats.routes';
@@ -36,6 +37,7 @@ router.use('/system-settings', systemSettingsRoutes);
 // Mount admin sub-routes that NEED tenant database (attach middleware first)
 router.use('/clients', attachClientDatabase, clientsRoutes);
 router.use('/projects', attachClientDatabase, projectsRoutes);
+router.use('/project-members', attachClientDatabase, projectMembersRoutes);
 router.use('/time-entries', attachClientDatabase, timeEntriesRoutes);
 
 // Admin dashboard root endpoint
@@ -48,6 +50,7 @@ router.get('/', (_req, res) => {
       roles: '/api/v1/admin/roles',
       clients: '/api/v1/admin/clients',
       projects: '/api/v1/admin/projects',
+      projectMembers: '/api/v1/admin/project-members',
       timeEntries: '/api/v1/admin/time-entries',
       tenants: '/api/v1/admin/tenants',
       capabilities: '/api/v1/admin/capabilities',
