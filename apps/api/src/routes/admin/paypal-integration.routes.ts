@@ -6,10 +6,11 @@
  */
 
 import { Router } from 'express';
-import { mainDb } from '../../lib/prisma-main';
+import { PrismaClient as MainPrismaClient } from '../../generated/prisma-main';
 import type { Request, Response } from 'express';
 
 const router = Router();
+const mainDb = new MainPrismaClient();
 
 /**
  * GET /api/v1/admin/paypal-integration
