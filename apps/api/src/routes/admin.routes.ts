@@ -13,6 +13,7 @@ import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
 import projectMembersRoutes from './admin/project-members.routes';
 import projectsRoutes from './admin/projects.routes';
+import reportsRoutes from './admin/reports.routes';
 import rolesRoutes from './admin/roles.routes';
 import statsRoutes from './admin/stats.routes';
 import systemSettingsRoutes from './admin/system-settings.routes';
@@ -39,6 +40,7 @@ router.use('/system-settings', systemSettingsRoutes);
 router.use('/clients', attachClientDatabase, clientsRoutes);
 router.use('/projects', attachClientDatabase, projectsRoutes);
 router.use('/project-members', attachClientDatabase, projectMembersRoutes);
+router.use('/reports', attachClientDatabase, reportsRoutes);
 router.use('/tasks', attachClientDatabase, tasksRoutes);
 router.use('/time-entries', attachClientDatabase, timeEntriesRoutes);
 
@@ -53,6 +55,7 @@ router.get('/', (_req, res) => {
       clients: '/api/v1/admin/clients',
       projects: '/api/v1/admin/projects',
       projectMembers: '/api/v1/admin/project-members',
+      reports: '/api/v1/admin/reports',
       tasks: '/api/v1/admin/tasks',
       timeEntries: '/api/v1/admin/time-entries',
       tenants: '/api/v1/admin/tenants',
