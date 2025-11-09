@@ -231,16 +231,18 @@ export default function UsersPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/impersonate`, {
-        method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ targetUserId: userId }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}/impersonate`,
+        {
+          method: 'POST',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (response.ok) {
+        const data = await response.json();
+        // Store the new impersonation token
+        localStorage.setItem('accessToken', data.data.accessToken);
         // Redirect to chat after impersonation
         router.push('/chat');
       } else {
