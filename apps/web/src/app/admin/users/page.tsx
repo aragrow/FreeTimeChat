@@ -35,28 +35,29 @@ interface Role {
   description: string;
 }
 
-interface Client {
+interface Tenant {
   id: string;
   name: string;
   slug: string;
+  tenantKey: string;
 }
 
 interface CreateUserData {
   email: string;
   name: string;
   password: string;
-  clientId?: string;
+  tenantId?: string;
   roleIds: string[];
 }
 
 export default function UsersPage() {
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, user: currentUser } = useAuth();
   const router = useRouter();
   const { hasCapability } = useCapabilities();
 
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
 
   // Check capabilities
   const canRead = hasCapability('users:read');
@@ -81,9 +82,19 @@ export default function UsersPage() {
     email: '',
     name: '',
     password: '',
-    clientId: '',
+    tenantId: '',
     roleIds: [],
   });
+
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; email: string } | null>(null);
+  const [deleteEmailConfirmation, setDeleteEmailConfirmation] = useState('');
+
+  // Password display modal state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState('');
+  const [createdUserEmail, setCreatedUserEmail] = useState('');
 
   useEffect(() => {
     if (canRead) {
@@ -91,10 +102,17 @@ export default function UsersPage() {
     }
     if (canCreate) {
       fetchRoles();
-      fetchClients();
+      // Fetch tenants for both admin and tenantadmin
+      // Admin: needs all tenants for dropdown
+      // Tenantadmin: needs their tenant name to display
+      if (currentUser?.roles?.includes('admin')) {
+        fetchTenants();
+      } else if (currentUser?.roles?.includes('tenantadmin') && currentUser.tenantId) {
+        fetchCurrentTenant(currentUser.tenantId);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, statusFilter, canRead, canCreate]);
+  }, [currentPage, statusFilter, canRead, canCreate, currentUser]);
 
   const fetchUsers = async () => {
     try {
@@ -125,44 +143,116 @@ export default function UsersPage() {
 
   const fetchRoles = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles?limit=100`, {
         method: 'GET',
         headers: getAuthHeaders(),
       });
 
       if (response.ok) {
         const data = await response.json();
-        setRoles(data.data || []);
+        setRoles(data.data.roles || []);
+      } else {
+        console.error('Failed to fetch roles:', response.status);
+        setRoles([]);
       }
     } catch (error) {
       console.error('Failed to fetch roles:', error);
+      setRoles([]);
     }
   };
 
-  const fetchClients = async () => {
+  const fetchTenants = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients`, {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/tenants?limit=100&isActive=true`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setTenants(data.data.tenants || []);
+      } else {
+        console.error('Failed to fetch tenants:', response.status);
+        setTenants([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch tenants:', error);
+      setTenants([]);
+    }
+  };
+
+  const fetchCurrentTenant = async (tenantId: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${tenantId}`, {
         method: 'GET',
         headers: getAuthHeaders(),
       });
 
       if (response.ok) {
         const data = await response.json();
-        setClients(data.data.clients || []);
+        // Set tenants array with just this one tenant
+        setTenants([data.data]);
+      } else {
+        console.error('Failed to fetch current tenant:', response.status);
+        setTenants([]);
       }
     } catch (error) {
-      console.error('Failed to fetch clients:', error);
+      console.error('Failed to fetch current tenant:', error);
+      setTenants([]);
     }
+  };
+
+  // Generate a secure random password
+  const generatePassword = (): string => {
+    const length = 16;
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const special = '!@#$%^&*';
+    const allChars = uppercase + lowercase + numbers + special;
+
+    let password = '';
+    // Ensure at least one of each type
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += special[Math.floor(Math.random() * special.length)];
+
+    // Fill the rest randomly
+    for (let i = password.length; i < length; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+
+    // Shuffle the password
+    return password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      // Prepare data, omit clientId if empty
+      // Generate a random password
+      const autoPassword = generatePassword();
+
+      // Determine the tenantId based on user role
+      let tenantId = createFormData.tenantId;
+
+      // If user is a tenantadmin, use their tenantId
+      if (currentUser?.roles?.includes('tenantadmin') && currentUser.tenantId) {
+        tenantId = currentUser.tenantId;
+      }
+
+      // Prepare data, omit tenantId if empty
       const payload = {
         ...createFormData,
-        clientId: createFormData.clientId || undefined,
+        password: autoPassword,
+        tenantId: tenantId || undefined,
       };
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users`, {
@@ -175,14 +265,24 @@ export default function UsersPage() {
       });
 
       if (response.ok) {
+        // Store generated password and email to show in modal
+        setGeneratedPassword(autoPassword);
+        setCreatedUserEmail(createFormData.email);
+
+        // Close create modal and reset form
         setShowCreateModal(false);
         setCreateFormData({
           email: '',
           name: '',
           password: '',
-          clientId: '',
+          tenantId: '',
           roleIds: [],
         });
+
+        // Show password modal
+        setShowPasswordModal(true);
+
+        // Refresh users list
         fetchUsers();
       } else {
         const errorData = await response.json();
@@ -194,23 +294,36 @@ export default function UsersPage() {
     }
   };
 
-  const handleDeleteUser = async (userId: string, userEmail: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to deactivate user "${userEmail}"? The user will no longer be able to log in.`
-      )
-    ) {
+  const handleDeleteUser = (userId: string, userEmail: string) => {
+    setUserToDelete({ id: userId, email: userEmail });
+    setDeleteEmailConfirmation('');
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    // Check if email matches
+    if (deleteEmailConfirmation !== userToDelete.email) {
+      alert('Email does not match. Please enter the exact email address to confirm deletion.');
       return;
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userToDelete.id}`,
+        {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (response.ok) {
+        setShowDeleteModal(false);
+        setUserToDelete(null);
+        setDeleteEmailConfirmation('');
         fetchUsers();
+        alert('User deactivated successfully.');
       } else {
         const errorData = await response.json();
         alert(`Failed to deactivate user: ${errorData.message}`);
@@ -254,6 +367,33 @@ export default function UsersPage() {
       alert('An error occurred while trying to impersonate the user.');
     }
   };
+
+  // Define role hierarchy (higher number = higher privilege)
+  const roleHierarchy: Record<string, number> = {
+    admin: 3,
+    tenantadmin: 2,
+    user: 1,
+  };
+
+  // Get current user's highest role level
+  const getCurrentUserRoleLevel = (): number => {
+    if (!currentUser?.roles || currentUser.roles.length === 0) return 0;
+
+    return Math.max(...currentUser.roles.map((role) => roleHierarchy[role.toLowerCase()] || 0));
+  };
+
+  // Filter roles based on current user's role level
+  const getAvailableRoles = (): Role[] => {
+    const currentUserLevel = getCurrentUserRoleLevel();
+
+    return roles.filter((role) => {
+      const roleLevel = roleHierarchy[role.name.toLowerCase()] || 0;
+      // Only show roles at same level or below
+      return roleLevel <= currentUserLevel;
+    });
+  };
+
+  const availableRoles = getAvailableRoles();
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -513,43 +653,78 @@ export default function UsersPage() {
                 />
               </div>
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password *
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  value={createFormData.password}
-                  onChange={(e) =>
-                    setCreateFormData({ ...createFormData, password: e.target.value })
-                  }
-                  placeholder="Minimum 8 characters"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <svg
+                    className="w-5 h-5 text-blue-600 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">Auto-generated Password</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      A secure password will be automatically generated. The user will be required
+                      to change it on first login.
+                    </p>
+                  </div>
+                </div>
               </div>
 
+              {/* Tenant Selection - Conditional based on user role */}
               <div>
-                <label htmlFor="clientId" className="block text-sm font-medium text-gray-700 mb-1">
-                  Client (Optional - leave empty for system admin)
+                <label htmlFor="tenantId" className="block text-sm font-medium text-gray-700 mb-1">
+                  Tenant{' '}
+                  {currentUser?.roles?.includes('admin') &&
+                    '(Optional - leave empty for system admin)'}
                 </label>
-                <select
-                  id="clientId"
-                  value={createFormData.clientId}
-                  onChange={(e) =>
-                    setCreateFormData({ ...createFormData, clientId: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">No Client (System Admin)</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
+                {currentUser?.roles?.includes('admin') ? (
+                  // Admin users: Show dropdown with all tenants
+                  <select
+                    id="tenantId"
+                    value={createFormData.tenantId}
+                    onChange={(e) =>
+                      setCreateFormData({ ...createFormData, tenantId: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">No Tenant (System Admin)</option>
+                    {tenants.map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : currentUser?.roles?.includes('tenantadmin') ? (
+                  // Tenant admins: Show their tenant (readonly)
+                  <input
+                    id="tenantId"
+                    type="text"
+                    value={
+                      tenants.find((t) => t.id === currentUser.tenantId)?.name ||
+                      currentUser.tenantId ||
+                      'Loading...'
+                    }
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                  />
+                ) : (
+                  // Fallback: No tenant selection
+                  <input
+                    id="tenantId"
+                    type="text"
+                    value="No tenant assigned"
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                  />
+                )}
               </div>
 
               <div>
@@ -557,32 +732,38 @@ export default function UsersPage() {
                   Roles (Select multiple)
                 </label>
                 <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                  {roles.map((role) => (
-                    <label key={role.id} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={createFormData.roleIds.includes(role.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setCreateFormData({
-                              ...createFormData,
-                              roleIds: [...createFormData.roleIds, role.id],
-                            });
-                          } else {
-                            setCreateFormData({
-                              ...createFormData,
-                              roleIds: createFormData.roleIds.filter((id) => id !== role.id),
-                            });
-                          }
-                        }}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-900">{role.name}</span>
-                      {role.description && (
-                        <span className="text-xs text-gray-500">- {role.description}</span>
-                      )}
-                    </label>
-                  ))}
+                  {availableRoles.length > 0 ? (
+                    availableRoles.map((role) => (
+                      <label key={role.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={createFormData.roleIds.includes(role.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setCreateFormData({
+                                ...createFormData,
+                                roleIds: [...createFormData.roleIds, role.id],
+                              });
+                            } else {
+                              setCreateFormData({
+                                ...createFormData,
+                                roleIds: createFormData.roleIds.filter((id) => id !== role.id),
+                              });
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-900">{role.name}</span>
+                        {role.description && (
+                          <span className="text-xs text-gray-500">- {role.description}</span>
+                        )}
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center py-2">
+                      No roles available to assign
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -599,7 +780,7 @@ export default function UsersPage() {
                       email: '',
                       name: '',
                       password: '',
-                      clientId: '',
+                      tenantId: '',
                       roleIds: [],
                     });
                   }}
@@ -609,6 +790,161 @@ export default function UsersPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {showDeleteModal && userToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <svg
+                  className="h-6 w-6 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mt-3 text-center">Deactivate User</h2>
+              <p className="text-sm text-gray-600 mt-2 text-center">
+                This will deactivate the user account. The user will no longer be able to log in.
+              </p>
+            </div>
+
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Warning:</strong> To confirm, please type the user&apos;s email address:{' '}
+                <span className="font-mono font-semibold">{userToDelete.email}</span>
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label
+                htmlFor="confirmEmail"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Enter email to confirm
+              </label>
+              <input
+                id="confirmEmail"
+                type="text"
+                value={deleteEmailConfirmation}
+                onChange={(e) => setDeleteEmailConfirmation(e.target.value)}
+                placeholder={userToDelete.email}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="danger"
+                onClick={confirmDeleteUser}
+                disabled={deleteEmailConfirmation !== userToDelete.email}
+                className="flex-1"
+              >
+                Deactivate User
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setUserToDelete(null);
+                  setDeleteEmailConfirmation('');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generated Password Display Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <svg
+                  className="h-6 w-6 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mt-3 text-center">
+                User Created Successfully
+              </h2>
+              <p className="text-sm text-gray-600 mt-2 text-center">
+                A temporary password has been generated for <strong>{createdUserEmail}</strong>
+              </p>
+            </div>
+
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800 font-semibold mb-2">
+                Important: Save this password now!
+              </p>
+              <p className="text-xs text-yellow-700">
+                This password will only be shown once. The user will be required to change it on
+                first login.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Temporary Password
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={generatedPassword}
+                  readOnly
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedPassword);
+                    alert('Password copied to clipboard!');
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              onClick={() => {
+                setShowPasswordModal(false);
+                setGeneratedPassword('');
+                setCreatedUserEmail('');
+              }}
+              className="w-full"
+            >
+              Done
+            </Button>
           </div>
         </div>
       )}
