@@ -388,7 +388,11 @@ export default function ClientsPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {clients.map((client) => (
-                <tr key={client.id} className="hover:bg-gray-50">
+                <tr
+                  key={client.id}
+                  onClick={() => openEditModal(client)}
+                  className="hover:bg-gray-50 cursor-pointer"
+                >
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900">{client.name}</div>
                     {client.companyName && (
@@ -420,19 +424,28 @@ export default function ClientsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
                       <button
-                        onClick={() => openEditModal(client)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditModal(client);
+                        }}
                         className="text-blue-600 hover:text-blue-900"
                       >
                         Edit
                       </button>
                       <button
-                        onClick={() => handleToggleActive(client.id, client.isActive)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleActive(client.id, client.isActive);
+                        }}
                         className="text-yellow-600 hover:text-yellow-900"
                       >
                         {client.isActive ? 'Deactivate' : 'Activate'}
                       </button>
                       <button
-                        onClick={() => handleDelete(client.id, client.name)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(client.id, client.name);
+                        }}
                         className="text-red-600 hover:text-red-900"
                         disabled={client.isActive}
                       >

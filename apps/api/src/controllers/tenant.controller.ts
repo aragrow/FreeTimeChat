@@ -491,4 +491,56 @@ export class TenantController {
       });
     }
   }
+
+  /**
+   * Provision tenant database
+   * POST /api/v1/admin/tenants/:id/provision
+   */
+  async provisionDatabase(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { force } = req.body;
+
+      // Verify tenant exists
+      const tenant = await this.tenantService.findById(id);
+      if (!tenant) {
+        res.status(404).json({
+          status: 'error',
+          message: 'Tenant not found',
+        });
+        return;
+      }
+
+      // Check if database already provisioned (unless force is true)
+      if (tenant.databaseName && !force) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Tenant database already configured. Use force=true to provision anyway.',
+          data: { databaseName: tenant.databaseName },
+        });
+        return;
+      }
+
+      // Provision database
+      const { getDatabaseService } = await import('../services/database.service');
+      const databaseService = getDatabaseService();
+      const databaseUrl = await databaseService.provisionCustomerDatabase(id);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Tenant database provisioned successfully',
+        data: {
+          tenantId: id,
+          databaseUrl,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error provisioning tenant database:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to provision tenant database',
+        error: error.message,
+      });
+    }
+  }
 }

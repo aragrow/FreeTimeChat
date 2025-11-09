@@ -372,6 +372,14 @@ export default function CapabilitiesPage() {
         columns={columns}
         data={filteredCapabilities}
         keyExtractor={(capability) => capability.id}
+        onRowClick={(capability) => {
+          setEditingCapability(capability);
+          setEditFormData({
+            name: capability.name,
+            description: capability.description || '',
+          });
+          setShowEditModal(true);
+        }}
         isLoading={isLoading}
         emptyMessage="No capabilities found"
       />

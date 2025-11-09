@@ -7,9 +7,11 @@
 
 import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
+import { attachClientDatabase } from '../middleware/client-database.middleware';
 import { requireAnyRole } from '../middleware/permission.middleware';
 import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
+import projectsRoutes from './admin/projects.routes';
 import rolesRoutes from './admin/roles.routes';
 import statsRoutes from './admin/stats.routes';
 import systemSettingsRoutes from './admin/system-settings.routes';
@@ -22,14 +24,17 @@ const router = Router();
 router.use(authenticateJWT);
 router.use(requireAnyRole(['admin', 'tenantadmin']));
 
-// Mount admin sub-routes
+// Mount admin sub-routes that DON'T need tenant database
 router.use('/users', usersRoutes);
 router.use('/roles', rolesRoutes);
-router.use('/clients', clientsRoutes);
 router.use('/capabilities', capabilitiesRoutes);
 router.use('/stats', statsRoutes);
 router.use('/tenants', tenantRoutes);
 router.use('/system-settings', systemSettingsRoutes);
+
+// Mount admin sub-routes that NEED tenant database (attach middleware first)
+router.use('/clients', attachClientDatabase, clientsRoutes);
+router.use('/projects', attachClientDatabase, projectsRoutes);
 
 // Admin dashboard root endpoint
 router.get('/', (_req, res) => {
@@ -40,6 +45,7 @@ router.get('/', (_req, res) => {
       users: '/api/v1/admin/users',
       roles: '/api/v1/admin/roles',
       clients: '/api/v1/admin/clients',
+      projects: '/api/v1/admin/projects',
       tenants: '/api/v1/admin/tenants',
       capabilities: '/api/v1/admin/capabilities',
       stats: '/api/v1/admin/stats',

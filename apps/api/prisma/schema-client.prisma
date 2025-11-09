@@ -53,22 +53,27 @@ model Client {
 }
 
 model Project {
-  id                String          @id @default(uuid())
-  name              String
-  description       String?
-  clientId          String          @map("client_id")
-  client            Client          @relation(fields: [clientId], references: [id])
-  isActive          Boolean         @default(true) @map("is_active")
-  startDate         DateTime?       @map("start_date")
-  endDate           DateTime?       @map("end_date")
-  isBillableProject Boolean         @default(true) @map("is_billable_project")
-  defaultBillable   Boolean         @default(true) @map("default_billable")
-  timeEntries       TimeEntry[]
-  tasks             Task[]
-  members           ProjectMember[]
-  createdAt         DateTime        @default(now()) @map("created_at")
-  updatedAt         DateTime        @updatedAt @map("updated_at")
-  deletedAt         DateTime?       @map("deleted_at")
+  id                     String          @id @default(uuid())
+  name                   String
+  description            String?
+  clientId               String?         @map("client_id")
+  client                 Client?         @relation(fields: [clientId], references: [id])
+  isActive               Boolean         @default(true) @map("is_active")
+  startDate              DateTime?       @map("start_date")
+  endDate                DateTime?       @map("end_date")
+  isBillableProject      Boolean         @default(true) @map("is_billable_project")
+  defaultBillable        Boolean         @default(true) @map("default_billable")
+  // Budget tracking fields
+  hourlyRate             Decimal?        @map("hourly_rate") @db.Decimal(10, 2)
+  allocatedHours         Decimal?        @map("allocated_hours") @db.Decimal(10, 2)
+  additionalHoursAllocated Decimal?      @default(0) @map("additional_hours_allocated") @db.Decimal(10, 2)
+  //
+  timeEntries            TimeEntry[]
+  tasks                  Task[]
+  members                ProjectMember[]
+  createdAt              DateTime        @default(now()) @map("created_at")
+  updatedAt              DateTime        @updatedAt @map("updated_at")
+  deletedAt              DateTime?       @map("deleted_at")
 
   @@index([clientId])
   @@index([isActive])

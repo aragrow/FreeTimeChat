@@ -1,59 +1,47 @@
 /**
- * Admin Client Management Routes
+ * Business Client Routes
  *
- * Handles client CRUD operations (customers of tenants)
+ * Manages the tenant's business clients (stored in tenant database)
+ * These are different from the "clients" in the main DB (which are actually tenants)
  */
 
 import { Router } from 'express';
-import { PrismaClient as MainPrismaClient } from '../../generated/prisma-main';
-import type { JWTPayload } from '@freetimechat/types';
 import type { Request, Response } from 'express';
 
 const router = Router();
-const prisma = new MainPrismaClient();
 
 /**
- * GET /api/v1/admin/clients
- * List all clients with search and filter
+ * GET /api/v1/admin/business-clients
+ * List all business clients for the current tenant
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
+    if (!req.clientDb) {
+      res.status(500).json({
+        status: 'error',
+        message: 'Tenant database not available',
+      });
+      return;
+    }
+
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = parseInt(req.query.limit as string) || 100;
     const search = req.query.search as string;
     const includeInactive = req.query.includeInactive === 'true';
-    let tenantId = req.query.tenantId as string;
-
-    // Tenant filtering: tenantadmin users can only see clients from their own tenant
-    const currentUser = req.user as JWTPayload;
-    const userRoles = currentUser.roles || [];
-    const isTenantAdmin = userRoles.includes('tenantadmin');
-    const isAdmin = userRoles.includes('admin');
-
-    // If user is tenantadmin (not admin), force filter by their tenant
-    if (isTenantAdmin && !isAdmin && currentUser.tenantId) {
-      tenantId = currentUser.tenantId;
-    }
 
     const skip = (page - 1) * limit;
 
     // Build where clause
     const where: any = {
-      deletedAt: null, // Only show non-deleted clients
+      deletedAt: null,
     };
-
-    // Filter by tenant
-    if (tenantId) {
-      where.tenantId = tenantId;
-    }
 
     // Search filter
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { slug: { contains: search, mode: 'insensitive' } },
-        { companyName: { contains: search, mode: 'insensitive' } },
-        { contactEmail: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -64,26 +52,15 @@ router.get('/', async (req: Request, res: Response) => {
 
     // Get clients with pagination
     const [clients, total] = await Promise.all([
-      prisma.client.findMany({
+      req.clientDb.client.findMany({
         where,
         skip,
         take: limit,
-        include: {
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              tenantKey: true,
-              isActive: true,
-            },
-          },
-        },
         orderBy: {
           createdAt: 'desc',
         },
       }),
-      prisma.client.count({ where }),
+      req.clientDb.client.count({ where }),
     ]);
 
     res.status(200).json({
@@ -99,41 +76,38 @@ router.get('/', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error listing clients:', error);
+    console.error('Error listing business clients:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Failed to list clients',
+      message: 'Failed to list business clients',
     });
   }
 });
 
 /**
- * GET /api/v1/admin/clients/:id
- * Get client by ID
+ * GET /api/v1/admin/business-clients/:id
+ * Get business client by ID
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
+    if (!req.clientDb) {
+      res.status(500).json({
+        status: 'error',
+        message: 'Tenant database not available',
+      });
+      return;
+    }
+
     const { id } = req.params;
 
-    const client = await prisma.client.findUnique({
+    const client = await req.clientDb.client.findUnique({
       where: { id },
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            tenantKey: true,
-            isActive: true,
-          },
-        },
-      },
     });
 
     if (!client) {
       res.status(404).json({
         status: 'error',
-        message: 'Client not found',
+        message: 'Business client not found',
       });
       return;
     }
@@ -143,81 +117,52 @@ router.get('/:id', async (req: Request, res: Response) => {
       data: client,
     });
   } catch (error) {
-    console.error('Error getting client:', error);
+    console.error('Error getting business client:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Failed to get client',
+      message: 'Failed to get business client',
     });
   }
 });
 
 /**
- * POST /api/v1/admin/clients
- * Create new client
+ * POST /api/v1/admin/business-clients
+ * Create new business client
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
+    if (!req.clientDb) {
+      res.status(500).json({
+        status: 'error',
+        message: 'Tenant database not available',
+      });
+      return;
+    }
+
     const {
       name,
-      tenantId,
-      companyName,
-      contactName,
-      contactEmail,
-      contactPhone,
-      address,
-      city,
-      state,
-      zipCode,
-      country,
-      notes,
+      email,
+      phone,
+      website,
+      contactPerson,
+      hourlyRate,
+      discountPercentage,
+      billingAddressLine1,
+      billingAddressLine2,
+      billingCity,
+      billingState,
+      billingPostalCode,
+      billingCountry,
+      invoicePrefix,
+      invoiceNextNumber,
+      invoiceNumberPadding,
     } = req.body;
-
-    // Tenant filtering: tenantadmin users can only create clients for their own tenant
-    const currentUser = req.user as JWTPayload;
-    const userRoles = currentUser.roles || [];
-    const isTenantAdmin = userRoles.includes('tenantadmin');
-    const isAdmin = userRoles.includes('admin');
-
-    // If user is tenantadmin (not admin), force tenantId to their own tenant
-    if (isTenantAdmin && !isAdmin && currentUser.tenantId) {
-      tenantId = currentUser.tenantId;
-    }
 
     // Validate required fields
     if (!name || !name.trim()) {
       res.status(400).json({
         status: 'error',
         message: 'Client name is required',
-      });
-      return;
-    }
-
-    if (!tenantId || !tenantId.trim()) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Tenant ID is required',
-      });
-      return;
-    }
-
-    // Verify tenant exists
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-    });
-
-    if (!tenant) {
-      res.status(404).json({
-        status: 'error',
-        message: 'Tenant not found',
-      });
-      return;
-    }
-
-    // Additional check: ensure tenantadmin users can only create for their own tenant
-    if (isTenantAdmin && !isAdmin && tenant.id !== currentUser.tenantId) {
-      res.status(403).json({
-        status: 'error',
-        message: 'You can only create clients for your own tenant',
       });
       return;
     }
@@ -230,42 +175,36 @@ router.post('/', async (req: Request, res: Response) => {
       .replace(/[^a-z0-9-]/g, '');
 
     // Create client
-    const client = await prisma.client.create({
+    const client = await req.clientDb.client.create({
       data: {
         name: name.trim(),
         slug,
-        tenantId,
-        companyName: companyName?.trim() || null,
-        contactName: contactName?.trim() || null,
-        contactEmail: contactEmail?.trim() || null,
-        contactPhone: contactPhone?.trim() || null,
-        address: address?.trim() || null,
-        city: city?.trim() || null,
-        state: state?.trim() || null,
-        zipCode: zipCode?.trim() || null,
-        country: country?.trim() || null,
-        notes: notes?.trim() || null,
+        email: email?.trim() || null,
+        phone: phone?.trim() || null,
+        website: website?.trim() || null,
+        contactPerson: contactPerson?.trim() || null,
+        hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+        discountPercentage: discountPercentage ? parseFloat(discountPercentage) : 0,
+        billingAddressLine1: billingAddressLine1?.trim() || null,
+        billingAddressLine2: billingAddressLine2?.trim() || null,
+        billingCity: billingCity?.trim() || null,
+        billingState: billingState?.trim() || null,
+        billingPostalCode: billingPostalCode?.trim() || null,
+        billingCountry: billingCountry?.trim() || null,
+        invoicePrefix: invoicePrefix?.trim() || null,
+        invoiceNextNumber: invoiceNextNumber || 1,
+        invoiceNumberPadding: invoiceNumberPadding || 5,
         isActive: true,
-      },
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            tenantKey: true,
-          },
-        },
       },
     });
 
     res.status(201).json({
       status: 'success',
       data: client,
-      message: 'Client created successfully',
+      message: 'Business client created successfully',
     });
   } catch (error) {
-    console.error('Error creating client:', error);
+    console.error('Error creating business client:', error);
     if (error instanceof Error) {
       res.status(400).json({
         status: 'error',
@@ -275,42 +214,55 @@ router.post('/', async (req: Request, res: Response) => {
     }
     res.status(500).json({
       status: 'error',
-      message: 'Failed to create client',
+      message: 'Failed to create business client',
     });
   }
 });
 
 /**
- * PUT /api/v1/admin/clients/:id
- * Update client details
+ * PUT /api/v1/admin/business-clients/:id
+ * Update business client
  */
 router.put('/:id', async (req: Request, res: Response) => {
   try {
+    if (!req.clientDb) {
+      res.status(500).json({
+        status: 'error',
+        message: 'Tenant database not available',
+      });
+      return;
+    }
+
     const { id } = req.params;
     const {
       name,
-      companyName,
-      contactName,
-      contactEmail,
-      contactPhone,
-      address,
-      city,
-      state,
-      zipCode,
-      country,
-      notes,
+      email,
+      phone,
+      website,
+      contactPerson,
+      hourlyRate,
+      discountPercentage,
+      billingAddressLine1,
+      billingAddressLine2,
+      billingCity,
+      billingState,
+      billingPostalCode,
+      billingCountry,
+      invoicePrefix,
+      invoiceNextNumber,
+      invoiceNumberPadding,
       isActive,
     } = req.body;
 
     // Check if client exists
-    const existingClient = await prisma.client.findUnique({
+    const existingClient = await req.clientDb.client.findUnique({
       where: { id },
     });
 
     if (!existingClient) {
       res.status(404).json({
         status: 'error',
-        message: 'Client not found',
+        message: 'Business client not found',
       });
       return;
     }
@@ -320,7 +272,6 @@ router.put('/:id', async (req: Request, res: Response) => {
 
     if (name !== undefined && name.trim()) {
       updateData.name = name.trim();
-      // Update slug if name changes
       updateData.slug = name
         .toLowerCase()
         .trim()
@@ -328,65 +279,73 @@ router.put('/:id', async (req: Request, res: Response) => {
         .replace(/[^a-z0-9-]/g, '');
     }
 
-    if (companyName !== undefined) updateData.companyName = companyName?.trim() || null;
-    if (contactName !== undefined) updateData.contactName = contactName?.trim() || null;
-    if (contactEmail !== undefined) updateData.contactEmail = contactEmail?.trim() || null;
-    if (contactPhone !== undefined) updateData.contactPhone = contactPhone?.trim() || null;
-    if (address !== undefined) updateData.address = address?.trim() || null;
-    if (city !== undefined) updateData.city = city?.trim() || null;
-    if (state !== undefined) updateData.state = state?.trim() || null;
-    if (zipCode !== undefined) updateData.zipCode = zipCode?.trim() || null;
-    if (country !== undefined) updateData.country = country?.trim() || null;
-    if (notes !== undefined) updateData.notes = notes?.trim() || null;
+    if (email !== undefined) updateData.email = email?.trim() || null;
+    if (phone !== undefined) updateData.phone = phone?.trim() || null;
+    if (website !== undefined) updateData.website = website?.trim() || null;
+    if (contactPerson !== undefined) updateData.contactPerson = contactPerson?.trim() || null;
+    if (hourlyRate !== undefined)
+      updateData.hourlyRate = hourlyRate ? parseFloat(hourlyRate) : null;
+    if (discountPercentage !== undefined)
+      updateData.discountPercentage = discountPercentage ? parseFloat(discountPercentage) : 0;
+    if (billingAddressLine1 !== undefined)
+      updateData.billingAddressLine1 = billingAddressLine1?.trim() || null;
+    if (billingAddressLine2 !== undefined)
+      updateData.billingAddressLine2 = billingAddressLine2?.trim() || null;
+    if (billingCity !== undefined) updateData.billingCity = billingCity?.trim() || null;
+    if (billingState !== undefined) updateData.billingState = billingState?.trim() || null;
+    if (billingPostalCode !== undefined)
+      updateData.billingPostalCode = billingPostalCode?.trim() || null;
+    if (billingCountry !== undefined) updateData.billingCountry = billingCountry?.trim() || null;
+    if (invoicePrefix !== undefined) updateData.invoicePrefix = invoicePrefix?.trim() || null;
+    if (invoiceNextNumber !== undefined) updateData.invoiceNextNumber = invoiceNextNumber;
+    if (invoiceNumberPadding !== undefined) updateData.invoiceNumberPadding = invoiceNumberPadding;
     if (isActive !== undefined) updateData.isActive = isActive;
 
     // Update client
-    const client = await prisma.client.update({
+    const client = await req.clientDb.client.update({
       where: { id },
       data: updateData,
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            tenantKey: true,
-          },
-        },
-      },
     });
 
     res.status(200).json({
       status: 'success',
       data: client,
-      message: 'Client updated successfully',
+      message: 'Business client updated successfully',
     });
   } catch (error) {
-    console.error('Error updating client:', error);
+    console.error('Error updating business client:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Failed to update client',
+      message: 'Failed to update business client',
     });
   }
 });
 
 /**
- * DELETE /api/v1/admin/clients/:id
- * Soft delete client (set deletedAt timestamp)
+ * DELETE /api/v1/admin/business-clients/:id
+ * Soft delete business client
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
+    if (!req.clientDb) {
+      res.status(500).json({
+        status: 'error',
+        message: 'Tenant database not available',
+      });
+      return;
+    }
+
     const { id } = req.params;
 
     // Check if client exists
-    const existingClient = await prisma.client.findUnique({
+    const existingClient = await req.clientDb.client.findUnique({
       where: { id },
     });
 
     if (!existingClient) {
       res.status(404).json({
         status: 'error',
-        message: 'Client not found',
+        message: 'Business client not found',
       });
       return;
     }
@@ -394,13 +353,13 @@ router.delete('/:id', async (req: Request, res: Response) => {
     if (existingClient.deletedAt) {
       res.status(400).json({
         status: 'error',
-        message: 'Client is already deleted',
+        message: 'Business client is already deleted',
       });
       return;
     }
 
     // Soft delete client
-    const client = await prisma.client.update({
+    const client = await req.clientDb.client.update({
       where: { id },
       data: {
         deletedAt: new Date(),
@@ -410,76 +369,14 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Client deleted successfully',
+      message: 'Business client deleted successfully',
       data: client,
     });
   } catch (error) {
-    console.error('Error deleting client:', error);
+    console.error('Error deleting business client:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Failed to delete client',
-    });
-  }
-});
-
-/**
- * POST /api/v1/admin/clients/:id/reactivate
- * Reactivate a deleted client
- */
-router.post('/:id/reactivate', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    // Check if client exists
-    const existingClient = await prisma.client.findUnique({
-      where: { id },
-    });
-
-    if (!existingClient) {
-      res.status(404).json({
-        status: 'error',
-        message: 'Client not found',
-      });
-      return;
-    }
-
-    if (!existingClient.deletedAt && existingClient.isActive) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Client is already active',
-      });
-      return;
-    }
-
-    // Reactivate client
-    const client = await prisma.client.update({
-      where: { id },
-      data: {
-        isActive: true,
-        deletedAt: null,
-      },
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            tenantKey: true,
-          },
-        },
-      },
-    });
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Client reactivated successfully',
-      data: client,
-    });
-  } catch (error) {
-    console.error('Error reactivating client:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to reactivate client',
+      message: 'Failed to delete business client',
     });
   }
 });

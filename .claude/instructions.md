@@ -1,31 +1,91 @@
 # Claude Code Instructions for FreeTimeChat
 
+## Core Working Principles
+
+### 🎯 Follow User Directions EXACTLY
+
+- **Do ONLY what the user explicitly asks for** - no more, no less
+- **Do NOT take liberties** or make assumptions about what the user might want
+- **Do NOT commit uncommitted changes** unless explicitly asked
+- **Do NOT add features** that weren't requested
+- **Do NOT refactor code** that wasn't mentioned
+- **Do NOT fix unrelated issues** unless asked
+
+### 💬 Always Ask Before Acting
+
+When you have ideas or suggestions:
+
+1. **STOP** - Do not implement immediately
+2. **ASK** - Explain your suggestion and ask permission first
+3. **WAIT** - Let the user decide before proceeding
+4. **Examples of when to ASK:**
+   - "I noticed X could be improved. Would you like me to fix it?"
+   - "There are uncommitted changes in the repo. Should I commit them?"
+   - "I found an error in Y. Should I fix it while I'm here?"
+   - "I could also add Z feature. Would you like that?"
+
+### ✅ When In Doubt
+
+- Ask for clarification
+- Err on the side of doing less rather than more
+- Confirm scope before starting work
+- Present options and let user choose
+
+### ❌ Never Assume
+
+- Don't assume what's in scope
+- Don't assume user wants all changes committed
+- Don't assume suggested improvements should be made
+- Don't assume silence means agreement
+
 ## Project Context
+
 This is a time tracking application with a unique architecture:
+
 - Regular users interact ONLY through chat interface
 - Admins use a traditional web interface
 - Built with Next.js and TypeScript
 
 ## Related Documentation
-- **[Git Best Practices](./git.md)** - Git workflow and commit standards including automated commit script that generates detailed commit messages and auto-creates dev branches (dev-1, dev-2, etc.)
-- **[Code Standards & Best Practices](./code.md)** - Comprehensive coding standards for frontend and backend development, component organization patterns, breaking pages into logical components, file structure, TypeScript conventions, and code quality guidelines
-- **[Authentication System](./authentication.md)** - Complete authentication architecture including JWT (RS256), Google OAuth, 2FA with TOTP, and token rotation strategies
-- **[Authorization System](./authorization.md)** - Role-Based Access Control (RBAC) with multiple roles per user, granular capabilities, and explicit deny rules that override allow permissions
-- **[Memory System](./memory.md)** - Long-term memory architecture for chat conversations including short-term (Redis), long-term (PostgreSQL), semantic memory (vector embeddings), and context management
-- **[Database Configuration](./database.md)** - Multi-tenant database architecture with database-per-client isolation. Comprehensive guide for database selection and setup with top 3 cloud options (Supabase, Railway, Neon) and 3 local options (Docker, native, Postgres.app). Main database for auth/authorization, UUID-based client databases for transactional data
+
+- **[Git Best Practices](./git.md)** - Git workflow and commit standards
+  including automated commit script that generates detailed commit messages and
+  auto-creates dev branches (dev-1, dev-2, etc.)
+- **[Code Standards & Best Practices](./code.md)** - Comprehensive coding
+  standards for frontend and backend development, component organization
+  patterns, breaking pages into logical components, file structure, TypeScript
+  conventions, and code quality guidelines
+- **[Authentication System](./authentication.md)** - Complete authentication
+  architecture including JWT (RS256), Google OAuth, 2FA with TOTP, and token
+  rotation strategies
+- **[Authorization System](./authorization.md)** - Role-Based Access Control
+  (RBAC) with multiple roles per user, granular capabilities, and explicit deny
+  rules that override allow permissions
+- **[Memory System](./memory.md)** - Long-term memory architecture for chat
+  conversations including short-term (Redis), long-term (PostgreSQL), semantic
+  memory (vector embeddings), and context management
+- **[Database Configuration](./database.md)** - Multi-tenant database
+  architecture with database-per-client isolation. Comprehensive guide for
+  database selection and setup with top 3 cloud options (Supabase, Railway,
+  Neon) and 3 local options (Docker, native, Postgres.app). Main database for
+  auth/authorization, UUID-based client databases for transactional data
 
 ## Development Guidelines
 
 ### When Working on Chat Features
+
 - Focus on natural language understanding
 - Support various time entry formats (hours, time ranges, descriptions)
 - Provide helpful, conversational responses
 - Handle ambiguous requests gracefully
 - Always confirm actions before executing
-- **Conversation Tracking**: Give each conversation a unique ID using uuid4, and save the state of the conversation in each interaction for future analysis of accuracy
+- **Conversation Tracking**: Give each conversation a unique ID using uuid4, and
+  save the state of the conversation in each interaction for future analysis of
+  accuracy
 - Store conversation context to improve response quality
 
 ### When Working on Admin Features
+
 - Use standard UI patterns (tables, forms, charts)
 - Prioritize data visualization
 - Enable bulk operations
@@ -34,6 +94,7 @@ This is a time tracking application with a unique architecture:
 - Include: who performed the action, when, what changed (before/after values)
 
 ### Code Standards
+
 - Use TypeScript with strict mode
 - Follow Next.js 14+ App Router conventions
 - Implement proper error handling
@@ -42,7 +103,9 @@ This is a time tracking application with a unique architecture:
 - Use Tailwind CSS for styling
 
 ### Chat Handler Pattern
+
 Chat handlers should:
+
 1. Parse user intent from natural language
 2. Extract relevant data (time, project, description)
 3. Validate the data
@@ -50,6 +113,7 @@ Chat handlers should:
 5. Provide clear confirmation with summary
 
 ### API Structure
+
 - `/api/chat` - Handle all user chat interactions
 - `/api/admin/*` - Admin-only endpoints
 - `/api/time-entries/*` - CRUD operations for time entries
@@ -59,6 +123,7 @@ Chat handlers should:
 - `/api/capabilities/*` - Capability management endpoints
 
 ### Security Considerations
+
 - Implement authentication for both interfaces (see authentication.md)
 - Role-based access control with explicit deny support (see authorization.md)
 - Validate all chat inputs for SQL injection, XSS
@@ -69,6 +134,7 @@ Chat handlers should:
 - Audit log security-sensitive operations
 
 ## File Organization
+
 ```
 /app
   /chat - User chat interface
@@ -86,6 +152,7 @@ Chat handlers should:
 ```
 
 ## Testing Approach
+
 - Test chat handlers with various natural language inputs
 - Test edge cases (negative hours, invalid dates, etc.)
 - Test admin operations (CRUD, bulk operations)
@@ -96,12 +163,14 @@ Chat handlers should:
 ## Technology Stack
 
 ### Frontend: Next.js (TypeScript)
+
 - Modern, fast, excellent developer experience
 - Perfect for building both chat interface and admin dashboard
 - Deploy to Vercel for free
 - Use App Router (not Pages Router) for modern React features
 
 ### Backend: Node.js + Express/Fastify (TypeScript)
+
 - Full-stack type safety with shared types
 - Faster development with same language
 - Simpler deployment
@@ -200,12 +269,15 @@ Chat handlers should:
 ### Communication Between Frontend and Backend
 
 **Frontend → Backend Communication**
+
 - RESTful API calls via fetch/axios
 - Base URL configured via environment variables
 - TypeScript types shared via `@freetimechat/shared-types` package
-- Authentication via JWT tokens in HTTP-only cookies (preferred) or Authorization header
+- Authentication via JWT tokens in HTTP-only cookies (preferred) or
+  Authorization header
 
 **Development Workflow:**
+
 - Run both frontend and backend locally during development
 - Frontend: `http://localhost:3000`
 - Backend: `http://localhost:4000`
@@ -214,6 +286,7 @@ Chat handlers should:
 ### Environment Configuration
 
 **Frontend (.env.local)**
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -221,6 +294,7 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
 ```
 
 **Backend (.env)**
+
 ```env
 # Server
 PORT=4000
@@ -261,32 +335,38 @@ OPENAI_API_KEY=sk-...
 
 ### Multi-Tenant Architecture (Database-Per-Client)
 
-FreeTimeChat uses a **database-per-tenant** architecture for maximum data isolation:
+FreeTimeChat uses a **database-per-tenant** architecture for maximum data
+isolation:
 
 **Main Database** (freetimechat_main):
+
 - Authentication and authorization (users, roles, capabilities)
 - Client registry and database assignments
 - JWT refresh tokens
 - Global configuration
 
-**Client Databases** (freetimechat_<UUID>):
+**Client Databases** (freetimechat\_<UUID>):
+
 - Each client gets their own isolated database
 - UUID v4-based naming: `freetimechat_550e8400e29b41d4a716446655440000`
 - Contains all transactional data (projects, time entries, tasks, conversations)
 - Complete data isolation between clients
 
 **Benefits:**
+
 - ✅ Maximum security and data isolation
 - ✅ Compliance-friendly (data residency)
 - ✅ Easy to backup/restore individual clients
 - ✅ Scalable (can move clients to dedicated servers)
 - ✅ Simple client offboarding (drop entire database)
 
-See [database.md](./database.md) for complete architecture details and implementation.
+See [database.md](./database.md) for complete architecture details and
+implementation.
 
 ### Recommended: PostgreSQL (Primary Database)
 
 **Why PostgreSQL:**
+
 - ✅ **Relational data model** perfect for structured time tracking data
 - ✅ **ACID compliance** ensures data integrity for time entries
 - ✅ **JSON support** for flexible chat metadata storage
@@ -301,6 +381,7 @@ See [database.md](./database.md) for complete architecture details and implement
 **Recommended ORM: Prisma**
 
 Why Prisma:
+
 - Type-safe database queries
 - Automatic TypeScript type generation
 - Great developer experience
@@ -311,6 +392,7 @@ Why Prisma:
 ### Main Database Tables
 
 **Authentication & Authorization:**
+
 - `users` - User accounts with auth fields and clientId (see authentication.md)
 - `clients` - Client registry with database assignments (UUID-based)
 - `refresh_tokens` - Refresh tokens with rotation tracking
@@ -322,17 +404,20 @@ Why Prisma:
 ### Client Database Tables
 
 **Business Logic** (per-client database):
+
 - `projects` - Project information
 - `time_entries` - Time tracking entries
 - `tasks` - Task management
 - `conversations` - Chat conversation metadata
 - `messages` - Chat messages with context
 
-**Note:** Each client database has its own isolated copy of these tables with their own data.
+**Note:** Each client database has its own isolated copy of these tables with
+their own data.
 
 ### Redis (Complementary - for Caching & Performance)
 
 **Use Cases:**
+
 - **Session storage** for JWT refresh tokens
 - **Rate limiting** for chat API endpoint
 - **Caching** user permissions and capabilities
@@ -343,6 +428,7 @@ Why Prisma:
 ### Data Backup Strategy
 
 **For Production:**
+
 - Daily automated backups (most hosts provide this)
 - Point-in-time recovery capability
 - Test backup restoration quarterly
@@ -351,6 +437,7 @@ Why Prisma:
 ## Implementation Roadmap
 
 ### Phase 1: Project Setup (Week 1)
+
 1. Initialize monorepo structure (pnpm workspaces)
 2. Set up Next.js frontend app with App Router
 3. Set up Express/Fastify backend app
@@ -362,6 +449,7 @@ Why Prisma:
 9. Run first migration
 
 ### Phase 2: Authentication & Authorization (Week 2)
+
 1. Implement JWT authentication system (RS256)
 2. Create user registration and login endpoints
 3. Implement Google OAuth integration
@@ -372,6 +460,7 @@ Why Prisma:
 8. Write unit tests for auth services
 
 ### Phase 3: Backend Core (Week 3)
+
 1. Create time entry CRUD endpoints
 2. Create project CRUD endpoints
 3. Create client CRUD endpoints
@@ -381,6 +470,7 @@ Why Prisma:
 7. Write unit tests for services
 
 ### Phase 4: Chat Processing (Week 4)
+
 1. Design chat intent parser
 2. Implement conversation tracking with uuid4
 3. Implement time entry handler (parse "I worked 3 hours on X")
@@ -390,6 +480,7 @@ Why Prisma:
 7. Handle ambiguous requests with clarification
 
 ### Phase 5: Frontend Foundation (Week 5)
+
 1. Create API client layer with TypeScript types
 2. Build authentication UI (login/register/2FA)
 3. Implement Google OAuth button
@@ -399,6 +490,7 @@ Why Prisma:
 7. Connect chat UI to backend API
 
 ### Phase 6: Admin Interface (Week 6-7)
+
 1. Build admin dashboard layout with navigation
 2. Create user management pages
 3. Create role/capability management UI
@@ -408,6 +500,7 @@ Why Prisma:
 7. Implement audit log viewer
 
 ### Phase 7: Reporting & Analytics (Week 8)
+
 1. Create reporting endpoints (time by user, project, date range)
 2. Build report visualization with charts
 3. Add export functionality (CSV/PDF)
@@ -415,6 +508,7 @@ Why Prisma:
 5. Implement real-time metrics
 
 ### Phase 8: Testing & Polish (Week 9)
+
 1. Comprehensive integration testing
 2. Load testing and performance optimization
 3. Security audit
@@ -423,6 +517,7 @@ Why Prisma:
 6. User acceptance testing
 
 ### Phase 9: Deployment (Week 10)
+
 1. Set up production database
 2. Configure environment variables
 3. Deploy backend to Railway/Render
@@ -436,28 +531,33 @@ Why Prisma:
 ### Recommended Deployment Setup
 
 **Frontend (Next.js):**
+
 - Deploy to: **Vercel** (easiest) or Netlify
 - Environment variables: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
 - Automatic deployments from git push
 - Edge functions for optimal performance
 
 **Backend (API):**
+
 - Deploy to: **Railway**, Render, or Fly.io
 - Environment variables: See Backend .env above
 - Set up health check endpoint: `GET /health`
 - Configure worker processes for production
 
 **Database:**
+
 - **PostgreSQL** on Supabase or Railway
 - Connection pooling enabled
 - Automated daily backups configured
 - Read replicas for scaling (if needed)
 
 **Redis:**
+
 - Railway Redis or Upstash
 - Configure for session storage and caching
 
 **Monitoring:**
+
 - Sentry for error tracking
 - LogRocket or similar for session replay
 - Uptime monitoring (Uptime Robot, Better Uptime)
@@ -473,7 +573,7 @@ services:
       context: ./apps/web
       dockerfile: ../../docker/Dockerfile.web
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - NEXT_PUBLIC_API_URL=http://api:4000
     depends_on:
@@ -484,7 +584,7 @@ services:
       context: ./apps/api
       dockerfile: ../../docker/Dockerfile.api
     ports:
-      - "4000:4000"
+      - '4000:4000'
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/freetimechat
       - REDIS_URL=redis://redis:6379
@@ -497,7 +597,7 @@ services:
   db:
     image: postgres:16-alpine
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
@@ -508,7 +608,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
 
@@ -520,6 +620,7 @@ volumes:
 ## Performance Optimization
 
 ### Backend
+
 - Use Redis for caching user permissions (5-minute TTL)
 - Implement database connection pooling
 - Add indexes on frequently queried columns
@@ -527,6 +628,7 @@ volumes:
 - Implement rate limiting on all endpoints
 
 ### Frontend
+
 - Use React Server Components where possible
 - Implement code splitting
 - Optimize images with Next.js Image component
@@ -598,7 +700,8 @@ pnpm format
 3. **Explicit Over Implicit**: Clear naming and explicit permission checks
 4. **Audit Everything**: Log all important operations
 5. **Fail Safely**: Default deny for permissions, graceful degradation
-6. **Test Thoroughly**: Unit tests for business logic, integration tests for flows
+6. **Test Thoroughly**: Unit tests for business logic, integration tests for
+   flows
 7. **Document Well**: JSDoc for complex functions, README for setup
 8. **Performance Matters**: Cache aggressively, optimize queries
 9. **User Experience**: Clear error messages, helpful chat responses

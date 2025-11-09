@@ -541,6 +541,26 @@ export default function TenantsPage() {
         columns={columns}
         data={filteredTenants}
         keyExtractor={(tenant) => tenant.id}
+        onRowClick={(tenant) => {
+          setEditingTenant(tenant);
+          setEditFormData({
+            name: tenant.name,
+            slug: tenant.slug,
+            tenantKey: tenant.tenantKey,
+            databaseName: tenant.databaseName,
+            databaseHost: tenant.databaseHost,
+            contactName: tenant.contactName,
+            contactEmail: tenant.contactEmail,
+            contactPhone: tenant.contactPhone,
+            billingStreet: tenant.billingStreet,
+            billingCity: tenant.billingCity,
+            billingState: tenant.billingState,
+            billingZip: tenant.billingZip,
+            billingCountry: tenant.billingCountry,
+            billingEmail: tenant.billingEmail,
+          });
+          setShowEditModal(true);
+        }}
         isLoading={isLoading}
         emptyMessage="No tenants found"
         pagination={{

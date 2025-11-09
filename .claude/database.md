@@ -1,10 +1,13 @@
 # Database Configuration & Setup Guide
 
-This document provides comprehensive guidance for selecting, configuring, and managing your database for FreeTimeChat, whether locally hosted or cloud-based.
+This document provides comprehensive guidance for selecting, configuring, and
+managing your database for FreeTimeChat, whether locally hosted or cloud-based.
 
 ## Overview
 
-FreeTimeChat supports **PostgreSQL** as the primary database with the following features:
+FreeTimeChat supports **PostgreSQL** as the primary database with the following
+features:
+
 - ✅ Relational data model for time tracking
 - ✅ ACID compliance
 - ✅ JSON support for flexible data
@@ -17,7 +20,18 @@ FreeTimeChat supports **PostgreSQL** as the primary database with the following 
 
 ## Multi-Tenant Database Architecture
 
-FreeTimeChat implements a **database-per-tenant** architecture for maximum data isolation and security.
+FreeTimeChat implements a **database-per-tenant** architecture for maximum data
+isolation and security.
+
+> **⚠️ IMPORTANT TERMINOLOGY UPDATE (2025-01-09)**
+>
+> **Main Database `Tenant`** = A customer of FreeTimeChat (e.g., "ARAGROW-LLC",
+> "Acme Corp") **Tenant Database `Client`** = A tenant's business client (e.g.,
+> "Content Cucumber", "XYZ Company")
+>
+> The `Client` model exists ONLY in tenant databases, NOT in the main database.
+> This ensures proper data isolation and correct query routing in the
+> multi-tenant architecture.
 
 ### Architecture Overview
 
@@ -28,30 +42,31 @@ FreeTimeChat implements a **database-per-tenant** architecture for maximum data 
 │                                                         │
 │  Tables:                                                │
 │  - users                 (user accounts)                │
+│  - tenants               (tenant registry) ⭐ NOT clients│
 │  - roles                 (role definitions)             │
 │  - capabilities          (permissions)                  │
 │  - user_roles            (role assignments)             │
 │  - role_capabilities     (permission assignments)       │
 │  - refresh_tokens        (JWT refresh tokens)           │
-│  - clients               (client registry)              │
-│  - client_databases      (database assignments)         │
+│  - security_settings     (tenant security config)       │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
                             │
-                            │ Client authenticated
+                            │ Tenant authenticated
                             ↓
         ┌───────────────────────────────────────┐
-        │    Route to Client-Specific Database  │
+        │    Route to Tenant-Specific Database  │
         └───────────────────────────────────────┘
                             │
         ┌───────────────────┴───────────────────┐
         │                                       │
         ↓                                       ↓
 ┌─────────────────┐                    ┌─────────────────┐
-│  Client DB 1    │                    │  Client DB 2    │
+│  Tenant DB 1    │                    │  Tenant DB 2    │
 │  UUID: abc123...│                    │  UUID: def456...│
 │                 │                    │                 │
 │  Tables:        │                    │  Tables:        │
+│  - clients ⭐   │                    │  - clients ⭐   │
 │  - projects     │                    │  - projects     │
 │  - time_entries │                    │  - time_entries │
 │  - tasks        │                    │  - tasks        │
@@ -64,6 +79,7 @@ FreeTimeChat implements a **database-per-tenant** architecture for maximum data 
 ### Why Database-Per-Tenant?
 
 **Advantages:**
+
 - ✅ **Maximum Data Isolation**: Each client's data is completely separate
 - ✅ **Security**: Data breach in one tenant doesn't affect others
 - ✅ **Compliance**: Easier to meet data residency requirements
@@ -74,6 +90,7 @@ FreeTimeChat implements a **database-per-tenant** architecture for maximum data 
 - ✅ **Client Deletion**: Simple to completely remove a client's data
 
 **Disadvantages:**
+
 - ❌ More complex connection management
 - ❌ More databases to maintain and migrate
 - ❌ Higher infrastructure costs at scale
@@ -94,7 +111,11 @@ Examples:
 
 ### Main Database Schema
 
-The main database stores authentication, authorization, and client registry:
+The main database stores authentication, authorization, and tenant registry:
+
+> **Note**: The `Client` model was removed from the main database on 2025-01-09.
+> Use `Tenant` for the tenant registry. Business clients are stored in tenant
+> databases.
 
 ```prisma
 // prisma/schema-main.prisma
@@ -104,8 +125,8 @@ model User {
   email             String          @unique
   passwordHash      String?         @map("password_hash")
   name              String
-  clientId          String          @map("client_id") // Links user to client
-  client            Client          @relation(fields: [clientId], references: [id])
+  tenantId          String?         @map("tenant_id") // Links user to tenant (optional for admins)
+  tenant            Tenant?         @relation(fields: [tenantId], references: [id])
   roles             UserRole[]
   refreshTokens     RefreshToken[]
   googleId          String?         @unique @map("google_id")
@@ -116,24 +137,27 @@ model User {
   deletedAt         DateTime?       @map("deleted_at")
 
   @@index([email])
-  @@index([clientId])
+  @@index([tenantId])
   @@map("users")
 }
 
-model Client {
+model Tenant {
   id              String          @id @default(uuid())
-  name            String          // Client/Company name
+  name            String          // Tenant/Company name (e.g., "ARAGROW-LLC")
   slug            String          @unique // URL-friendly identifier
-  databaseName    String          @unique @map("database_name") // UUID-based DB name
-  databaseHost    String          @map("database_host") // For multi-region support
+  tenantKey       String          @unique @map("tenant_key") // Unique short key (e.g., "ARAGROW-LLC")
+  databaseId      String?         @unique @map("database_id") // UUID4 for database identification
+  databaseName    String?         @unique @map("database_name") // UUID-based DB name
+  databaseHost    String          @default("localhost") @map("database_host") // For multi-region support
   isActive        Boolean         @default(true) @map("is_active")
   users           User[]
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
   @@index([slug])
+  @@index([tenantKey])
   @@index([databaseName])
-  @@map("clients")
+  @@map("tenants")
 }
 
 model Role {
@@ -205,27 +229,62 @@ model RefreshToken {
 }
 ```
 
-### Client Database Schema
+### Tenant Database Schema
 
-Each client database contains transactional data:
+Each tenant database contains transactional data and business clients:
+
+> **Important**: The `Client` model represents the tenant's business clients
+> (customers they serve), NOT to be confused with the `Tenant` model in the main
+> database (customers of FreeTimeChat).
 
 ```prisma
 // prisma/schema-client.prisma
 
-model Project {
-  id          String       @id @default(uuid())
-  name        String
-  description String?
-  startDate   DateTime?    @map("start_date")
-  endDate     DateTime?    @map("end_date")
-  status      String       @default("active")
-  timeEntries TimeEntry[]
-  tasks       Task[]
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-  deletedAt   DateTime?    @map("deleted_at")
+model Client {
+  id                   String    @id @default(uuid())
+  name                 String    // Business client name (e.g., "Content Cucumber")
+  slug                 String    @unique
+  isActive             Boolean   @default(true) @map("is_active")
+  email                String?
+  phone                String?
+  website              String?
+  contactPerson        String?   @map("contact_person")
+  hourlyRate           Decimal?  @map("hourly_rate") @db.Decimal(10, 2)
+  discountPercentage   Decimal?  @default(0) @map("discount_percentage") @db.Decimal(5, 2)
+  // Invoice numbering
+  invoicePrefix        String?   @map("invoice_prefix")
+  invoiceNextNumber    Int       @default(1) @map("invoice_next_number")
+  invoiceNumberPadding Int       @default(5) @map("invoice_number_padding")
+  projects             Project[]
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at")
 
-  @@index([status])
+  @@index([slug])
+  @@index([isActive])
+  @@map("clients")
+}
+
+model Project {
+  id            String       @id @default(uuid())
+  name          String
+  description   String?
+  clientId      String?      @map("client_id") // References Client in THIS database
+  client        Client?      @relation(fields: [clientId], references: [id])
+  isActive      Boolean      @default(true) @map("is_active")
+  startDate     DateTime?    @map("start_date")
+  endDate       DateTime?    @map("end_date")
+  // Budget tracking
+  hourlyRate    Decimal?     @map("hourly_rate") @db.Decimal(10, 2)
+  allocatedHours Decimal?    @map("allocated_hours") @db.Decimal(10, 2)
+  timeEntries   TimeEntry[]
+  tasks         Task[]
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  @@index([clientId])
+  @@index([isActive])
   @@map("projects")
 }
 
@@ -386,7 +445,8 @@ export class DatabaseService {
    * Build client database URL
    */
   private static buildClientDatabaseUrl(host: string, dbName: string): string {
-    const baseUrl = process.env.DATABASE_URL_TEMPLATE || process.env.DATABASE_URL;
+    const baseUrl =
+      process.env.DATABASE_URL_TEMPLATE || process.env.DATABASE_URL;
 
     if (!baseUrl) {
       throw new Error('DATABASE_URL_TEMPLATE not configured');
@@ -709,6 +769,7 @@ migrateAllClients();
 ### Client Onboarding Flow
 
 1. **Create Client Account**
+
 ```typescript
 async function onboardNewClient(data: {
   name: string;
@@ -762,7 +823,8 @@ async function onboardNewClient(data: {
 ### Security Considerations
 
 1. **Connection Isolation**: Each client can only access their own database
-2. **User Validation**: Always verify user belongs to client before allowing access
+2. **User Validation**: Always verify user belongs to client before allowing
+   access
 3. **Database Credentials**: Use different credentials per client in production
 4. **Connection Limits**: Implement connection pooling and limits
 5. **Audit Logging**: Log all cross-database operations
@@ -820,14 +882,14 @@ async function healthCheckAllDatabases() {
 
 ## Database Selection Matrix
 
-| Criteria | Local (Dev) | Cloud (Production) |
-|----------|-------------|-------------------|
-| **Cost** | Free | $0-25/month |
-| **Setup Time** | 5-10 minutes | 10-15 minutes |
-| **Maintenance** | Manual | Managed |
-| **Backups** | Manual | Automatic |
-| **Scaling** | Limited | Easy |
-| **Best For** | Development/Testing | Production |
+| Criteria        | Local (Dev)         | Cloud (Production) |
+| --------------- | ------------------- | ------------------ |
+| **Cost**        | Free                | $0-25/month        |
+| **Setup Time**  | 5-10 minutes        | 10-15 minutes      |
+| **Maintenance** | Manual              | Managed            |
+| **Backups**     | Manual              | Automatic          |
+| **Scaling**     | Limited             | Easy               |
+| **Best For**    | Development/Testing | Production         |
 
 ---
 
@@ -838,11 +900,13 @@ async function healthCheckAllDatabases() {
 **Best for:** Full-featured PostgreSQL with built-in auth and real-time features
 
 **Pricing:**
+
 - **Free Tier**: 500 MB database, 2 GB bandwidth, 50,000 monthly active users
 - **Pro Plan**: $25/month - 8 GB database, 50 GB bandwidth, 100,000 MAU
 - **Team Plan**: $599/month - 100 GB database, 250 GB bandwidth
 
 **Advantages:**
+
 - ✅ Free tier is generous
 - ✅ PostgreSQL 15+
 - ✅ Built-in authentication (can replace custom auth)
@@ -856,11 +920,13 @@ async function healthCheckAllDatabases() {
 - ✅ pgvector extension supported
 
 **Disadvantages:**
+
 - ❌ Shared resources on free tier
 - ❌ Connection limits on free tier (60 connections)
 - ❌ Some vendor lock-in features
 
 **Setup:**
+
 ```bash
 # 1. Create account at https://supabase.com
 # 2. Create new project
@@ -870,12 +936,14 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432
 ```
 
 **Connection Pooling (Recommended):**
+
 ```bash
 # Use pooler connection for better performance
 DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:6543/postgres?pgbouncer=true"
 ```
 
-**When to choose:** Best for startups and MVPs, especially if you want built-in auth and real-time features.
+**When to choose:** Best for startups and MVPs, especially if you want built-in
+auth and real-time features.
 
 ---
 
@@ -884,6 +952,7 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:6543
 **Best for:** Simple, developer-friendly PostgreSQL hosting
 
 **Pricing:**
+
 - **Free Trial**: $5 credit
 - **Pay as you go**: Usage-based pricing
   - PostgreSQL: ~$5-10/month for small apps
@@ -891,6 +960,7 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:6543
 - **Team Plan**: $20/month (includes $20 credits)
 
 **Advantages:**
+
 - ✅ Extremely simple setup
 - ✅ Pay only for what you use
 - ✅ No credit card required for trial
@@ -903,11 +973,13 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:6543
 - ✅ Great developer experience
 
 **Disadvantages:**
+
 - ❌ No free tier (trial only)
 - ❌ Can get expensive with high usage
 - ❌ Limited configuration options
 
 **Setup:**
+
 ```bash
 # 1. Create account at https://railway.app
 # 2. Create new project
@@ -917,7 +989,9 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:6543
 DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:5432/railway"
 ```
 
-**When to choose:** Best for developers who want simplicity and are willing to pay for convenience. Great for production if you're already using Railway for backend deployment.
+**When to choose:** Best for developers who want simplicity and are willing to
+pay for convenience. Great for production if you're already using Railway for
+backend deployment.
 
 ---
 
@@ -926,11 +1000,13 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:5432/railway"
 **Best for:** Serverless PostgreSQL with automatic scaling and branching
 
 **Pricing:**
+
 - **Free Tier**: 0.5 GB storage, shared compute, 10 branches
 - **Pro Plan**: $19/month - 10 GB storage, 2 vCPU, unlimited branches
 - **Custom**: Enterprise pricing
 
 **Advantages:**
+
 - ✅ Serverless (pay per usage)
 - ✅ Instant database branching (great for dev/staging)
 - ✅ Auto-scaling compute
@@ -941,11 +1017,13 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:5432/railway"
 - ✅ Point-in-time restore
 
 **Disadvantages:**
+
 - ❌ Free tier has storage limits
 - ❌ Newer service (less mature than others)
 - ❌ Some PostgreSQL extensions not yet supported
 
 **Setup:**
+
 ```bash
 # 1. Create account at https://neon.tech
 # 2. Create new project
@@ -954,24 +1032,25 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:5432/railway"
 DATABASE_URL="postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]?sslmode=require"
 ```
 
-**When to choose:** Best for projects with variable traffic or need database branching for development workflows.
+**When to choose:** Best for projects with variable traffic or need database
+branching for development workflows.
 
 ---
 
 ## Comparison Table: Cloud Options
 
-| Feature | Supabase | Railway | Neon |
-|---------|----------|---------|------|
-| **Free Tier** | ✅ 500 MB | ❌ Trial only | ✅ 0.5 GB |
-| **Starting Price** | $25/month | ~$5/month | $19/month |
-| **PostgreSQL Version** | 15+ | 16 | 16 |
-| **Automatic Backups** | Pro+ | ✅ | ✅ |
-| **Connection Pooling** | ✅ | ❌ (use PgBouncer) | ✅ Built-in |
-| **Extensions** | Most | Most | Limited |
-| **Auth Built-in** | ✅ | ❌ | ❌ |
-| **Real-time** | ✅ | ❌ | ❌ |
-| **Branching** | ❌ | ❌ | ✅ |
-| **Best For** | MVPs with auth | Simple hosting | Variable traffic |
+| Feature                | Supabase       | Railway            | Neon             |
+| ---------------------- | -------------- | ------------------ | ---------------- |
+| **Free Tier**          | ✅ 500 MB      | ❌ Trial only      | ✅ 0.5 GB        |
+| **Starting Price**     | $25/month      | ~$5/month          | $19/month        |
+| **PostgreSQL Version** | 15+            | 16                 | 16               |
+| **Automatic Backups**  | Pro+           | ✅                 | ✅               |
+| **Connection Pooling** | ✅             | ❌ (use PgBouncer) | ✅ Built-in      |
+| **Extensions**         | Most           | Most               | Limited          |
+| **Auth Built-in**      | ✅             | ❌                 | ❌               |
+| **Real-time**          | ✅             | ❌                 | ❌               |
+| **Branching**          | ❌             | ❌                 | ✅               |
+| **Best For**           | MVPs with auth | Simple hosting     | Variable traffic |
 
 ---
 
@@ -984,6 +1063,7 @@ DATABASE_URL="postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]?sslmode=require"
 **Pricing:** Free
 
 **Advantages:**
+
 - ✅ Consistent across all platforms (Windows/Mac/Linux)
 - ✅ Easy to start/stop
 - ✅ Isolated from system
@@ -993,6 +1073,7 @@ DATABASE_URL="postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]?sslmode=require"
 - ✅ Ideal for team development
 
 **Disadvantages:**
+
 - ❌ Requires Docker installation
 - ❌ Uses more resources than native
 - ❌ Slightly slower than native
@@ -1000,6 +1081,7 @@ DATABASE_URL="postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]?sslmode=require"
 **Setup:**
 
 **Option A: Using docker-compose.yml** (Recommended)
+
 ```yaml
 # docker-compose.yml
 version: '3.8'
@@ -1012,12 +1094,12 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: freetimechat
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -1026,7 +1108,7 @@ services:
     image: redis:7-alpine
     container_name: freetimechat-redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
 
@@ -1051,6 +1133,7 @@ docker-compose up -d
 ```
 
 **Option B: Docker run command**
+
 ```bash
 # Start PostgreSQL
 docker run --name freetimechat-db \
@@ -1066,11 +1149,13 @@ docker exec -it freetimechat-db psql -U postgres -d freetimechat -c "CREATE EXTE
 ```
 
 **Connection String:**
+
 ```bash
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/freetimechat"
 ```
 
-**When to choose:** Best for all developers, especially teams. Most flexible and consistent.
+**When to choose:** Best for all developers, especially teams. Most flexible and
+consistent.
 
 ---
 
@@ -1081,6 +1166,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/freetimechat"
 **Pricing:** Free
 
 **Advantages:**
+
 - ✅ Native macOS app
 - ✅ Very fast (no Docker overhead)
 - ✅ Menu bar icon for easy start/stop
@@ -1089,11 +1175,13 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/freetimechat"
 - ✅ GUI for database management
 
 **Disadvantages:**
+
 - ❌ macOS only
 - ❌ Not portable to other platforms
 - ❌ Manual backup management
 
 **Setup:**
+
 ```bash
 # 1. Download from https://postgresapp.com
 # 2. Install and open Postgres.app
@@ -1115,13 +1203,15 @@ CREATE EXTENSION vector;
 ```
 
 **Connection String:**
+
 ```bash
 DATABASE_URL="postgresql://postgres@localhost:5432/freetimechat"
 # Or with custom user:
 DATABASE_URL="postgresql://freetimechat_user:your_password@localhost:5432/freetimechat"
 ```
 
-**When to choose:** Best for macOS developers who prefer native apps and maximum performance.
+**When to choose:** Best for macOS developers who prefer native apps and maximum
+performance.
 
 ---
 
@@ -1132,6 +1222,7 @@ DATABASE_URL="postgresql://freetimechat_user:your_password@localhost:5432/freeti
 **Pricing:** Free
 
 **Advantages:**
+
 - ✅ Native installation
 - ✅ Best performance
 - ✅ System service (auto-start on boot)
@@ -1139,6 +1230,7 @@ DATABASE_URL="postgresql://freetimechat_user:your_password@localhost:5432/freeti
 - ✅ Lower resource usage than Docker
 
 **Disadvantages:**
+
 - ❌ Different commands per OS
 - ❌ Can conflict with other PostgreSQL installations
 - ❌ Harder to run multiple versions
@@ -1146,6 +1238,7 @@ DATABASE_URL="postgresql://freetimechat_user:your_password@localhost:5432/freeti
 **Setup by Platform:**
 
 **macOS (Homebrew):**
+
 ```bash
 # Install PostgreSQL
 brew install postgresql@16
@@ -1165,6 +1258,7 @@ DATABASE_URL="postgresql://$(whoami)@localhost:5432/freetimechat"
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 # Install PostgreSQL
 sudo apt update
@@ -1190,6 +1284,7 @@ DATABASE_URL="postgresql://freetimechat_user:your_password@localhost:5432/freeti
 ```
 
 **Windows (Chocolatey):**
+
 ```powershell
 # Install PostgreSQL
 choco install postgresql
@@ -1207,7 +1302,8 @@ CREATE DATABASE freetimechat;
 DATABASE_URL="postgresql://postgres:your_password@localhost:5432/freetimechat"
 ```
 
-**When to choose:** Best for developers comfortable with system administration and prefer native installations.
+**When to choose:** Best for developers comfortable with system administration
+and prefer native installations.
 
 ---
 
@@ -1364,7 +1460,9 @@ async function setupDockerDatabase(): Promise<DatabaseConfig> {
       await new Promise((resolve) => setTimeout(resolve, 3000));
     }
   } else {
-    console.log('⚠️  docker-compose.yml not found. You can start it later with:');
+    console.log(
+      '⚠️  docker-compose.yml not found. You can start it later with:'
+    );
     console.log('   docker-compose up -d postgres');
   }
 
@@ -1408,7 +1506,9 @@ async function setupNativeDatabase(): Promise<DatabaseConfig> {
   console.log('\n📝 Manual steps required:');
   console.log('1. Make sure PostgreSQL is installed and running');
   console.log(`2. Create database: createdb ${database}`);
-  console.log(`3. Install pgvector: psql ${database} -c "CREATE EXTENSION vector;"`);
+  console.log(
+    `3. Install pgvector: psql ${database} -c "CREATE EXTENSION vector;"`
+  );
 
   return {
     type: 'local',
@@ -1433,7 +1533,9 @@ async function setupPostgresApp(): Promise<DatabaseConfig> {
   console.log('1. Open Postgres.app');
   console.log('2. Click "Initialize" if not already done');
   console.log(`3. Create database: psql -c "CREATE DATABASE ${database}"`);
-  console.log(`4. Install pgvector: psql ${database} -c "CREATE EXTENSION vector;"`);
+  console.log(
+    `4. Install pgvector: psql ${database} -c "CREATE EXTENSION vector;"`
+  );
 
   return {
     type: 'local',
@@ -1475,7 +1577,9 @@ async function setupCloudDatabase(): Promise<DatabaseConfig> {
     console.log('1. Go to https://supabase.com');
     console.log('2. Create a new project');
     console.log('3. Go to Settings > Database');
-    console.log('4. Copy the connection string (use "Connection pooling" for better performance)');
+    console.log(
+      '4. Copy the connection string (use "Connection pooling" for better performance)'
+    );
   } else if (provider === 'railway') {
     console.log('1. Go to https://railway.app');
     console.log('2. Create a new project');
@@ -1496,7 +1600,10 @@ async function setupCloudDatabase(): Promise<DatabaseConfig> {
       name: 'connectionString',
       message: 'Paste your database connection string:',
       validate: (input) => {
-        if (!input.startsWith('postgresql://') && !input.startsWith('postgres://')) {
+        if (
+          !input.startsWith('postgresql://') &&
+          !input.startsWith('postgres://')
+        ) {
           return 'Please enter a valid PostgreSQL connection string';
         }
         return true;
@@ -1610,12 +1717,16 @@ import { PrismaClient } from '@prisma/client';
 
 const DATABASE_CONFIGS = {
   development: {
-    url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/freetimechat',
+    url:
+      process.env.DATABASE_URL ||
+      'postgresql://postgres:postgres@localhost:5432/freetimechat',
     // Force local in development
     preferLocal: true,
   },
   test: {
-    url: process.env.DATABASE_URL_TEST || 'postgresql://postgres:postgres@localhost:5432/freetimechat_test',
+    url:
+      process.env.DATABASE_URL_TEST ||
+      'postgresql://postgres:postgres@localhost:5432/freetimechat_test',
   },
   staging: {
     url: process.env.DATABASE_URL,
@@ -1629,7 +1740,8 @@ const DATABASE_CONFIGS = {
   },
 };
 
-const env = (process.env.NODE_ENV || 'development') as keyof typeof DATABASE_CONFIGS;
+const env = (process.env.NODE_ENV ||
+  'development') as keyof typeof DATABASE_CONFIGS;
 const config = DATABASE_CONFIGS[env];
 
 // Use local database in development even if cloud URL is provided
@@ -1637,7 +1749,8 @@ if (env === 'development' && config.preferLocal) {
   const localUrl = 'postgresql://postgres:postgres@localhost:5432/freetimechat';
 
   // Check if local database is available
-  const useLocal = process.env.FORCE_LOCAL_DB === 'true' || !process.env.DATABASE_URL;
+  const useLocal =
+    process.env.FORCE_LOCAL_DB === 'true' || !process.env.DATABASE_URL;
 
   if (useLocal) {
     config.url = localUrl;
@@ -1699,12 +1812,12 @@ services:
   pgbouncer:
     image: edoburu/pgbouncer
     environment:
-      DATABASE_URL: "postgres://postgres:postgres@postgres:5432/freetimechat"
+      DATABASE_URL: 'postgres://postgres:postgres@postgres:5432/freetimechat'
       POOL_MODE: transaction
       MAX_CLIENT_CONN: 1000
       DEFAULT_POOL_SIZE: 20
     ports:
-      - "6432:5432"
+      - '6432:5432'
     networks:
       - db_network
     depends_on:
@@ -1756,6 +1869,7 @@ echo "Backup completed: $BACKUP_FILE.gz"
 **Supabase:** Automatic daily backups (Pro plan)
 
 **Railway:** Automatic backups, manual restore via CLI:
+
 ```bash
 railway backup create
 railway backup restore [backup-id]
@@ -1768,17 +1882,20 @@ railway backup restore [backup-id]
 ## Recommended Setup by Use Case
 
 ### For Solo Developer (MVP)
+
 - **Development**: Docker (easy, portable)
 - **Production**: Supabase free tier
 - **Cost**: $0/month
 
 ### For Small Team
+
 - **Development**: Docker (consistent across team)
 - **Staging**: Railway ($5-10/month)
 - **Production**: Supabase Pro ($25/month)
 - **Cost**: $30-35/month
 
 ### For Production App
+
 - **Development**: Docker
 - **Staging**: Railway
 - **Production**: Neon Pro or Supabase Team
@@ -1873,13 +1990,17 @@ VACUUM ANALYZE;
 ## Summary
 
 **Recommended for Most Users:**
+
 - **Development**: Docker (cross-platform, easy)
-- **Production**: Supabase (generous free tier, managed) or Railway (simple, affordable)
+- **Production**: Supabase (generous free tier, managed) or Railway (simple,
+  affordable)
 
 **Total Monthly Cost:**
+
 - **Development**: Free (Docker)
 - **Production**: $0-25/month (Supabase free to Pro)
 
 **Setup Time:**
+
 - Interactive setup wizard: 5-10 minutes
 - Manual setup: 10-15 minutes

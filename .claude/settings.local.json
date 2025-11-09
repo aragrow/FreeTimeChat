@@ -110,7 +110,9 @@
       "Bash(PGPASSWORD=freetimechat_dev_password /opt/homebrew/bin/psql:*)",
       "Bash(docker-compose exec:*)",
       "Bash(node test-login.js:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(CLIENT_DATABASE_URL=\"postgresql://david@localhost:5432/freetimechat_customer_22d1fe9f_b025_4ce1_ba7c_5d53aecc3762\" pnpm prisma db push:*)",
+      "Bash(pnpm prisma:generate:client:*)"
     ],
     "deny": [],
     "ask": []

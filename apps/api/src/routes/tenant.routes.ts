@@ -61,6 +61,13 @@ router.put('/:id', controller.update.bind(controller));
 router.patch('/:id/status', controller.setStatus.bind(controller));
 
 /**
+ * @route   POST /api/v1/admin/tenants/:id/provision
+ * @desc    Provision tenant database (creates the physical PostgreSQL database)
+ * @access  Admin only
+ */
+router.post('/:id/provision', controller.provisionDatabase.bind(controller));
+
+/**
  * @route   DELETE /api/v1/admin/tenants/:id
  * @desc    Delete tenant
  * @access  Admin only
