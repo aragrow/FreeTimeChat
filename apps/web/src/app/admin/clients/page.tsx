@@ -27,6 +27,7 @@ interface Client {
   zipCode: string | null;
   country: string | null;
   notes: string | null;
+  hourlyRate: number | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -61,14 +62,23 @@ export default function ClientsPage() {
     contactName: '',
     contactEmail: '',
     contactPhone: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+    hourlyRate: '',
   });
 
   // Available tenants for dropdown
-  const [tenants, setTenants] = useState<Array<{ id: string; name: string }>>([]);
+  const [tenants, setTenants] = useState<Array<{ id: string; name: string; tenantKey: string }>>(
+    []
+  );
 
   useEffect(() => {
     fetchClients();
     fetchTenants();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchTerm, includeInactive]);
 
   const fetchClients = async () => {
@@ -109,9 +119,10 @@ export default function ClientsPage() {
       if (response.ok) {
         const result = await response.json();
         setTenants(
-          (result.data.tenants || []).map((t: any) => ({
+          (result.data.tenants || []).map((t: { id: string; name: string; tenantKey: string }) => ({
             id: t.id,
             name: t.name,
+            tenantKey: t.tenantKey,
           }))
         );
       }
@@ -145,6 +156,12 @@ export default function ClientsPage() {
           contactName: '',
           contactEmail: '',
           contactPhone: '',
+          address: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: '',
+          hourlyRate: '',
         });
         fetchClients();
       } else {
@@ -182,6 +199,12 @@ export default function ClientsPage() {
           contactName: '',
           contactEmail: '',
           contactPhone: '',
+          address: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: '',
+          hourlyRate: '',
         });
         fetchClients();
       } else {
@@ -241,6 +264,37 @@ export default function ClientsPage() {
     }
   };
 
+  // Format phone number as user types
+  const formatPhoneNumber = (value: string): string => {
+    // Remove all non-numeric characters except + at start
+    const cleaned = value.replace(/[^\d+]/g, '');
+
+    // If starts with +, it's international - just add spacing
+    if (cleaned.startsWith('+')) {
+      return cleaned;
+    }
+
+    // US/Canada format: (XXX) XXX-XXXX
+    const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+    if (match) {
+      const [, area, prefix, line] = match;
+      if (line) {
+        return `(${area}) ${prefix}-${line}`;
+      } else if (prefix) {
+        return area.length === 3 ? `(${area}) ${prefix}` : area;
+      } else {
+        return area;
+      }
+    }
+
+    return cleaned;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    setFormData({ ...formData, contactPhone: formatted });
+  };
+
   const openEditModal = (client: Client) => {
     setEditingClient(client);
     setFormData({
@@ -250,6 +304,12 @@ export default function ClientsPage() {
       contactName: client.contactName || '',
       contactEmail: client.contactEmail || '',
       contactPhone: client.contactPhone || '',
+      address: client.address || '',
+      city: client.city || '',
+      state: client.state || '',
+      zipCode: client.zipCode || '',
+      country: client.country || '',
+      hourlyRate: client.hourlyRate ? client.hourlyRate.toString() : '',
     });
   };
 
@@ -410,35 +470,42 @@ export default function ClientsPage() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">Create New Client</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Client Name *
-                </label>
-                <Input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Client name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tenant *</label>
-                <select
-                  value={formData.tenantId}
-                  onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a tenant</option>
-                  {tenants.map((tenant) => (
-                    <option key={tenant.id} value={tenant.id}>
-                      {tenant.name}
-                    </option>
-                  ))}
-                </select>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-6">Create New Client</h2>
+
+            {/* Basic Information */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                Basic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Client Name *
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Client name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tenant *</label>
+                  <select
+                    value={formData.tenantId}
+                    onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a tenant</option>
+                    {tenants.map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.tenantKey}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
@@ -449,14 +516,36 @@ export default function ClientsPage() {
                   placeholder="Company name"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name</label>
-                <Input
-                  type="text"
-                  value={formData.contactName}
-                  onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                  placeholder="Contact person name"
-                />
+            </div>
+
+            {/* Contact Information */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                Contact Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contact Name
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.contactName}
+                    onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                    placeholder="Contact person name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contact Phone
+                  </label>
+                  <Input
+                    type="tel"
+                    value={formData.contactPhone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -469,18 +558,85 @@ export default function ClientsPage() {
                   placeholder="contact@example.com"
                 />
               </div>
+            </div>
+
+            {/* Billing Address */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Billing Address</h3>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Phone
+                  Street Address
                 </label>
                 <Input
-                  type="tel"
-                  value={formData.contactPhone}
-                  onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                  placeholder="+1 (555) 123-4567"
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Street address"
                 />
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <Input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="City"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <Input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    placeholder="State"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+                  <Input
+                    type="text"
+                    value={formData.zipCode}
+                    onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                    placeholder="ZIP"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <Input
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    placeholder="Country"
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Billing Information */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                Billing Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Default Hourly Rate
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.hourlyRate}
+                    onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 variant="outline"
@@ -493,6 +649,12 @@ export default function ClientsPage() {
                     contactName: '',
                     contactEmail: '',
                     contactPhone: '',
+                    address: '',
+                    city: '',
+                    state: '',
+                    zipCode: '',
+                    country: '',
+                    hourlyRate: '',
                   });
                 }}
               >
@@ -506,36 +668,43 @@ export default function ClientsPage() {
 
       {/* Edit Modal */}
       {editingClient && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">Edit Client</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Client Name *
-                </label>
-                <Input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tenant *</label>
-                <select
-                  value={formData.tenantId}
-                  onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
-                  disabled
-                >
-                  <option value="">Select a tenant</option>
-                  {tenants.map((tenant) => (
-                    <option key={tenant.id} value={tenant.id}>
-                      {tenant.name}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">Tenant cannot be changed</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-6">Edit Client</h2>
+
+            {/* Basic Information */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                Basic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Client Name *
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tenant *</label>
+                  <select
+                    value={formData.tenantId}
+                    onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+                    disabled
+                  >
+                    <option value="">Select a tenant</option>
+                    {tenants.map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.tenantKey}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Tenant cannot be changed</p>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
@@ -546,14 +715,36 @@ export default function ClientsPage() {
                   placeholder="Company name"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name</label>
-                <Input
-                  type="text"
-                  value={formData.contactName}
-                  onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                  placeholder="Contact person name"
-                />
+            </div>
+
+            {/* Contact Information */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                Contact Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contact Name
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.contactName}
+                    onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                    placeholder="Contact person name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contact Phone
+                  </label>
+                  <Input
+                    type="tel"
+                    value={formData.contactPhone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -566,18 +757,85 @@ export default function ClientsPage() {
                   placeholder="contact@example.com"
                 />
               </div>
+            </div>
+
+            {/* Billing Address */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Billing Address</h3>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Phone
+                  Street Address
                 </label>
                 <Input
-                  type="tel"
-                  value={formData.contactPhone}
-                  onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                  placeholder="+1 (555) 123-4567"
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Street address"
                 />
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <Input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="City"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <Input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    placeholder="State"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+                  <Input
+                    type="text"
+                    value={formData.zipCode}
+                    onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                    placeholder="ZIP"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <Input
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    placeholder="Country"
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Billing Information */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                Billing Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Default Hourly Rate
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.hourlyRate}
+                    onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 variant="outline"
@@ -590,6 +848,12 @@ export default function ClientsPage() {
                     contactName: '',
                     contactEmail: '',
                     contactPhone: '',
+                    address: '',
+                    city: '',
+                    state: '',
+                    zipCode: '',
+                    country: '',
+                    hourlyRate: '',
                   });
                 }}
               >
