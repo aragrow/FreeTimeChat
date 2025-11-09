@@ -43,6 +43,7 @@ model Client {
   invoiceNextNumber    Int       @default(1) @map("invoice_next_number")
   invoiceNumberPadding Int       @default(5) @map("invoice_number_padding") // e.g., 5 = "00001"
   projects             Project[]
+  invoices             Invoice[]
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
   deletedAt            DateTime? @map("deleted_at")
@@ -53,27 +54,27 @@ model Client {
 }
 
 model Project {
-  id                     String          @id @default(uuid())
-  name                   String
-  description            String?
-  clientId               String?         @map("client_id")
-  client                 Client?         @relation(fields: [clientId], references: [id])
-  isActive               Boolean         @default(true) @map("is_active")
-  startDate              DateTime?       @map("start_date")
-  endDate                DateTime?       @map("end_date")
-  isBillableProject      Boolean         @default(true) @map("is_billable_project")
-  defaultBillable        Boolean         @default(true) @map("default_billable")
+  id                       String          @id @default(uuid())
+  name                     String
+  description              String?
+  clientId                 String?         @map("client_id")
+  client                   Client?         @relation(fields: [clientId], references: [id])
+  isActive                 Boolean         @default(true) @map("is_active")
+  startDate                DateTime?       @map("start_date")
+  endDate                  DateTime?       @map("end_date")
+  isBillableProject        Boolean         @default(true) @map("is_billable_project")
+  defaultBillable          Boolean         @default(true) @map("default_billable")
   // Budget tracking fields
-  hourlyRate             Decimal?        @map("hourly_rate") @db.Decimal(10, 2)
-  allocatedHours         Decimal?        @map("allocated_hours") @db.Decimal(10, 2)
-  additionalHoursAllocated Decimal?      @default(0) @map("additional_hours_allocated") @db.Decimal(10, 2)
+  hourlyRate               Decimal?        @map("hourly_rate") @db.Decimal(10, 2)
+  allocatedHours           Decimal?        @map("allocated_hours") @db.Decimal(10, 2)
+  additionalHoursAllocated Decimal?        @default(0) @map("additional_hours_allocated") @db.Decimal(10, 2)
   //
-  timeEntries            TimeEntry[]
-  tasks                  Task[]
-  members                ProjectMember[]
-  createdAt              DateTime        @default(now()) @map("created_at")
-  updatedAt              DateTime        @updatedAt @map("updated_at")
-  deletedAt              DateTime?       @map("deleted_at")
+  timeEntries              TimeEntry[]
+  tasks                    Task[]
+  members                  ProjectMember[]
+  createdAt                DateTime        @default(now()) @map("created_at")
+  updatedAt                DateTime        @updatedAt @map("updated_at")
+  deletedAt                DateTime?       @map("deleted_at")
 
   @@index([clientId])
   @@index([isActive])
@@ -185,4 +186,108 @@ enum MessageRole {
   USER
   ASSISTANT
   SYSTEM
+}
+
+model PayPalTenantConfig {
+  id                   String   @id @default(uuid())
+  paypalIntegrationId  String   @map("paypal_integration_id") // References PayPalIntegration in main DB
+  isEnabled            Boolean  @default(false) @map("is_enabled")
+  // PayPal invoice settings
+  invoiceEmailSubject  String?  @map("invoice_email_subject") // Custom email subject line
+  invoiceTermsAndConds String?  @map("invoice_terms_and_conds") @db.Text // Custom terms and conditions
+  invoiceNote          String?  @map("invoice_note") @db.Text // Note to appear on invoice
+  invoiceMerchantLogo  String?  @map("invoice_merchant_logo") // Logo URL
+  // Payment settings
+  allowPartialPayment  Boolean  @default(true) @map("allow_partial_payment")
+  minimumAmountDue     Decimal? @map("minimum_amount_due") @db.Decimal(10, 2)
+  dueInDays            Int      @default(30) @map("due_in_days") // Net 30, Net 60, etc.
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("paypal_tenant_configs")
+}
+
+model Invoice {
+  id                 String           @id @default(uuid())
+  invoiceNumber      String           @unique @map("invoice_number") // e.g., "INV-00001"
+  clientId           String?          @map("client_id")
+  client             Client?          @relation(fields: [clientId], references: [id])
+  status             InvoiceStatus    @default(DRAFT)
+  paypalInvoiceId    String?          @unique @map("paypal_invoice_id") // PayPal's invoice ID
+  paypalInvoiceUrl   String?          @map("paypal_invoice_url") // PayPal invoice URL for viewing/payment
+  // Dates
+  issueDate          DateTime         @map("issue_date")
+  dueDate            DateTime         @map("due_date")
+  paidDate           DateTime?        @map("paid_date")
+  // Amounts
+  subtotal           Decimal          @db.Decimal(10, 2)
+  taxRate            Decimal          @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  taxAmount          Decimal          @default(0) @map("tax_amount") @db.Decimal(10, 2)
+  discountAmount     Decimal          @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  totalAmount        Decimal          @map("total_amount") @db.Decimal(10, 2)
+  amountPaid         Decimal          @default(0) @map("amount_paid") @db.Decimal(10, 2)
+  amountDue          Decimal          @map("amount_due") @db.Decimal(10, 2)
+  // Details
+  note               String?          @db.Text
+  termsAndConditions String?          @map("terms_and_conditions") @db.Text
+  // Metadata
+  createdBy          String           @map("created_by") // User ID
+  sentBy             String?          @map("sent_by") // User ID who sent the invoice
+  sentAt             DateTime?        @map("sent_at")
+  items              InvoiceItem[]
+  payments           InvoicePayment[]
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  @@index([clientId])
+  @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
+  @@index([paypalInvoiceId])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id           String   @id @default(uuid())
+  invoiceId    String   @map("invoice_id")
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  projectId    String?  @map("project_id") // Optional reference to project
+  description  String   @db.Text
+  quantity     Decimal  @db.Decimal(10, 2)
+  unitPrice    Decimal  @map("unit_price") @db.Decimal(10, 2)
+  amount       Decimal  @db.Decimal(10, 2) // quantity * unitPrice
+  // Time entry references (if invoice item is from time entries)
+  timeEntryIds String[] @default([]) @map("time_entry_ids") // Array of time entry IDs
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([invoiceId])
+  @@index([projectId])
+  @@map("invoice_items")
+}
+
+model InvoicePayment {
+  id              String   @id @default(uuid())
+  invoiceId       String   @map("invoice_id")
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  paypalPaymentId String?  @map("paypal_payment_id") // PayPal transaction ID
+  amount          Decimal  @db.Decimal(10, 2)
+  paymentDate     DateTime @map("payment_date")
+  paymentMethod   String?  @map("payment_method") // e.g., "PayPal", "Credit Card", "Check"
+  note            String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([invoiceId])
+  @@index([paymentDate])
+  @@map("invoice_payments")
+}
+
+enum InvoiceStatus {
+  DRAFT // Not yet sent
+  SENT // Sent to client via PayPal
+  VIEWED // Client viewed the invoice
+  PAID // Fully paid
+  PARTIAL_PAID // Partially paid
+  CANCELLED // Cancelled
+  REFUNDED // Refunded
+  OVERDUE // Past due date
 }

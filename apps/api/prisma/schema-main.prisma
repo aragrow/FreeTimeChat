@@ -245,3 +245,21 @@ model SystemSettings {
 
   @@map("system_settings")
 }
+
+model PayPalIntegration {
+  id               String   @id @default(uuid())
+  name             String // Friendly name for this PayPal integration
+  clientId         String   @map("client_id") // PayPal REST API Client ID
+  clientSecretEnc  String   @map("client_secret_enc") // Encrypted PayPal REST API Secret
+  isProduction     Boolean  @default(false) @map("is_production") // true = live, false = sandbox
+  isActive         Boolean  @default(true) @map("is_active")
+  allowedTenantIds String[] @default([]) @map("allowed_tenant_ids") // Empty array = all tenants, else specific list
+  webhookId        String?  @map("webhook_id") // PayPal webhook ID for events
+  createdBy        String   @map("created_by") // Admin user ID
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@index([isProduction])
+  @@map("paypal_integrations")
+}

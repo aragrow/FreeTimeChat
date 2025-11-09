@@ -11,6 +11,9 @@ import { attachClientDatabase } from '../middleware/client-database.middleware';
 import { requireAnyRole } from '../middleware/permission.middleware';
 import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
+import invoicesRoutes from './admin/invoices.routes';
+import paypalConfigRoutes from './admin/paypal-config.routes';
+import paypalIntegrationRoutes from './admin/paypal-integration.routes';
 import projectMembersRoutes from './admin/project-members.routes';
 import projectsRoutes from './admin/projects.routes';
 import reportsRoutes from './admin/reports.routes';
@@ -32,12 +35,15 @@ router.use(requireAnyRole(['admin', 'tenantadmin']));
 router.use('/users', usersRoutes);
 router.use('/roles', rolesRoutes);
 router.use('/capabilities', capabilitiesRoutes);
+router.use('/paypal-integration', paypalIntegrationRoutes);
 router.use('/stats', statsRoutes);
 router.use('/tenants', tenantRoutes);
 router.use('/system-settings', systemSettingsRoutes);
 
 // Mount admin sub-routes that NEED tenant database (attach middleware first)
 router.use('/clients', attachClientDatabase, clientsRoutes);
+router.use('/invoices', attachClientDatabase, invoicesRoutes);
+router.use('/paypal-config', attachClientDatabase, paypalConfigRoutes);
 router.use('/projects', attachClientDatabase, projectsRoutes);
 router.use('/project-members', attachClientDatabase, projectMembersRoutes);
 router.use('/reports', attachClientDatabase, reportsRoutes);
@@ -52,15 +58,18 @@ router.get('/', (_req, res) => {
     endpoints: {
       users: '/api/v1/admin/users',
       roles: '/api/v1/admin/roles',
+      capabilities: '/api/v1/admin/capabilities',
       clients: '/api/v1/admin/clients',
+      invoices: '/api/v1/admin/invoices',
+      paypalIntegration: '/api/v1/admin/paypal-integration',
+      paypalConfig: '/api/v1/admin/paypal-config',
       projects: '/api/v1/admin/projects',
       projectMembers: '/api/v1/admin/project-members',
       reports: '/api/v1/admin/reports',
-      tasks: '/api/v1/admin/tasks',
-      timeEntries: '/api/v1/admin/time-entries',
-      tenants: '/api/v1/admin/tenants',
-      capabilities: '/api/v1/admin/capabilities',
       stats: '/api/v1/admin/stats',
+      tasks: '/api/v1/admin/tasks',
+      tenants: '/api/v1/admin/tenants',
+      timeEntries: '/api/v1/admin/time-entries',
     },
   });
 });
