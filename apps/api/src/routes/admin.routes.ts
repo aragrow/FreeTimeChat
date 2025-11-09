@@ -16,6 +16,7 @@ import projectsRoutes from './admin/projects.routes';
 import rolesRoutes from './admin/roles.routes';
 import statsRoutes from './admin/stats.routes';
 import systemSettingsRoutes from './admin/system-settings.routes';
+import tasksRoutes from './admin/tasks.routes';
 import timeEntriesRoutes from './admin/time-entries.routes';
 import usersRoutes from './admin/users.routes';
 import tenantRoutes from './tenant.routes';
@@ -38,6 +39,7 @@ router.use('/system-settings', systemSettingsRoutes);
 router.use('/clients', attachClientDatabase, clientsRoutes);
 router.use('/projects', attachClientDatabase, projectsRoutes);
 router.use('/project-members', attachClientDatabase, projectMembersRoutes);
+router.use('/tasks', attachClientDatabase, tasksRoutes);
 router.use('/time-entries', attachClientDatabase, timeEntriesRoutes);
 
 // Admin dashboard root endpoint
@@ -51,6 +53,7 @@ router.get('/', (_req, res) => {
       clients: '/api/v1/admin/clients',
       projects: '/api/v1/admin/projects',
       projectMembers: '/api/v1/admin/project-members',
+      tasks: '/api/v1/admin/tasks',
       timeEntries: '/api/v1/admin/time-entries',
       tenants: '/api/v1/admin/tenants',
       capabilities: '/api/v1/admin/capabilities',
