@@ -9,6 +9,7 @@ import { AttemptType, PrismaClient as MainPrismaClient, type User } from '../gen
 import { getJWTService } from './jwt.service';
 import { getLoginTrackingService } from './login-tracking.service';
 import { getPasswordService } from './password.service';
+import { getSystemSettingsService } from './system-settings.service';
 import { getUserService } from './user.service';
 import type { LoginResponse, RegisterRequest, UserPublic } from '@freetimechat/types';
 
@@ -18,6 +19,7 @@ export class AuthService {
   private passwordService: ReturnType<typeof getPasswordService>;
   private jwtService: ReturnType<typeof getJWTService>;
   private loginTrackingService: ReturnType<typeof getLoginTrackingService>;
+  private systemSettingsService: ReturnType<typeof getSystemSettingsService>;
 
   constructor() {
     this.prisma = new MainPrismaClient();
@@ -25,23 +27,24 @@ export class AuthService {
     this.passwordService = getPasswordService();
     this.jwtService = getJWTService();
     this.loginTrackingService = getLoginTrackingService();
+    this.systemSettingsService = getSystemSettingsService();
   }
 
   /**
    * Calculate 2FA grace period based on user roles
-   * Admin and CustomerAdmin: 2 hours
+   * Admin and TenantAdmin: 2 hours
    * Regular users: 10 days
    */
   private calculateRoleBasedGracePeriod(roles: string[]): Date {
     const now = new Date();
 
-    // Check if user has admin or customeradmin role
+    // Check if user has admin or tenantadmin role
     const hasAdminRole = roles.some(
-      (role) => role.toLowerCase() === 'admin' || role.toLowerCase() === 'customeradmin'
+      (role) => role.toLowerCase() === 'admin' || role.toLowerCase() === 'tenantadmin'
     );
 
     if (hasAdminRole) {
-      // 2 hours for admin and customeradmin
+      // 2 hours for admin and tenantadmin
       return new Date(now.getTime() + 2 * 60 * 60 * 1000);
     }
 
@@ -57,6 +60,7 @@ export class AuthService {
     email: string,
     password: string,
     tenantKey?: string,
+    skipTwoFactor?: boolean,
     ipAddress?: string,
     userAgent?: string
   ): Promise<LoginResponse> {
@@ -148,6 +152,16 @@ export class AuthService {
       userAgent,
     });
 
+    // Check if password change is required
+    if (user.requirePasswordChange) {
+      return {
+        accessToken: '',
+        refreshToken: '',
+        user: this.sanitizeUser(user),
+        requiresPasswordChange: true,
+      };
+    }
+
     // Set 2FA grace period on first login
     if (!user.lastLoginAt && !user.twoFactorGracePeriodEndsAt) {
       const gracePeriodEndDate = this.calculateRoleBasedGracePeriod(roles);
@@ -175,8 +189,10 @@ export class AuthService {
       }
     }
 
-    // Check if 2FA is enabled
-    if (user.twoFactorEnabled) {
+    // Check if 2FA is enabled (skip in development if flag is set OR if global bypass is enabled)
+    const globalBypass = await this.systemSettingsService.isTwoFactorBypassedForAllUsers();
+
+    if (user.twoFactorEnabled && !skipTwoFactor && !globalBypass) {
       // Return partial response indicating 2FA is required
       return {
         accessToken: '',

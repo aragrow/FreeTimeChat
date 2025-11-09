@@ -5,11 +5,18 @@
  * All endpoints require admin privileges
  */
 
+import { getPasswordService } from '../services/password.service';
+import { getRoleService } from '../services/role.service';
 import { getTenantService } from '../services/tenant.service';
+import { getUserService } from '../services/user.service';
+import type { JWTPayload } from '@freetimechat/types';
 import type { Request, Response } from 'express';
 
 export class TenantController {
   private tenantService = getTenantService();
+  private userService = getUserService();
+  private roleService = getRoleService();
+  private passwordService = getPasswordService();
 
   /**
    * Get all tenants with optional filtering and pagination
@@ -17,6 +24,41 @@ export class TenantController {
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
+      // Tenant filtering: tenantadmin users can only see their own tenant
+      const currentUser = req.user as JWTPayload;
+      const userRoles = currentUser.roles || [];
+      const isTenantAdmin = userRoles.includes('tenantadmin');
+      const isAdmin = userRoles.includes('admin');
+
+      // If user is tenantadmin (not admin), return only their own tenant
+      if (isTenantAdmin && !isAdmin && currentUser.tenantId) {
+        const tenant = await this.tenantService.findById(currentUser.tenantId);
+
+        if (!tenant) {
+          res.status(404).json({
+            status: 'error',
+            message: 'Tenant not found',
+          });
+          return;
+        }
+
+        // Return as a paginated result with single tenant
+        res.status(200).json({
+          status: 'success',
+          data: {
+            tenants: [tenant],
+            pagination: {
+              page: 1,
+              limit: 1,
+              total: 1,
+              totalPages: 1,
+            },
+          },
+        });
+        return;
+      }
+
+      // Admin users can see all tenants with filtering
       const { isActive, search, page, limit } = req.query;
 
       const filters: any = {};
@@ -105,13 +147,24 @@ export class TenantController {
         billingCountry,
         billingEmail,
         isActive,
+        adminUsername,
       } = req.body;
 
       // Validate required fields
-      if (!name || !slug || !tenantKey) {
+      if (!name || !slug || !tenantKey || !adminUsername) {
         res.status(400).json({
           status: 'error',
-          message: 'Missing required fields: name, slug, tenantKey',
+          message: 'Missing required fields: name, slug, tenantKey, adminUsername',
+        });
+        return;
+      }
+
+      // Validate admin username format (exactly 6 digits)
+      const usernameRegex = /^\d{6}$/;
+      if (!usernameRegex.test(adminUsername)) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Admin username must be exactly 6 digits',
         });
         return;
       }
@@ -172,10 +225,37 @@ export class TenantController {
         isActive,
       });
 
+      // Create admin user for the tenant
+      const adminEmail = `${adminUsername}@${slug}.local`;
+      const passwordHash = await this.passwordService.hash('firsttime');
+
+      const adminUser = await this.userService.createUser({
+        email: adminEmail,
+        passwordHash,
+        name: `Admin ${adminUsername}`,
+        tenantId: tenant.id,
+        requirePasswordChange: true,
+      });
+
+      // Assign TenantAdmin role to the new user
+      const tenantAdminRole = await this.roleService.findByName('tenantadmin');
+      if (!tenantAdminRole) {
+        throw new Error('TenantAdmin role not found. Please run database seed.');
+      }
+      await this.roleService.assignToUser(adminUser.id, tenantAdminRole.id);
+
       res.status(201).json({
         status: 'success',
-        data: { tenant },
-        message: 'Tenant created successfully',
+        data: {
+          tenant,
+          adminUser: {
+            id: adminUser.id,
+            email: adminUser.email,
+            name: adminUser.name,
+            requirePasswordChange: adminUser.requirePasswordChange,
+          },
+        },
+        message: 'Tenant and admin user created successfully',
       });
     } catch (error: any) {
       console.error('Error creating tenant:', error);

@@ -21,6 +21,16 @@ export default function SecuritySettingsPage() {
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeData, setQRCodeData] = useState<{ qrCode: string; secret: string } | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [twoFactorPassword, setTwoFactorPassword] = useState('');
+  const [skipTwoFactorInDev, setSkipTwoFactorInDev] = useState(() => {
+    // Load from localStorage, default to true in development
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('skipTwoFactorInDev');
+      return stored !== null ? stored === 'true' : true;
+    }
+    return true;
+  });
 
   // Password change state
   const [passwordData, setPasswordData] = useState({
@@ -95,19 +105,36 @@ export default function SecuritySettingsPage() {
     }
   };
 
+  const handleEnable2FAClick = () => {
+    setShowPasswordPrompt(true);
+    setMessage(null);
+  };
+
   const handleEnable2FA = async () => {
+    if (!twoFactorPassword) {
+      setMessage({ type: 'error', text: 'Password is required' });
+      return;
+    }
+
+    setIsSaving(true);
     setMessage(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/2fa/enable`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/enable`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: twoFactorPassword }),
       });
 
       if (response.ok) {
         const data = await response.json();
         setQRCodeData(data.data);
         setShowQRCode(true);
+        setShowPasswordPrompt(false);
+        setTwoFactorPassword('');
       } else {
         const errorData = await response.json();
         setMessage({ type: 'error', text: errorData.message || 'Failed to enable 2FA' });
@@ -115,6 +142,8 @@ export default function SecuritySettingsPage() {
     } catch (error) {
       console.error('Error enabling 2FA:', error);
       setMessage({ type: 'error', text: 'An error occurred while enabling 2FA' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -128,7 +157,7 @@ export default function SecuritySettingsPage() {
     setMessage(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/2fa/verify`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify`, {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
@@ -164,7 +193,7 @@ export default function SecuritySettingsPage() {
     setMessage(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/2fa/disable`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/disable`, {
         method: 'POST',
         headers: getAuthHeaders(),
       });
@@ -182,6 +211,11 @@ export default function SecuritySettingsPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSkipTwoFactorToggle = (checked: boolean) => {
+    setSkipTwoFactorInDev(checked);
+    localStorage.setItem('skipTwoFactorInDev', checked.toString());
   };
 
   return (
@@ -286,14 +320,46 @@ export default function SecuritySettingsPage() {
               </span>
             </div>
 
-            {!twoFactorEnabled && !showQRCode && (
+            {!twoFactorEnabled && !showQRCode && !showPasswordPrompt && (
               <div>
                 <p className="text-sm text-gray-600 mb-4">
                   Two-factor authentication (2FA) adds an additional layer of security to your
                   account by requiring a verification code from your phone in addition to your
                   password.
                 </p>
-                <Button onClick={handleEnable2FA}>Enable 2FA</Button>
+                <Button onClick={handleEnable2FAClick}>Enable 2FA</Button>
+              </div>
+            )}
+
+            {showPasswordPrompt && (
+              <div className="space-y-4">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-900 mb-3">
+                    For security, please enter your current password to enable 2FA
+                  </p>
+                  <Input
+                    type="password"
+                    value={twoFactorPassword}
+                    onChange={(e) => setTwoFactorPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    disabled={isSaving}
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={handleEnable2FA} disabled={isSaving || !twoFactorPassword}>
+                    {isSaving ? 'Enabling...' : 'Continue'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowPasswordPrompt(false);
+                      setTwoFactorPassword('');
+                    }}
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -358,6 +424,37 @@ export default function SecuritySettingsPage() {
                 <Button variant="danger" onClick={handleDisable2FA} disabled={isSaving}>
                   {isSaving ? 'Disabling...' : 'Disable 2FA'}
                 </Button>
+              </div>
+            )}
+
+            {/* Development Mode Option - Only show in development */}
+            {process.env.NODE_ENV !== 'production' && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="flex items-start">
+                  <input
+                    id="skip-2fa-dev"
+                    type="checkbox"
+                    checked={skipTwoFactorInDev}
+                    onChange={(e) => handleSkipTwoFactorToggle(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                  />
+                  <div className="ml-3">
+                    <label htmlFor="skip-2fa-dev" className="text-sm font-medium text-gray-900">
+                      Skip 2FA verification in development mode
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      When enabled, you won&apos;t be prompted for a 2FA code during login in
+                      development. This is for convenience during local development only and will
+                      not work in production.
+                    </p>
+                    <div className="mt-2 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-xs text-yellow-800">
+                        <strong>Development Only:</strong> This setting is only available in
+                        development mode and will have no effect in production environments.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </Card>

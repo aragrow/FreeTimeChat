@@ -8,7 +8,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -21,6 +21,22 @@ export default function Verify2FAPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
+  const [skipInDev, setSkipInDev] = useState(false);
+
+  // Check if we should skip 2FA in development mode
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') {
+      const shouldSkip = localStorage.getItem('skipTwoFactorInDev') === 'true';
+      setSkipInDev(shouldSkip);
+
+      if (shouldSkip) {
+        // Auto-redirect to chat after a brief delay to show the skip message
+        setTimeout(() => {
+          router.push('/chat');
+        }, 1500);
+      }
+    }
+  }, [router]);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +106,34 @@ export default function Verify2FAPage() {
         </div>
 
         <Card className="p-8">
+          {skipInDev && process.env.NODE_ENV !== 'production' && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+              <div className="flex items-center">
+                <svg
+                  className="h-5 w-5 text-green-400 mr-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-green-800">
+                    Skipping 2FA verification (Development Mode)
+                  </p>
+                  <p className="text-xs text-green-700 mt-1">
+                    Redirecting to chat... You can disable this in Security Settings.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
               {error}
@@ -123,10 +167,38 @@ export default function Verify2FAPage() {
               />
             </div>
 
-            <Button type="submit" isLoading={isLoading} className="w-full">
-              Verify
+            <Button type="submit" isLoading={isLoading} disabled={skipInDev} className="w-full">
+              {skipInDev ? 'Redirecting...' : 'Verify'}
             </Button>
           </form>
+
+          {/* Development mode skip toggle */}
+          {process.env.NODE_ENV !== 'production' && !skipInDev && (
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="flex items-start">
+                <input
+                  id="skip-2fa"
+                  type="checkbox"
+                  checked={skipInDev}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setSkipInDev(checked);
+                    localStorage.setItem('skipTwoFactorInDev', checked.toString());
+                    if (checked) {
+                      setTimeout(() => router.push('/chat'), 500);
+                    }
+                  }}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                />
+                <label htmlFor="skip-2fa" className="ml-3 text-xs text-gray-600">
+                  Skip 2FA verification in development mode
+                  <span className="block text-yellow-600 mt-1">
+                    (Development only - will not work in production)
+                  </span>
+                </label>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 text-center">
             <button

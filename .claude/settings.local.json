@@ -106,7 +106,11 @@
       "Bash(pnpm --filter @freetimechat/api test:integration:*)",
       "Bash(/Users/david/Documents/nextjs/FreeTimeChat/apps/api/src/services/google-oauth.service.ts)",
       "Bash(pnpm test:login:*)",
-      "Bash(pnpm --filter @freetimechat/api add:*)"
+      "Bash(pnpm --filter @freetimechat/api add:*)",
+      "Bash(PGPASSWORD=freetimechat_dev_password /opt/homebrew/bin/psql:*)",
+      "Bash(docker-compose exec:*)",
+      "Bash(node test-login.js:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

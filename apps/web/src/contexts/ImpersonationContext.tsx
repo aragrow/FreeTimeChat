@@ -57,21 +57,23 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
 
   const startImpersonation = async (targetUserId: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/impersonate`, {
-        method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ targetUserId }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${targetUserId}/impersonate`,
+        {
+          method: 'POST',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
+        // Store the new impersonation token
+        localStorage.setItem('accessToken', data.data.accessToken);
+
         setIsImpersonating(true);
         setTargetUser(data.data.targetUser);
 
-        // Refresh auth context to update user info
+        // Refresh auth context to update user info with the new token
         await refreshUser();
 
         return true;
@@ -88,12 +90,19 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
 
   const endImpersonation = async (): Promise<void> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/end-impersonation`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/impersonate/stop`,
+        {
+          method: 'POST',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (response.ok) {
+        const data = await response.json();
+        // Store the restored admin token
+        localStorage.setItem('accessToken', data.data.accessToken);
+
         setIsImpersonating(false);
         setTargetUser(null);
 

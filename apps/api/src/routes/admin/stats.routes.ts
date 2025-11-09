@@ -14,9 +14,28 @@ const prisma = new MainPrismaClient();
 /**
  * GET /api/v1/admin/stats
  * Get overview statistics (total users, roles, clients, capabilities)
+ * Supports optional tenantId query parameter to filter stats by tenant
  */
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
+    const { tenantId } = req.query;
+
+    // Build user filter based on tenant selection and user role
+    const currentUser = req.user as any;
+    const userRoles = currentUser.roles || [];
+    const isTenantAdmin = userRoles.includes('tenantadmin');
+    const isAdmin = userRoles.includes('admin');
+
+    const userFilter: any = {};
+
+    // Tenant filtering: tenantadmin users can only see stats for their own tenant
+    if (isTenantAdmin && !isAdmin && currentUser.tenantId) {
+      userFilter.tenantId = currentUser.tenantId;
+    } else if (tenantId && tenantId !== 'all') {
+      // Admin users can filter by any tenant
+      userFilter.tenantId = String(tenantId);
+    }
+
     // Get all stats in parallel
     const [
       totalUsers,
@@ -34,31 +53,40 @@ router.get('/', async (_req: Request, res: Response) => {
       usersByClient,
       topRoles,
     ] = await Promise.all([
-      // User counts
-      prisma.user.count(),
+      // User counts (filtered by tenant if specified)
+      prisma.user.count({
+        where: userFilter,
+      }),
       prisma.user.count({
         where: {
+          ...userFilter,
           isActive: true,
           deletedAt: null,
         },
       }),
       prisma.user.count({
         where: {
+          ...userFilter,
           isActive: false,
           deletedAt: null,
         },
       }),
       prisma.user.count({
         where: {
+          ...userFilter,
           deletedAt: { not: null },
         },
       }),
 
-      // Client counts
-      prisma.tenant.count(),
-      prisma.tenant.count({
-        where: { isActive: true },
-      }),
+      // Client counts (always show all, or filtered if specific tenant)
+      tenantId && tenantId !== 'all' ? Promise.resolve(1) : prisma.tenant.count(),
+      tenantId && tenantId !== 'all'
+        ? prisma.tenant.count({
+            where: { id: String(tenantId), isActive: true },
+          })
+        : prisma.tenant.count({
+            where: { isActive: true },
+          }),
 
       // Role counts
       prisma.role.count(),
@@ -157,6 +185,7 @@ router.get('/', async (_req: Request, res: Response) => {
 
     const activeUsersLast30Days = await prisma.user.count({
       where: {
+        ...userFilter,
         lastLoginAt: {
           gte: thirtyDaysAgo,
         },
@@ -171,23 +200,41 @@ router.get('/', async (_req: Request, res: Response) => {
     const [newUsersLast7Days, newClientsLast7Days] = await Promise.all([
       prisma.user.count({
         where: {
+          ...userFilter,
           createdAt: {
             gte: sevenDaysAgo,
           },
         },
       }),
-      prisma.tenant.count({
-        where: {
-          createdAt: {
-            gte: sevenDaysAgo,
-          },
-        },
-      }),
+      tenantId && tenantId !== 'all'
+        ? Promise.resolve(0)
+        : prisma.tenant.count({
+            where: {
+              createdAt: {
+                gte: sevenDaysAgo,
+              },
+            },
+          }),
     ]);
+
+    // Get selected tenant info if filtering by tenant
+    let selectedTenant = null;
+    if (tenantId && tenantId !== 'all') {
+      selectedTenant = await prisma.tenant.findUnique({
+        where: { id: String(tenantId) },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          isActive: true,
+        },
+      });
+    }
 
     res.status(200).json({
       status: 'success',
       data: {
+        selectedTenant,
         users: {
           total: totalUsers,
           active: activeUsers,
@@ -201,6 +248,11 @@ router.get('/', async (_req: Request, res: Response) => {
           active: activeClients,
           inactive: totalClients - activeClients,
           newInLast7Days: newClientsLast7Days,
+        },
+        tenants: {
+          total: totalClients,
+          active: activeClients,
+          inactive: totalClients - activeClients,
         },
         roles: {
           total: totalRoles,

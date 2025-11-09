@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { useImpersonation } from '@/contexts/ImpersonationContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useCapabilities } from '@/hooks/useCapabilities';
 
@@ -46,6 +47,7 @@ export default function UserDetailPage() {
   const router = useRouter();
   const { getAuthHeaders } = useAuth();
   const { hasCapability } = useCapabilities();
+  const { startImpersonation } = useImpersonation();
 
   const userId = params?.id as string;
 
@@ -228,6 +230,20 @@ export default function UserDetailPage() {
     }
   };
 
+  const handleImpersonate = async () => {
+    if (!confirm(`Are you sure you want to impersonate "${user?.name}" (${user?.email})?`)) {
+      return;
+    }
+
+    const success = await startImpersonation(userId);
+    if (success) {
+      // Redirect to chat (main app area)
+      router.push('/chat');
+    } else {
+      alert('Failed to start impersonation. Please check the console for details.');
+    }
+  };
+
   if (!canRead) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -401,6 +417,25 @@ export default function UserDetailPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
               <p className="text-gray-600 font-mono text-sm">{user.id}</p>
+            </div>
+
+            {/* Impersonate Action */}
+            <div className="pt-4 border-t">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Impersonation</label>
+              <Button size="sm" variant="outline" onClick={handleImpersonate}>
+                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                  />
+                </svg>
+                Impersonate User
+              </Button>
+              <p className="text-xs text-gray-500 mt-2">
+                Login as this user to see their view of the application
+              </p>
             </div>
           </div>
         </Card>

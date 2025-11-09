@@ -146,16 +146,21 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
 
             {/* Sidebar Footer */}
             <div className="border-t border-gray-200 bg-gray-50">
-              {/* Admin Panel Link - Only show for admin users */}
+              {/* Admin Panel Link - Show for admin and tenantadmin users */}
               {(() => {
                 console.log('Chat Layout - User object:', user);
                 console.log('Chat Layout - User roles:', user?.roles);
-                const isAdmin =
+                const hasAdminAccess =
                   user?.roles?.some(
-                    (role) => role && typeof role === 'string' && role.toLowerCase() === 'admin'
-                  ) || user?.role?.toLowerCase() === 'admin';
-                console.log('Chat Layout - Is Admin:', isAdmin);
-                return isAdmin;
+                    (role) =>
+                      role &&
+                      typeof role === 'string' &&
+                      (role.toLowerCase() === 'admin' || role.toLowerCase() === 'tenantadmin')
+                  ) ||
+                  user?.role?.toLowerCase() === 'admin' ||
+                  user?.role?.toLowerCase() === 'tenantadmin';
+                console.log('Chat Layout - Has Admin Access:', hasAdminAccess);
+                return hasAdminAccess;
               })() && (
                 <div className="p-3 border-b border-gray-200">
                   <a
@@ -190,9 +195,19 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {user?.firstName} {user?.lastName}
+                        {user?.isImpersonating && user?.impersonation?.adminEmail
+                          ? user.impersonation.adminEmail.split('@')[0]
+                          : `${user?.firstName} ${user?.lastName}`}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user?.isImpersonating ? (
+                          <span className="text-orange-600 font-medium">
+                            impersonating #{user?.email}
+                          </span>
+                        ) : (
+                          user?.email
+                        )}
+                      </p>
                     </div>
                   </div>
                   <button

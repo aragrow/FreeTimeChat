@@ -62,6 +62,7 @@ export interface LoginResponse {
   refreshToken: string;
   user: UserPublic;
   requiresTwoFactor?: boolean;
+  requiresPasswordChange?: boolean;
 }
 
 /**

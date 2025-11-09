@@ -98,6 +98,7 @@ export class UserService {
     name: string;
     tenantId: string;
     googleId?: string;
+    requirePasswordChange?: boolean;
   }): Promise<User> {
     return this.prisma.user.create({
       data: {
@@ -106,6 +107,7 @@ export class UserService {
         name: data.name,
         tenantId: data.tenantId,
         googleId: data.googleId,
+        requirePasswordChange: data.requirePasswordChange,
       },
       include: {
         tenant: true,
@@ -127,6 +129,20 @@ export class UserService {
   }
 
   /**
+   * Create a new user (alias for create)
+   */
+  async createUser(data: {
+    email: string;
+    passwordHash?: string;
+    name: string;
+    tenantId: string;
+    googleId?: string;
+    requirePasswordChange?: boolean;
+  }): Promise<User> {
+    return this.create(data);
+  }
+
+  /**
    * Update user information
    */
   async update(
@@ -138,6 +154,7 @@ export class UserService {
       twoFactorEnabled?: boolean;
       twoFactorSecret?: string;
       isActive?: boolean;
+      requirePasswordChange?: boolean;
     }
   ): Promise<User> {
     return this.prisma.user.update({
@@ -160,6 +177,24 @@ export class UserService {
         },
       },
     });
+  }
+
+  /**
+   * Update user information (alias for update)
+   */
+  async updateUser(
+    id: string,
+    data: {
+      name?: string;
+      passwordHash?: string;
+      googleId?: string;
+      twoFactorEnabled?: boolean;
+      twoFactorSecret?: string;
+      isActive?: boolean;
+      requirePasswordChange?: boolean;
+    }
+  ): Promise<User> {
+    return this.update(id, data);
   }
 
   /**

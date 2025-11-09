@@ -37,6 +37,17 @@ router.get('/', async (req: Request, res: Response) => {
     // Build where clause
     const where: any = {};
 
+    // Tenant filtering: tenantadmin users can only see users from their own tenant
+    const currentUser = req.user as JWTPayload;
+    const userRoles = currentUser.roles || [];
+    const isTenantAdmin = userRoles.includes('tenantadmin');
+    const isAdmin = userRoles.includes('admin');
+
+    // If user is tenantadmin (not admin), filter by their tenant
+    if (isTenantAdmin && !isAdmin && currentUser.tenantId) {
+      where.tenantId = currentUser.tenantId;
+    }
+
     // Search filter
     if (search) {
       where.OR = [
@@ -57,9 +68,9 @@ router.get('/', async (req: Request, res: Response) => {
     }
     // 'all' or undefined = no status filter
 
-    // Client filter
-    if (clientId) {
-      where.clientId = clientId;
+    // Client filter (only for admin users)
+    if (clientId && isAdmin) {
+      where.tenantId = clientId;
     }
 
     // Get users with pagination
@@ -275,7 +286,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, password, isActive, twoFactorEnabled } = req.body;
+    const { name, password, isActive, twoFactorEnabled, roleIds } = req.body;
 
     // Check if user exists
     const existingUser = await userService.findById(id);
@@ -299,11 +310,53 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     // Update user
-    const user = await userService.update(id, updateData);
+    const _user = await userService.update(id, updateData);
+
+    // Update roles if provided
+    if (roleIds !== undefined && Array.isArray(roleIds)) {
+      // Get current roles
+      const currentRoles = await roleService.getUserRoles(id);
+      const currentRoleIds = currentRoles.map((r) => r.id);
+
+      // Determine which roles to add and remove
+      const rolesToAdd = roleIds.filter((roleId: string) => !currentRoleIds.includes(roleId));
+      const rolesToRemove = currentRoleIds.filter((roleId) => !roleIds.includes(roleId));
+
+      // Add new roles
+      for (const roleId of rolesToAdd) {
+        try {
+          await roleService.assignToUser(id, roleId);
+        } catch (error) {
+          console.warn(`Failed to assign role ${roleId} to user ${id}:`, error);
+        }
+      }
+
+      // Remove old roles
+      for (const roleId of rolesToRemove) {
+        try {
+          await roleService.removeFromUser(id, roleId);
+        } catch (error) {
+          console.warn(`Failed to remove role ${roleId} from user ${id}:`, error);
+        }
+      }
+    }
+
+    // Fetch updated user with roles
+    const updatedUser = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        tenant: true,
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
 
     res.status(200).json({
       status: 'success',
-      data: user,
+      data: updatedUser,
     });
   } catch (error) {
     console.error('Error updating user:', error);
@@ -360,6 +413,76 @@ router.delete('/:id', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/v1/admin/users/impersonate/stop
+ * Stop impersonation session
+ * NOTE: This route MUST come before /:id/impersonate to avoid matching 'impersonate' as an ID
+ */
+router.post('/impersonate/stop', async (req: Request, res: Response) => {
+  try {
+    const currentUser = req.user as JWTPayload;
+
+    // Check if user is currently impersonating
+    if (!currentUser.impersonation?.sessionId) {
+      res.status(400).json({
+        status: 'error',
+        message: 'No active impersonation session',
+      });
+      return;
+    }
+
+    // Get the admin user ID from impersonation metadata
+    const adminUserId = currentUser.impersonation.adminUserId;
+
+    // Stop impersonation
+    await impersonationService.stopImpersonation(currentUser.impersonation.sessionId);
+
+    // Get the admin user to generate a new token
+    const adminUser = await prisma.user.findUnique({
+      where: { id: adminUserId },
+      include: { tenant: true },
+    });
+
+    if (!adminUser) {
+      res.status(404).json({
+        status: 'error',
+        message: 'Admin user not found',
+      });
+      return;
+    }
+
+    // Get admin roles
+    const adminRoles = await roleService.getUserRoles(adminUserId);
+    const primaryRole = adminRoles.length > 0 ? adminRoles[0] : 'user';
+
+    // Generate new access token for admin
+    const { getJWTService } = await import('../../services/jwt.service');
+    const jwtService = getJWTService();
+    const accessToken = jwtService.signAccessToken({
+      userId: adminUserId,
+      email: adminUser.email,
+      role: primaryRole,
+      roles: adminRoles.length > 0 ? adminRoles : ['user'],
+      tenantId: adminUser.tenantId || 'system',
+      databaseName: adminUser.tenant?.databaseName || 'freetimechat_customer_dev',
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Impersonation session stopped',
+      data: {
+        accessToken,
+      },
+    });
+  } catch (error) {
+    console.error('Error stopping impersonation:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to stop impersonation',
+    });
+  }
+});
+
+/**
  * POST /api/v1/admin/users/:id/impersonate
  * Start impersonation session for a user
  */
@@ -375,6 +498,39 @@ router.post('/:id/impersonate', async (req: Request, res: Response) => {
       res.status(404).json({
         status: 'error',
         message: 'Target user not found',
+      });
+      return;
+    }
+
+    // Tenant filtering: tenantadmin users can only impersonate users from their own tenant
+    const userRoles = currentUser.roles || [];
+    const isTenantAdmin = userRoles.includes('tenantadmin');
+    const isAdmin = userRoles.includes('admin');
+
+    // If user is tenantadmin (not admin), check if target user is from their tenant
+    if (isTenantAdmin && !isAdmin) {
+      if (!currentUser.tenantId) {
+        res.status(403).json({
+          status: 'error',
+          message: 'You must belong to a tenant to impersonate users',
+        });
+        return;
+      }
+
+      if (targetUser.tenantId !== currentUser.tenantId) {
+        res.status(403).json({
+          status: 'error',
+          message: 'You can only impersonate users from your own tenant',
+        });
+        return;
+      }
+    }
+
+    // Prevent impersonating yourself
+    if (adminUserId === targetUserId) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Cannot impersonate yourself',
       });
       return;
     }
@@ -406,39 +562,6 @@ router.post('/:id/impersonate', async (req: Request, res: Response) => {
     res.status(500).json({
       status: 'error',
       message: 'Failed to start impersonation',
-    });
-  }
-});
-
-/**
- * POST /api/v1/admin/users/impersonate/stop
- * Stop impersonation session
- */
-router.post('/impersonate/stop', async (req: Request, res: Response) => {
-  try {
-    const currentUser = req.user as JWTPayload;
-
-    // Check if user is currently impersonating
-    if (!currentUser.impersonation?.sessionId) {
-      res.status(400).json({
-        status: 'error',
-        message: 'No active impersonation session',
-      });
-      return;
-    }
-
-    // Stop impersonation
-    await impersonationService.stopImpersonation(currentUser.impersonation.sessionId);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Impersonation session stopped',
-    });
-  } catch (error) {
-    console.error('Error stopping impersonation:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to stop impersonation',
     });
   }
 });

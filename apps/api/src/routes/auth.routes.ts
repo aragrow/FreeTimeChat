@@ -19,7 +19,9 @@ const authService = getAuthService();
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { email, password, tenantKey } = req.body as LoginRequest;
+    const { email, password, tenantKey, skipTwoFactor } = req.body as LoginRequest & {
+      skipTwoFactor?: boolean;
+    };
 
     // Validate input
     if (!email || !password) {
@@ -30,7 +32,10 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await authService.login(email, password, tenantKey);
+    // Development only: Allow skipping 2FA
+    const shouldSkipTwoFactor = skipTwoFactor === true && process.env.NODE_ENV !== 'production';
+
+    const result = await authService.login(email, password, tenantKey, shouldSkipTwoFactor);
 
     res.status(200).json({
       status: 'success',
@@ -95,6 +100,7 @@ router.post('/login', async (req: Request, res: Response) => {
       }
     }
 
+    console.error('Login error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Login failed',
@@ -269,6 +275,89 @@ router.post('/logout', authenticateJWT, async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/v1/auth/change-required-password
+ * Change password when required (for first-time login)
+ */
+router.post('/change-required-password', async (req: Request, res: Response) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+
+    // Validate input
+    if (!email || !currentPassword || !newPassword) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Email, current password, and new password are required',
+      });
+      return;
+    }
+
+    // Get user
+    const userService = (await import('../services/user.service')).getUserService();
+    const passwordService = (await import('../services/password.service')).getPasswordService();
+
+    const user = await userService.findByEmail(email);
+
+    if (!user || !user.passwordHash) {
+      res.status(401).json({
+        status: 'error',
+        message: 'Invalid credentials',
+      });
+      return;
+    }
+
+    // Verify user requires password change
+    if (!user.requirePasswordChange) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Password change not required for this account',
+      });
+      return;
+    }
+
+    // Verify current password
+    const isValidPassword = await passwordService.verify(currentPassword, user.passwordHash);
+
+    if (!isValidPassword) {
+      res.status(401).json({
+        status: 'error',
+        message: 'Invalid current password',
+      });
+      return;
+    }
+
+    // Validate new password
+    const passwordValidation = passwordService.validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+      res.status(400).json({
+        status: 'error',
+        message: `Invalid password: ${passwordValidation.errors.join(', ')}`,
+      });
+      return;
+    }
+
+    // Hash new password
+    const newPasswordHash = await passwordService.hash(newPassword);
+
+    // Update password and clear requirePasswordChange flag
+    await userService.updateUser(user.id, {
+      passwordHash: newPasswordHash,
+      requirePasswordChange: false,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password changed successfully. Please login with your new password.',
+    });
+  } catch (error) {
+    console.error('Error changing required password:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to change password',
+    });
+  }
+});
+
+/**
  * GET /api/v1/auth/me
  * Get current user information
  */
@@ -310,6 +399,13 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
       isTwoFactorEnabled: user.twoFactorEnabled,
       isImpersonating: req.user.impersonation?.isImpersonating,
       originalUserId: req.user.impersonation?.adminUserId,
+      impersonation: req.user.impersonation
+        ? {
+            adminUserId: req.user.impersonation.adminUserId,
+            adminEmail: req.user.impersonation.adminEmail,
+            sessionId: req.user.impersonation.sessionId,
+          }
+        : undefined,
     };
 
     res.status(200).json({

@@ -6,6 +6,7 @@
 
 import { Router } from 'express';
 import { PrismaClient as MainPrismaClient } from '../../generated/prisma-main';
+import type { JWTPayload } from '@freetimechat/types';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -21,7 +22,18 @@ router.get('/', async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const search = req.query.search as string;
     const includeInactive = req.query.includeInactive === 'true';
-    const tenantId = req.query.tenantId as string;
+    let tenantId = req.query.tenantId as string;
+
+    // Tenant filtering: tenantadmin users can only see clients from their own tenant
+    const currentUser = req.user as JWTPayload;
+    const userRoles = currentUser.roles || [];
+    const isTenantAdmin = userRoles.includes('tenantadmin');
+    const isAdmin = userRoles.includes('admin');
+
+    // If user is tenantadmin (not admin), force filter by their tenant
+    if (isTenantAdmin && !isAdmin && currentUser.tenantId) {
+      tenantId = currentUser.tenantId;
+    }
 
     const skip = (page - 1) * limit;
 
@@ -160,6 +172,17 @@ router.post('/', async (req: Request, res: Response) => {
       notes,
     } = req.body;
 
+    // Tenant filtering: tenantadmin users can only create clients for their own tenant
+    const currentUser = req.user as JWTPayload;
+    const userRoles = currentUser.roles || [];
+    const isTenantAdmin = userRoles.includes('tenantadmin');
+    const isAdmin = userRoles.includes('admin');
+
+    // If user is tenantadmin (not admin), force tenantId to their own tenant
+    if (isTenantAdmin && !isAdmin && currentUser.tenantId) {
+      tenantId = currentUser.tenantId;
+    }
+
     // Validate required fields
     if (!name || !name.trim()) {
       res.status(400).json({
@@ -186,6 +209,15 @@ router.post('/', async (req: Request, res: Response) => {
       res.status(404).json({
         status: 'error',
         message: 'Tenant not found',
+      });
+      return;
+    }
+
+    // Additional check: ensure tenantadmin users can only create for their own tenant
+    if (isTenantAdmin && !isAdmin && tenant.id !== currentUser.tenantId) {
+      res.status(403).json({
+        status: 'error',
+        message: 'You can only create clients for your own tenant',
       });
       return;
     }

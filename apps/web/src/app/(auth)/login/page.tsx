@@ -19,13 +19,20 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, loginWithGoogle } = useAuth();
   const [formData, setFormData] = useState({
-    customerKey: '',
+    tenantKey: '',
     email: '',
     password: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState('');
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
+  const [passwordChangeData, setPasswordChangeData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordChangeError, setPasswordChangeError] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -71,11 +78,22 @@ export default function LoginPage() {
       const result = await login(
         formData.email,
         formData.password,
-        formData.customerKey || undefined
+        formData.tenantKey || undefined
       );
 
       if (result.error) {
         setGeneralError(result.error);
+        return;
+      }
+
+      // Check if password change is required
+      if (result.requiresPasswordChange) {
+        setPasswordChangeData({
+          currentPassword: formData.password,
+          newPassword: '',
+          confirmPassword: '',
+        });
+        setShowPasswordChangeModal(true);
         return;
       }
 
@@ -90,6 +108,70 @@ export default function LoginPage() {
     } catch (error) {
       console.error('Login error:', error);
       setGeneralError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordChangeError('');
+
+    // Validate password change
+    if (passwordChangeData.newPassword !== passwordChangeData.confirmPassword) {
+      setPasswordChangeError('New passwords do not match');
+      return;
+    }
+
+    if (passwordChangeData.newPassword.length < 8) {
+      setPasswordChangeError('Password must be at least 8 characters long');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/change-required-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            currentPassword: passwordChangeData.currentPassword,
+            newPassword: passwordChangeData.newPassword,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setPasswordChangeError(data.message || 'Failed to change password');
+        return;
+      }
+
+      // Password changed successfully, close modal and show success message
+      setShowPasswordChangeModal(false);
+      setGeneralError('');
+      alert('Password changed successfully! Please login with your new password.');
+
+      // Reset form
+      setFormData({
+        tenantKey: formData.tenantKey,
+        email: formData.email,
+        password: '',
+      });
+      setPasswordChangeData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error) {
+      console.error('Password change error:', error);
+      setPasswordChangeError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -145,18 +227,18 @@ export default function LoginPage() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="customerKey" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="tenantKey" className="block text-sm font-medium text-gray-700 mb-1">
                 Tenant Key
                 <span className="text-gray-500 font-normal ml-1">(optional for admins)</span>
               </label>
               <Input
-                id="customerKey"
-                name="customerKey"
+                id="tenantKey"
+                name="tenantKey"
                 type="text"
                 autoComplete="off"
-                value={formData.customerKey}
+                value={formData.tenantKey}
                 onChange={handleInputChange}
-                error={errors.customerKey}
+                error={errors.tenantKey}
                 placeholder="TENANT-1234"
                 disabled={isLoading}
               />
@@ -239,6 +321,89 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
+
+      {/* Password Change Modal */}
+      {showPasswordChangeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Change Password Required</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              You must change your password before continuing. This is a one-time requirement for
+              security purposes.
+            </p>
+
+            {passwordChangeError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+                {passwordChangeError}
+              </div>
+            )}
+
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Current Password
+                </label>
+                <Input
+                  type="password"
+                  value={passwordChangeData.currentPassword}
+                  readOnly
+                  disabled
+                  className="bg-gray-50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <Input
+                  type="password"
+                  value={passwordChangeData.newPassword}
+                  onChange={(e) =>
+                    setPasswordChangeData({ ...passwordChangeData, newPassword: e.target.value })
+                  }
+                  placeholder="Enter new password"
+                  required
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm New Password
+                </label>
+                <Input
+                  type="password"
+                  value={passwordChangeData.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordChangeData({
+                      ...passwordChangeData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                  placeholder="Confirm new password"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button type="submit" isLoading={isLoading} className="flex-1">
+                  Change Password
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowPasswordChangeModal(false)}
+                  disabled={isLoading}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

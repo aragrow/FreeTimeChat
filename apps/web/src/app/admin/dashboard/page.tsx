@@ -14,20 +14,51 @@ export default function AdminDashboard() {
   const { getAuthHeaders } = useAuth();
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
+
+  useEffect(() => {
+    fetchTenants();
+  }, []);
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [selectedTenantId]);
+
+  const fetchTenants = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTenants(data.data.tenants || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch tenants:', error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
 
+      // Build query params
+      const params = new URLSearchParams();
+      if (selectedTenantId && selectedTenantId !== 'all') {
+        params.append('tenantId', selectedTenantId);
+      }
+
       // Fetch dashboard stats
-      const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const statsResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/stats?${params}`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
@@ -133,9 +164,35 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Overview of your FreeTimeChat system</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">
+            {stats?.selectedTenant
+              ? `Overview for ${stats.selectedTenant.name}`
+              : 'Overview of your FreeTimeChat system'}
+          </p>
+        </div>
+
+        {/* Tenant Filter */}
+        <div className="w-64">
+          <label htmlFor="tenant-filter" className="block text-sm font-medium text-gray-700 mb-1">
+            Filter by Tenant
+          </label>
+          <select
+            id="tenant-filter"
+            value={selectedTenantId}
+            onChange={(e) => setSelectedTenantId(e.target.value)}
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          >
+            <option value="all">All Tenants</option>
+            {tenants.map((tenant) => (
+              <option key={tenant.id} value={tenant.id}>
+                {tenant.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Stats Cards */}

@@ -171,19 +171,17 @@ async function main() {
 
   console.log(`✓ User role created: ${userRole.name} (ID: ${userRole.id})`);
 
-  // Create "customeradmin" role (customer administrator)
-  const customerAdminRole = await prismaMain.role.create({
+  // Create "tenantadmin" role (tenant administrator)
+  const tenantAdminRole = await prismaMain.role.create({
     data: {
       id: '00000000-0000-0000-0000-000000000012',
-      name: 'customeradmin',
-      description: 'Customer administrator with user management permissions',
+      name: 'tenantadmin',
+      description: 'Tenant administrator with user management permissions',
       isSeeded: true,
     },
   });
 
-  console.log(
-    `✓ Customer Admin role created: ${customerAdminRole.name} (ID: ${customerAdminRole.id})`
-  );
+  console.log(`✓ Tenant Admin role created: ${tenantAdminRole.name} (ID: ${tenantAdminRole.id})`);
 
   // Create "admin" role (full system administrator)
   const adminRole = await prismaMain.role.create({
@@ -223,35 +221,44 @@ async function main() {
 
   console.log(`✓ Assigned ${userRoleCapabilities.length} capabilities to user role`);
 
-  // Assign user management capabilities to "customeradmin" role
-  const customerAdminCapabilities = [
+  // Assign capabilities to "tenantadmin" role
+  // TenantAdmin can manage users, view their tenant info, and manage projects for their tenant only
+  const tenantAdminCapabilities = [
+    // User management (tenant-scoped)
     'users:read',
     'users:create',
     'users:update',
     'users:delete',
+    // Tenant management (read-only for their own tenant)
+    'tenants:read',
+    // Project management (tenant-scoped)
+    'projects:read',
+    'projects:create',
+    'projects:update',
+    'projects:delete',
+    // Conversations
     'conversations:read',
     'conversations:create',
     'conversations:delete',
+    // Reports
     'reports:read',
     'reports:export',
   ];
 
-  const customerAdminRoleCapabilities = allCapabilities
-    .filter((c) => customerAdminCapabilities.includes(c.name))
+  const tenantAdminRoleCapabilities = allCapabilities
+    .filter((c) => tenantAdminCapabilities.includes(c.name))
     .map((c) => ({
-      roleId: customerAdminRole.id,
+      roleId: tenantAdminRole.id,
       capabilityId: c.id,
       isAllowed: true,
       isSeeded: true,
     }));
 
   await prismaMain.roleCapability.createMany({
-    data: customerAdminRoleCapabilities,
+    data: tenantAdminRoleCapabilities,
   });
 
-  console.log(
-    `✓ Assigned ${customerAdminRoleCapabilities.length} capabilities to customeradmin role`
-  );
+  console.log(`✓ Assigned ${tenantAdminRoleCapabilities.length} capabilities to tenantadmin role`);
 
   // Assign ALL capabilities to "admin" role
   const adminRoleCapabilities = allCapabilities.map((c) => ({
@@ -355,7 +362,7 @@ async function main() {
   console.log(`   • Test Tenant: ${testTenant.name} (Key: ${testTenant.tenantKey})`);
   console.log(`   • Roles:`);
   console.log(`     - user (${userRoleCapabilities.length} capabilities)`);
-  console.log(`     - customeradmin (${customerAdminRoleCapabilities.length} capabilities)`);
+  console.log(`     - tenantadmin (${tenantAdminRoleCapabilities.length} capabilities)`);
   console.log(`     - admin (${adminRoleCapabilities.length} capabilities)`);
   console.log(`   • Total Capabilities: ${allCapabilities.length}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');

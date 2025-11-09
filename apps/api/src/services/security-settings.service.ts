@@ -34,8 +34,25 @@ export class SecuritySettingsService {
 
   /**
    * Get security settings for a tenant (creates default if not exists)
+   * For system/admin users (tenantId = 'system' or null), returns default settings without saving
    */
-  async getByTenantId(tenantId: string): Promise<SecuritySettings> {
+  async getByTenantId(tenantId: string | null): Promise<SecuritySettings> {
+    // For system/admin users without a tenant, return default settings
+    if (!tenantId || tenantId === 'system') {
+      return {
+        id: 'system-default',
+        tenantId: 'system',
+        twoFactorGracePeriodDays: 10,
+        twoFactorRequiredRoles: [],
+        twoFactorBypassUrls: [],
+        maxPasswordAttempts: 5,
+        maxTwoFactorAttempts: 3,
+        accountLockoutDurationMinutes: 30,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as SecuritySettings;
+    }
+
     let settings = await this.prisma.securitySettings.findUnique({
       where: { tenantId },
     });

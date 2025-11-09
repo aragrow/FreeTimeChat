@@ -99,7 +99,11 @@ export class LoginTrackingService {
   /**
    * Lock account due to too many failed attempts
    */
-  async lockAccount(userId: string, clientId: string, reason: string): Promise<AccountLockout> {
+  async lockAccount(
+    userId: string,
+    clientId: string | null,
+    reason: string
+  ): Promise<AccountLockout> {
     // Get security settings to determine lockout duration
     const settings = await this.securitySettingsService.getByTenantId(clientId);
     const lockoutDuration = settings.accountLockoutDurationMinutes;
@@ -156,7 +160,7 @@ export class LoginTrackingService {
    */
   async checkAndLockIfNeeded(
     userId: string,
-    clientId: string,
+    clientId: string | null,
     attemptType: AttemptType
   ): Promise<boolean> {
     // Get security settings

@@ -34,6 +34,7 @@ model User {
   twoFactorGracePeriodEndsAt DateTime?         @map("two_factor_grace_period_ends_at")
   isActive                   Boolean           @default(true) @map("is_active")
   isSeeded                   Boolean           @default(false) @map("is_seeded")
+  requirePasswordChange      Boolean           @default(false) @map("require_password_change")
   lastLoginAt                DateTime?         @map("last_login_at")
   communicationMedium        String?           @default("email") @map("communication_medium") // email, sms, both, none
   notificationFrequency      String?           @default("immediate") @map("notification_frequency") // immediate, hourly, daily, weekly
@@ -262,4 +263,13 @@ model AccountLockout {
   @@index([lockedUntil])
   @@index([userId, unlocked])
   @@map("account_lockouts")
+}
+
+model SystemSettings {
+  id                         String   @id @default("system") // Singleton table
+  bypassTwoFactorForAllUsers Boolean  @default(false) @map("bypass_two_factor_for_all_users")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
 }

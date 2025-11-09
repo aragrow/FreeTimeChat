@@ -71,7 +71,7 @@ export class RoleService {
     }
 
     // Get roles and total count
-    const [roles, total] = await Promise.all([
+    const [rolesRaw, total] = await Promise.all([
       this.prisma.role.findMany({
         where,
         skip,
@@ -93,6 +93,14 @@ export class RoleService {
       }),
       this.prisma.role.count({ where }),
     ]);
+
+    // Map _count to userCount and capabilityCount for frontend
+    const roles = rolesRaw.map((role) => ({
+      ...role,
+      userCount: role._count.users,
+      capabilityCount: role._count.capabilities,
+      _count: undefined, // Remove the _count field
+    }));
 
     return {
       roles,

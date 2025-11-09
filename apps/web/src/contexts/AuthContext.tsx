@@ -19,6 +19,11 @@ export interface User {
   isTwoFactorEnabled: boolean;
   isImpersonating?: boolean;
   originalUserId?: string;
+  impersonation?: {
+    adminUserId: string;
+    adminEmail: string;
+    sessionId: string;
+  };
 }
 
 interface AuthContextType {
@@ -28,8 +33,8 @@ interface AuthContextType {
   login: (
     email: string,
     password: string,
-    customerKey?: string
-  ) => Promise<{ requires2FA?: boolean; error?: string }>;
+    tenantKey?: string
+  ) => Promise<{ requires2FA?: boolean; requiresPasswordChange?: boolean; error?: string }>;
   logout: () => Promise<void>;
   verify2FA: (code: string) => Promise<{ success: boolean; error?: string }>;
   refreshUser: () => Promise<void>;
@@ -46,23 +51,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
-  // Load tokens from localStorage on mount
+  // Load tokens and check auth on mount
   useEffect(() => {
     const storedAccessToken = localStorage.getItem('accessToken');
     const storedRefreshToken = localStorage.getItem('refreshToken');
 
     if (storedAccessToken) {
       setAccessToken(storedAccessToken);
-    }
-    if (storedRefreshToken) {
-      setRefreshToken(storedRefreshToken);
+      setRefreshToken(storedRefreshToken || null);
+      // Check auth with the token we just loaded
+      checkAuthWithToken(storedAccessToken);
+    } else {
+      setIsLoading(false);
     }
   }, []);
-
-  // Check authentication status when accessToken changes
-  useEffect(() => {
-    checkAuth();
-  }, [accessToken]);
 
   // Set up token refresh interval
   useEffect(() => {
@@ -78,17 +80,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, refreshToken]);
 
-  const getAuthHeaders = () => {
+  const getAuthHeaders = (token?: string) => {
     const headers: Record<string, string> = {};
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+    const tokenToUse = token || accessToken;
+    if (tokenToUse) {
+      headers['Authorization'] = `Bearer ${tokenToUse}`;
     }
     return headers;
   };
 
-  const checkAuth = async () => {
+  const checkAuthWithToken = async (token: string) => {
     try {
-      if (!accessToken) {
+      if (!token) {
         setUser(null);
         setIsLoading(false);
         return;
@@ -96,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(token),
       });
 
       if (response.ok) {
@@ -106,11 +109,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setAccessToken(null);
         setRefreshToken(null);
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       setUser(null);
+      setAccessToken(null);
+      setRefreshToken(null);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const checkAuth = async () => {
+    if (accessToken) {
+      await checkAuthWithToken(accessToken);
+    } else {
+      setUser(null);
       setIsLoading(false);
     }
   };
@@ -151,16 +169,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (
     email: string,
     password: string,
-    customerKey?: string
-  ): Promise<{ requires2FA?: boolean; error?: string }> => {
+    tenantKey?: string
+  ): Promise<{ requires2FA?: boolean; requiresPasswordChange?: boolean; error?: string }> => {
     try {
-      const body: { email: string; password: string; customerKey?: string } = {
-        email,
-        password,
-      };
+      const body: { email: string; password: string; tenantKey?: string; skipTwoFactor?: boolean } =
+        {
+          email,
+          password,
+        };
 
-      if (customerKey) {
-        body.customerKey = customerKey;
+      if (tenantKey) {
+        body.tenantKey = tenantKey;
+      }
+
+      // Development only: Check if we should skip 2FA
+      if (process.env.NODE_ENV !== 'production') {
+        const skipTwoFactor = localStorage.getItem('skipTwoFactorInDev') === 'true';
+        if (skipTwoFactor) {
+          body.skipTwoFactor = true;
+        }
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
@@ -175,6 +202,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         return { error: data.message || 'Login failed' };
+      }
+
+      // Check if password change is required
+      if (data.data?.requiresPasswordChange) {
+        return { requiresPasswordChange: true };
       }
 
       // Check if 2FA is required

@@ -7,19 +7,20 @@
 
 import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
-import { requireRole } from '../middleware/permission.middleware';
+import { requireAnyRole } from '../middleware/permission.middleware';
 import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
 import rolesRoutes from './admin/roles.routes';
 import statsRoutes from './admin/stats.routes';
+import systemSettingsRoutes from './admin/system-settings.routes';
 import usersRoutes from './admin/users.routes';
 import tenantRoutes from './tenant.routes';
 
 const router = Router();
 
-// All admin routes require authentication and admin role
+// All admin routes require authentication and admin or tenantadmin role
 router.use(authenticateJWT);
-router.use(requireRole('admin'));
+router.use(requireAnyRole(['admin', 'tenantadmin']));
 
 // Mount admin sub-routes
 router.use('/users', usersRoutes);
@@ -28,6 +29,7 @@ router.use('/clients', clientsRoutes);
 router.use('/capabilities', capabilitiesRoutes);
 router.use('/stats', statsRoutes);
 router.use('/tenants', tenantRoutes);
+router.use('/system-settings', systemSettingsRoutes);
 
 // Admin dashboard root endpoint
 router.get('/', (_req, res) => {

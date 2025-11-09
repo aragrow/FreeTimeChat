@@ -53,6 +53,7 @@ interface CreateTenantData {
   billingZip: string;
   billingCountry: string;
   billingEmail: string;
+  adminUsername: string;
 }
 
 interface EditTenantData {
@@ -99,6 +100,7 @@ export default function TenantsPage() {
     billingZip: '',
     billingCountry: 'USA',
     billingEmail: '',
+    adminUsername: '',
   });
   const [editFormData, setEditFormData] = useState<EditTenantData>({});
 
@@ -167,6 +169,7 @@ export default function TenantsPage() {
           billingZip: '',
           billingCountry: 'USA',
           billingEmail: '',
+          adminUsername: '',
         });
         fetchTenants();
       } else {
@@ -828,6 +831,43 @@ export default function TenantsPage() {
                 </div>
               </div>
 
+              {/* Admin User */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  Admin User (Customer Admin)
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  This admin user will be automatically created for the tenant with a default
+                  password &quot;firsttime&quot; and must change it on first login.
+                </p>
+                <div>
+                  <label
+                    htmlFor="adminUsername"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Admin Username * (6 digits)
+                  </label>
+                  <Input
+                    id="adminUsername"
+                    type="text"
+                    required
+                    value={createFormData.adminUsername}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setCreateFormData({ ...createFormData, adminUsername: value });
+                    }}
+                    placeholder="123456"
+                    maxLength={6}
+                    pattern="\d{6}"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Email will be: {createFormData.adminUsername || 'XXXXXX'}@
+                    {createFormData.slug || 'slug'}.local
+                  </p>
+                  <p className="text-xs text-gray-500">Default password: firsttime</p>
+                </div>
+              </div>
+
               {/* Form Actions */}
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <Button type="submit" className="flex-1">
@@ -853,6 +893,7 @@ export default function TenantsPage() {
                       billingZip: '',
                       billingCountry: 'USA',
                       billingEmail: '',
+                      adminUsername: '',
                     });
                   }}
                   className="flex-1"
