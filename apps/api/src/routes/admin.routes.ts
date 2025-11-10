@@ -11,6 +11,7 @@ import { attachClientDatabase } from '../middleware/client-database.middleware';
 import { requireAnyRole } from '../middleware/permission.middleware';
 import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
+import integrationTemplatesRoutes from './admin/integration-templates.routes';
 import invoicesRoutes from './admin/invoices.routes';
 import paypalConfigRoutes from './admin/paypal-config.routes';
 import paypalIntegrationRoutes from './admin/paypal-integration.routes';
@@ -35,6 +36,7 @@ router.use(requireAnyRole(['admin', 'tenantadmin']));
 router.use('/users', usersRoutes);
 router.use('/roles', rolesRoutes);
 router.use('/capabilities', capabilitiesRoutes);
+router.use('/integration-templates', integrationTemplatesRoutes);
 router.use('/paypal-integration', paypalIntegrationRoutes);
 router.use('/stats', statsRoutes);
 router.use('/tenants', tenantRoutes);
@@ -60,6 +62,7 @@ router.get('/', (_req, res) => {
       roles: '/api/v1/admin/roles',
       capabilities: '/api/v1/admin/capabilities',
       clients: '/api/v1/admin/clients',
+      integrationTemplates: '/api/v1/admin/integration-templates',
       invoices: '/api/v1/admin/invoices',
       paypalIntegration: '/api/v1/admin/paypal-integration',
       paypalConfig: '/api/v1/admin/paypal-config',

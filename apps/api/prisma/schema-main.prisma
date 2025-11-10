@@ -41,7 +41,7 @@ model User {
   secondaryEmail             String?           @map("secondary_email")
   compensationType           CompensationType? @map("compensation_type")
   hourlyRate                 Decimal?          @map("hourly_rate") @db.Decimal(10, 2)
-  trackingMode               TrackingMode      @default(BOTH) @map("tracking_mode") // clock, time, or both
+  trackingMode               TrackingMode      @default(CLOCK) @map("tracking_mode") // clock or time (manual entry)
   createdAt                  DateTime          @default(now()) @map("created_at")
   updatedAt                  DateTime          @updatedAt @map("updated_at")
   deletedAt                  DateTime?         @map("deleted_at")
@@ -186,7 +186,7 @@ enum CompensationType {
 enum TrackingMode {
   CLOCK // User can only use time clock (punch in/out)
   TIME // User can only enter manual time entries
-  BOTH // User can use both clock and manual time entry
+  BOTH // User can use both clock and manual time entries
 }
 
 enum AttemptType {
@@ -269,4 +269,42 @@ model PayPalIntegration {
   @@index([isActive])
   @@index([isProduction])
   @@map("paypal_integrations")
+}
+
+model IntegrationTemplate {
+  id                   String              @id @default(uuid())
+  name                 String // Display name (e.g., "OpenAI GPT-4", "SendGrid Email")
+  slug                 String              @unique // URL-friendly identifier (e.g., "openai-gpt4", "sendgrid")
+  category             IntegrationCategory // Category/type of integration
+  description          String? // Description of what this integration does
+  provider             String // Provider name (e.g., "OpenAI", "SendGrid", "Pinecone")
+  iconUrl              String?             @map("icon_url") // URL to integration icon/logo
+  documentationUrl     String?             @map("documentation_url") // Link to integration docs
+  configSchema         Json                @map("config_schema") // JSON schema defining required config fields
+  defaultConfig        Json?               @map("default_config") // Default configuration values
+  requiredCapabilities String[]            @default([]) @map("required_capabilities") // Required user capabilities to use this template
+  isActive             Boolean             @default(true) @map("is_active") // Whether this template is available
+  isSeeded             Boolean             @default(false) @map("is_seeded") // System-provided template
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  deletedAt            DateTime?           @map("deleted_at")
+
+  @@index([category])
+  @@index([isActive])
+  @@index([slug])
+  @@map("integration_templates")
+}
+
+enum IntegrationCategory {
+  AI // AI/LLM integrations (OpenAI, Anthropic, etc.)
+  EMAIL // Email services (SendGrid, Mailgun, etc.)
+  VECTOR_DB // Vector databases (Pinecone, Weaviate, etc.)
+  PAYMENT // Payment processors (PayPal, Stripe, etc.)
+  MONITORING // Monitoring and error tracking (Sentry, DataDog, etc.)
+  STORAGE // Cloud storage (S3, Azure Blob, etc.)
+  COMMUNICATION // Communication platforms (Slack, Discord, etc.)
+  ANALYTICS // Analytics platforms (Google Analytics, Mixpanel, etc.)
+  OTHER // Other integrations
+
+  @@map("integration_category")
 }
