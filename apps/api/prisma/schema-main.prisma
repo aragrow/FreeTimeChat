@@ -41,6 +41,7 @@ model User {
   secondaryEmail             String?           @map("secondary_email")
   compensationType           CompensationType? @map("compensation_type")
   hourlyRate                 Decimal?          @map("hourly_rate") @db.Decimal(10, 2)
+  trackingMode               TrackingMode      @default(BOTH) @map("tracking_mode") // clock, time, or both
   createdAt                  DateTime          @default(now()) @map("created_at")
   updatedAt                  DateTime          @updatedAt @map("updated_at")
   deletedAt                  DateTime?         @map("deleted_at")
@@ -180,6 +181,12 @@ enum CompensationType {
   SALARY_HCE // Highly Compensated Employee - no overtime
   SALARY_WITH_OT // Salary with overtime after 40 hours
   HOURLY // Hourly employee with overtime after 40 hours
+}
+
+enum TrackingMode {
+  CLOCK // User can only use time clock (punch in/out)
+  TIME // User can only enter manual time entries
+  BOTH // User can use both clock and manual time entry
 }
 
 enum AttemptType {

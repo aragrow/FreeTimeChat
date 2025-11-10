@@ -1,0 +1,799 @@
+/**
+ * Time Entries Page
+ *
+ * Unified time entries management for all user roles
+ * - Regular users: view/manage own entries
+ * - Tenant admins: view/manage entries for users in their tenant
+ * - System admins: view/manage entries across all tenants (with tenant selection)
+ */
+
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import type { TableColumn } from '@/components/ui/Table';
+import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/Input';
+import { Table } from '@/components/ui/Table';
+import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/hooks/useAuth';
+
+interface TimeEntry extends Record<string, unknown> {
+  id: string;
+  description: string;
+  startTime: string;
+  endTime?: string;
+  duration?: number;
+  isRunning: boolean;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  projectId: string;
+  projectName?: string;
+  isBillable?: boolean;
+  createdAt: string;
+}
+
+interface Tenant {
+  id: string;
+  name: string;
+  tenantKey: string;
+}
+
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export default function TimeEntriesPage() {
+  const { getAuthHeaders, user } = useAuth();
+  const router = useRouter();
+  const { showToast } = useToast();
+
+  // Determine user role
+  const isAdmin = user?.roles?.includes('admin');
+  const isTenantAdmin = user?.roles?.includes('tenantadmin');
+
+  // State
+  const [entries, setEntries] = useState<TimeEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'running' | 'stopped'>('all');
+  const [userFilter, setUserFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isClockedIn, setIsClockedIn] = useState(false);
+  const [runningEntryId, setRunningEntryId] = useState<string | null>(null);
+
+  // Admin-specific state
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [selectedTenant, setSelectedTenant] = useState<string>('');
+  const [users, setUsers] = useState<User[]>([]);
+
+  // Get user's tracking mode (default to BOTH if not set)
+  const userTrackingMode = (user as { trackingMode?: string })?.trackingMode || 'BOTH';
+  const canUseClock = userTrackingMode === 'CLOCK' || userTrackingMode === 'BOTH';
+  const canUseManual = userTrackingMode === 'TIME' || userTrackingMode === 'BOTH';
+
+  // Fetch tenants (admin only)
+  useEffect(() => {
+    if (isAdmin) {
+      fetchTenants();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
+
+  // Fetch users when tenant is selected (admin and tenant admin)
+  useEffect(() => {
+    if (isAdmin || isTenantAdmin) {
+      fetchUsers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTenant, isAdmin, isTenantAdmin]);
+
+  // Fetch time entries
+  useEffect(() => {
+    if (isAdmin && !selectedTenant) {
+      // Admin must select a tenant first
+      return;
+    }
+    fetchTimeEntries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, statusFilter, userFilter, startDate, endDate, selectedTenant]);
+
+  const fetchTenants = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const tenantsList = data.data.tenants || [];
+        setTenants(tenantsList);
+        // Auto-select first tenant
+        if (tenantsList.length > 0) {
+          setSelectedTenant(tenantsList[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch tenants:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users?limit=1000`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.data.users || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  };
+
+  const fetchTimeEntries = async () => {
+    try {
+      setIsLoading(true);
+
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20',
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate }),
+        ...(userFilter !== 'all' && { userId: userFilter }),
+      });
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries?${params}`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Map the API response to match our frontend interface
+        const mappedEntries = (data.data.entries || []).map(
+          (entry: {
+            id: string;
+            description?: string;
+            startTime: string;
+            endTime?: string;
+            duration?: number;
+            userId: string;
+            projectId: string;
+            project?: { name?: string };
+            isBillable?: boolean;
+            createdAt: string;
+          }) => ({
+            id: entry.id,
+            description: entry.description || 'No description',
+            startTime: entry.startTime,
+            endTime: entry.endTime,
+            duration: entry.duration ? Math.floor(entry.duration / 60) : 0, // Convert seconds to minutes
+            isRunning: !entry.endTime,
+            userId: entry.userId,
+            userName: 'Unknown User', // TODO: Get from main DB
+            userEmail: entry.userId, // Placeholder
+            projectId: entry.projectId,
+            projectName: entry.project?.name || 'No Project',
+            isBillable: entry.isBillable,
+            createdAt: entry.createdAt,
+          })
+        );
+        setEntries(mappedEntries);
+        setTotalPages(data.data.pagination?.totalPages || 1);
+
+        // Check if user has a running entry (clocked in)
+        const runningEntry = mappedEntries.find(
+          (entry: TimeEntry) => entry.isRunning && entry.userId === user?.id
+        );
+        setIsClockedIn(!!runningEntry);
+        setRunningEntryId(runningEntry?.id || null);
+      } else {
+        showToast('error', 'Failed to load time entries');
+      }
+    } catch (error) {
+      console.error('Failed to fetch time entries:', error);
+      showToast('error', 'An error occurred while loading time entries');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredEntries = entries.filter((entry) => {
+    const matchesSearch =
+      searchTerm === '' ||
+      entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.projectName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (entry.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'running' && entry.isRunning) ||
+      (statusFilter === 'stopped' && !entry.isRunning);
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const formatDuration = (minutes?: number) => {
+    if (!minutes) return '0h 0m';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  const formatDate = (timestamp: string) => {
+    return new Date(timestamp).toLocaleDateString();
+  };
+
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleStopTimer = async (entryId: string) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries/${entryId}/stop`,
+        {
+          method: 'POST',
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (response.ok) {
+        showToast('success', 'Timer stopped successfully');
+        fetchTimeEntries();
+      } else {
+        const error = await response.json();
+        showToast('error', error.message || 'Failed to stop timer');
+      }
+    } catch (error) {
+      console.error('Error stopping timer:', error);
+      showToast('error', 'An error occurred while stopping the timer');
+    }
+  };
+
+  const handleClockIn = async () => {
+    // For now, redirect to new time entry page
+    // In the future, we could auto-create a time entry with no end time
+    router.push('/time-entries/new');
+  };
+
+  const handleClockOut = async () => {
+    if (!runningEntryId) {
+      showToast('error', 'No active time entry found');
+      return;
+    }
+    await handleStopTimer(runningEntryId);
+  };
+
+  // Build columns based on user role
+  const buildColumns = (): TableColumn<TimeEntry>[] => {
+    const baseColumns: TableColumn<TimeEntry>[] = [];
+
+    // User column (only for admins and tenant admins)
+    if (isAdmin || isTenantAdmin) {
+      baseColumns.push({
+        key: 'userName',
+        header: 'User',
+        sortable: true,
+        render: (entry) => (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
+              {entry.userName?.charAt(0) || 'U'}
+            </div>
+            <div>
+              <span className="text-sm font-medium text-gray-900">
+                {entry.userName || 'Unknown'}
+              </span>
+              <p className="text-xs text-gray-500">{entry.userEmail}</p>
+            </div>
+          </div>
+        ),
+      });
+    }
+
+    // Project column
+    baseColumns.push({
+      key: 'projectName',
+      header: 'Project',
+      sortable: true,
+      render: (entry) => (
+        <div>
+          <span className="text-sm font-medium text-gray-900">
+            {entry.projectName || 'No Project'}
+          </span>
+          {entry.isBillable && (
+            <Badge variant="success" size="sm" className="ml-2">
+              Billable
+            </Badge>
+          )}
+        </div>
+      ),
+    });
+
+    // Description
+    baseColumns.push({
+      key: 'description',
+      header: 'Description',
+      sortable: true,
+      render: (entry) => (
+        <p className="text-sm text-gray-900 max-w-md truncate">{entry.description}</p>
+      ),
+    });
+
+    // Start Time
+    baseColumns.push({
+      key: 'startTime',
+      header: 'Start Time',
+      sortable: true,
+      render: (entry) => (
+        <div>
+          <p className="text-sm font-medium text-gray-900">{formatDate(entry.startTime)}</p>
+          <p className="text-xs text-gray-500">{formatTime(entry.startTime)}</p>
+        </div>
+      ),
+    });
+
+    // End Time
+    baseColumns.push({
+      key: 'endTime',
+      header: 'End Time',
+      sortable: true,
+      render: (entry) =>
+        entry.endTime ? (
+          <div>
+            <p className="text-sm font-medium text-gray-900">{formatDate(entry.endTime)}</p>
+            <p className="text-xs text-gray-500">{formatTime(entry.endTime)}</p>
+          </div>
+        ) : (
+          <Badge variant="success" className="animate-pulse">
+            Running
+          </Badge>
+        ),
+    });
+
+    // Duration
+    baseColumns.push({
+      key: 'duration',
+      header: 'Duration',
+      sortable: true,
+      render: (entry) => (
+        <span className="text-sm font-medium text-gray-900">{formatDuration(entry.duration)}</span>
+      ),
+    });
+
+    // Actions
+    baseColumns.push({
+      key: 'actions',
+      header: 'Actions',
+      render: (entry) => (
+        <div className="flex items-center gap-2">
+          {entry.isRunning && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStopTimer(entry.id);
+              }}
+            >
+              Stop
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/time-entries/${entry.id}`);
+            }}
+          >
+            {isAdmin || isTenantAdmin ? 'Edit' : 'View'}
+          </Button>
+        </div>
+      ),
+    });
+
+    return baseColumns;
+  };
+
+  const totalHours = entries.reduce((sum, entry) => sum + (entry.duration || 0), 0) / 60;
+  const runningEntries = entries.filter((e) => e.isRunning).length;
+  const billableHours =
+    entries.filter((e) => e.isBillable).reduce((sum, entry) => sum + (entry.duration || 0), 0) / 60;
+
+  // Get page title based on role
+  const getPageTitle = () => {
+    if (isAdmin) return 'Time Entries Management';
+    if (isTenantAdmin) return 'Team Time Entries';
+    return 'My Time Entries';
+  };
+
+  // Get page description based on role
+  const getPageDescription = () => {
+    if (isAdmin) return 'Manage time entries across all tenants';
+    if (isTenantAdmin) return 'View and manage time entries for your team';
+    return 'Track and manage your time across projects';
+  };
+
+  return (
+    <ProtectedRoute>
+      <ImpersonationBanner />
+      <div className="min-h-screen bg-gray-50 impersonation-offset">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
+                <p className="text-gray-600 mt-1">{getPageDescription()}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" onClick={() => router.push('/chat')}>
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                    />
+                  </svg>
+                  Back to Chat
+                </Button>
+
+                {/* Tracking Mode Based Buttons - Only show for regular users (not admins) */}
+                {!isAdmin && !isTenantAdmin && (
+                  <>
+                    {/* Clock In/Out Button */}
+                    {canUseClock && (
+                      <Button
+                        onClick={isClockedIn ? handleClockOut : handleClockIn}
+                        variant={isClockedIn ? 'destructive' : 'default'}
+                      >
+                        <svg
+                          className="w-5 h-5 mr-2"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        {isClockedIn ? 'Clock Out' : 'Clock In'}
+                      </Button>
+                    )}
+
+                    {/* Manual Entry Button */}
+                    {canUseManual && (
+                      <Button onClick={() => router.push('/time-entries/new')}>
+                        <svg
+                          className="w-5 h-5 mr-2"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01"
+                          />
+                        </svg>
+                        Add Manual Entry
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {/* Admin/Tenant Admin Add Button */}
+                {(isAdmin || isTenantAdmin) && selectedTenant && (
+                  <Button onClick={() => router.push('/time-entries/new')}>
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    Add Time Entry
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Tenant Selection (Admin Only) */}
+            {isAdmin && (
+              <Card className="p-4">
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                    Select Tenant:
+                  </label>
+                  <select
+                    value={selectedTenant}
+                    onChange={(e) => {
+                      setSelectedTenant(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">-- Select a Tenant --</option>
+                    {tenants.map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.name} ({tenant.tenantKey})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </Card>
+            )}
+
+            {/* Show message if admin hasn't selected a tenant */}
+            {isAdmin && !selectedTenant ? (
+              <Card className="p-8">
+                <EmptyState
+                  icon="building"
+                  title="Select a tenant to view time entries"
+                  description="Please select a tenant from the dropdown above to view and manage time entries."
+                />
+              </Card>
+            ) : (
+              <>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <svg
+                          className="w-6 h-6 text-blue-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Total Hours</p>
+                        <p className="text-2xl font-bold text-gray-900">{totalHours.toFixed(1)}h</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <svg
+                          className="w-6 h-6 text-green-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Running Timers</p>
+                        <p className="text-2xl font-bold text-gray-900">{runningEntries}</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <svg
+                          className="w-6 h-6 text-purple-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Billable Hours</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {billableHours.toFixed(1)}h
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {(isAdmin || isTenantAdmin) && (
+                    <Card className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <svg
+                            className="w-6 h-6 text-orange-600"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Total Entries</p>
+                          <p className="text-2xl font-bold text-gray-900">{entries.length}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                </div>
+
+                {/* Filters */}
+                <Card className="p-4">
+                  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
+                      <div className="md:col-span-1">
+                        <Input
+                          type="text"
+                          placeholder="Search..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+
+                      {/* User Filter (Admin and Tenant Admin only) */}
+                      {(isAdmin || isTenantAdmin) && (
+                        <select
+                          value={userFilter}
+                          onChange={(e) => setUserFilter(e.target.value)}
+                          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="all">All Users</option>
+                          {users.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.firstName} {u.lastName}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="running">Running</option>
+                        <option value="stopped">Stopped</option>
+                      </select>
+
+                      <div className="flex gap-2">
+                        <Input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          placeholder="Start Date"
+                        />
+                        <Input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          placeholder="End Date"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Add Time Entry Button */}
+                    {(!isAdmin || selectedTenant) && (
+                      <Button
+                        onClick={() => router.push('/time-entries/new')}
+                        className="whitespace-nowrap w-full md:w-auto"
+                      >
+                        <svg
+                          className="w-5 h-5 mr-2"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 4v16m8-8H4"
+                          />
+                        </svg>
+                        Add Time Entry
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+
+                {/* Time Entries Table */}
+                {filteredEntries.length === 0 && !isLoading ? (
+                  <Card className="p-8">
+                    <EmptyState
+                      icon="clock"
+                      title="No time entries yet"
+                      description="Start tracking time by creating your first time entry or use the chat to log time naturally."
+                      actionLabel="Add Time Entry"
+                      onAction={() => router.push('/time-entries/new')}
+                      secondaryActionLabel="Go to Chat"
+                      onSecondaryAction={() => router.push('/chat')}
+                    />
+                  </Card>
+                ) : (
+                  <Table<TimeEntry>
+                    columns={buildColumns()}
+                    data={filteredEntries}
+                    keyExtractor={(entry) => entry.id}
+                    onRowClick={(entry) => router.push(`/time-entries/${entry.id}`)}
+                    isLoading={isLoading}
+                    emptyMessage="No time entries found"
+                    pagination={{
+                      currentPage,
+                      totalPages,
+                      onPageChange: setCurrentPage,
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </ProtectedRoute>
+  );
+}

@@ -38,7 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Users', href: '/admin/users', icon: 'users' },
     { name: 'Clients', href: '/admin/clients', icon: 'building' },
     { name: 'Projects', href: '/admin/projects', icon: 'folder' },
-    { name: 'Time Entries', href: '/admin/time-entries', icon: 'clock' },
+    { name: 'Time Entries', href: '/time-entries', icon: 'clock' },
     { name: 'Reports', href: '/admin/reports', icon: 'report' },
   ];
 

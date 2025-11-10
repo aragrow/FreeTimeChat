@@ -42,8 +42,19 @@ router.get('/', async (req: Request, res: Response) => {
       deletedAt: null,
     };
 
+    // RBAC: Regular users can only see their own entries
+    // Tenant admins and system admins can see all entries in the tenant
+    const isAdmin = req.user?.roles?.includes('admin');
+    const isTenantAdmin = req.user?.roles?.includes('tenantadmin');
+    const isRegularUser = !isAdmin && !isTenantAdmin;
+
+    if (isRegularUser) {
+      where.userId = req.user?.sub;
+    }
+
     if (projectId) where.projectId = projectId as string;
-    if (userId) where.userId = userId as string;
+    // Allow filtering by userId only for admins
+    if (userId && (isAdmin || isTenantAdmin)) where.userId = userId as string;
     if (isBillable !== undefined) where.isBillable = isBillable === 'true';
 
     // Date range filter
@@ -140,6 +151,19 @@ router.get('/:id', async (req: Request, res: Response) => {
       return;
     }
 
+    // RBAC: Regular users can only see their own entries
+    const isAdmin = req.user?.roles?.includes('admin');
+    const isTenantAdmin = req.user?.roles?.includes('tenantadmin');
+    const isRegularUser = !isAdmin && !isTenantAdmin;
+
+    if (isRegularUser && entry.userId !== req.user?.sub) {
+      res.status(403).json({
+        status: 'error',
+        message: 'Access denied: You can only view your own time entries',
+      });
+      return;
+    }
+
     res.status(200).json({
       status: 'success',
       data: entry,
@@ -180,11 +204,19 @@ router.post('/', async (req: Request, res: Response) => {
       isBillable = true,
     } = req.body;
 
+    // RBAC: Regular users can only create entries for themselves
+    const isAdmin = req.user?.roles?.includes('admin');
+    const isTenantAdmin = req.user?.roles?.includes('tenantadmin');
+    const isRegularUser = !isAdmin && !isTenantAdmin;
+
+    // Determine the userId for the entry
+    const entryUserId = isRegularUser ? req.user?.sub : userId || req.user?.sub;
+
     // Validation
-    if (!userId || !projectId || !startTime) {
+    if (!entryUserId || !projectId || !startTime) {
       res.status(400).json({
         status: 'error',
-        message: 'userId, projectId, and startTime are required',
+        message: 'projectId and startTime are required',
       });
       return;
     }
@@ -213,7 +245,7 @@ router.post('/', async (req: Request, res: Response) => {
     // Create time entry
     const entry = await req.clientDb.timeEntry.create({
       data: {
-        userId,
+        userId: entryUserId,
         projectId,
         description: description?.trim() || null,
         startTime: new Date(startTime),
@@ -292,6 +324,19 @@ router.put('/:id', async (req: Request, res: Response) => {
       res.status(404).json({
         status: 'error',
         message: 'Time entry not found',
+      });
+      return;
+    }
+
+    // RBAC: Regular users can only update their own entries
+    const isAdmin = req.user?.roles?.includes('admin');
+    const isTenantAdmin = req.user?.roles?.includes('tenantadmin');
+    const isRegularUser = !isAdmin && !isTenantAdmin;
+
+    if (isRegularUser && existingEntry.userId !== req.user?.sub) {
+      res.status(403).json({
+        status: 'error',
+        message: 'Access denied: You can only update your own time entries',
       });
       return;
     }
@@ -391,6 +436,19 @@ router.delete('/:id', async (req: Request, res: Response) => {
       res.status(404).json({
         status: 'error',
         message: 'Time entry not found',
+      });
+      return;
+    }
+
+    // RBAC: Regular users can only delete their own entries
+    const isAdmin = req.user?.roles?.includes('admin');
+    const isTenantAdmin = req.user?.roles?.includes('tenantadmin');
+    const isRegularUser = !isAdmin && !isTenantAdmin;
+
+    if (isRegularUser && existingEntry.userId !== req.user?.sub) {
+      res.status(403).json({
+        status: 'error',
+        message: 'Access denied: You can only delete your own time entries',
       });
       return;
     }
@@ -521,6 +579,19 @@ router.post('/:id/stop', async (req: Request, res: Response) => {
       res.status(404).json({
         status: 'error',
         message: 'Time entry not found',
+      });
+      return;
+    }
+
+    // RBAC: Regular users can only stop their own timers
+    const isAdmin = req.user?.roles?.includes('admin');
+    const isTenantAdmin = req.user?.roles?.includes('tenantadmin');
+    const isRegularUser = !isAdmin && !isTenantAdmin;
+
+    if (isRegularUser && existingEntry.userId !== req.user?.sub) {
+      res.status(403).json({
+        status: 'error',
+        message: 'Access denied: You can only stop your own timers',
       });
       return;
     }

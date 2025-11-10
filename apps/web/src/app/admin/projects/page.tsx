@@ -35,11 +35,25 @@ interface Client {
   name: string;
 }
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface ProjectMember {
+  id: string;
+  projectId: string;
+  userId: string;
+}
+
 export default function ProjectsPage() {
   const { getAuthHeaders } = useAuth();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -59,11 +73,13 @@ export default function ProjectsPage() {
     isBillable: true,
     isFixedHours: false,
     allocatedHours: '',
+    userIds: [] as string[],
   });
 
   useEffect(() => {
     fetchProjects();
     fetchClients();
+    fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, statusFilter]);
 
@@ -115,6 +131,53 @@ export default function ProjectsPage() {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users?limit=1000`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setUsers(
+          (result.data.users || []).map((u: { id: string; name: string; email: string }) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  };
+
+  const fetchProjectMembers = async (projectId: string) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/project/${projectId}`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        const members = result.data || [];
+        setProjectMembers(members);
+        // Update form data with user IDs
+        setFormData((prev) => ({
+          ...prev,
+          userIds: members.map((m: ProjectMember) => m.userId),
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch project members:', error);
+    }
+  };
+
   const handleCreate = async () => {
     if (!formData.name) {
       alert('Project name is required');
@@ -139,6 +202,24 @@ export default function ProjectsPage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        const newProjectId = data.data.id;
+
+        // Add users to the project if any selected
+        if (formData.userIds.length > 0) {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/bulk`, {
+            method: 'POST',
+            headers: {
+              ...getAuthHeaders(),
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              projectId: newProjectId,
+              userIds: formData.userIds,
+            }),
+          });
+        }
+
         setShowCreateModal(false);
         setFormData({
           name: '',
@@ -148,6 +229,7 @@ export default function ProjectsPage() {
           isBillable: true,
           isFixedHours: false,
           allocatedHours: '',
+          userIds: [],
         });
         fetchProjects();
       } else {
@@ -186,6 +268,39 @@ export default function ProjectsPage() {
       );
 
       if (response.ok) {
+        // Update user assignments
+        const originalUserIds = projectMembers.map((m) => m.userId);
+        const newUserIds = formData.userIds;
+
+        // Find users to remove (in original but not in new)
+        const usersToRemove = projectMembers.filter((m) => !newUserIds.includes(m.userId));
+
+        // Find users to add (in new but not in original)
+        const userIdsToAdd = newUserIds.filter((id) => !originalUserIds.includes(id));
+
+        // Remove users
+        for (const member of usersToRemove) {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/${member.id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+          });
+        }
+
+        // Add users
+        if (userIdsToAdd.length > 0) {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/bulk`, {
+            method: 'POST',
+            headers: {
+              ...getAuthHeaders(),
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              projectId: editingProject.id,
+              userIds: userIdsToAdd,
+            }),
+          });
+        }
+
         setEditingProject(null);
         setFormData({
           name: '',
@@ -195,6 +310,7 @@ export default function ProjectsPage() {
           isBillable: true,
           isFixedHours: false,
           allocatedHours: '',
+          userIds: [],
         });
         fetchProjects();
       } else {
@@ -270,7 +386,10 @@ export default function ProjectsPage() {
       isBillable: project.isBillable,
       isFixedHours: !!project.allocatedHours,
       allocatedHours: project.allocatedHours ? project.allocatedHours.toString() : '',
+      userIds: [], // Will be set by fetchProjectMembers
     });
+    // Fetch project members
+    fetchProjectMembers(project.id);
   };
 
   const filteredProjects = projects.filter((project) => {
@@ -716,6 +835,46 @@ export default function ProjectsPage() {
               </div>
             </div>
 
+            {/* Team Members */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Team Members</h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <label
+                      key={user.id}
+                      className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.userIds.includes(user.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              userIds: [...formData.userIds, user.id],
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              userIds: formData.userIds.filter((id) => id !== user.id),
+                            });
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-gray-900">{user.name}</span>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                      </div>
+                    </label>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-sm">No users available</p>
+                )}
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 variant="outline"
@@ -729,6 +888,7 @@ export default function ProjectsPage() {
                     isBillable: true,
                     isFixedHours: false,
                     allocatedHours: '',
+                    userIds: [],
                   });
                 }}
               >
@@ -993,6 +1153,46 @@ export default function ProjectsPage() {
               </div>
             </div>
 
+            {/* Team Members */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Team Members</h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <label
+                      key={user.id}
+                      className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.userIds.includes(user.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              userIds: [...formData.userIds, user.id],
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              userIds: formData.userIds.filter((id) => id !== user.id),
+                            });
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-gray-900">{user.name}</span>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                      </div>
+                    </label>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-sm">No users available</p>
+                )}
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 variant="outline"
@@ -1006,6 +1206,7 @@ export default function ProjectsPage() {
                     isBillable: true,
                     isFixedHours: false,
                     allocatedHours: '',
+                    userIds: [],
                   });
                 }}
               >
