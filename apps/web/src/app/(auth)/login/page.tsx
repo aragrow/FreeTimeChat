@@ -10,14 +10,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { GoogleLogo } from '@/components/icons/GoogleLogo';
+import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, loginWithGoogle } = useAuth();
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     tenantKey: '',
     email: '',
@@ -39,7 +42,9 @@ export default function LoginPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Convert tenant key to uppercase
+    const processedValue = name === 'tenantKey' ? value.toUpperCase() : value;
+    setFormData((prev) => ({ ...prev, [name]: processedValue }));
     // Clear error when user types
     if (errors[name]) {
       setErrors((prev) => {
@@ -159,7 +164,7 @@ export default function LoginPage() {
       // Password changed successfully, close modal and show success message
       setShowPasswordChangeModal(false);
       setGeneralError('');
-      alert('Password changed successfully! Please login with your new password.');
+      showToast('success', 'Password changed successfully! Please login with your new password.');
 
       // Reset form
       setFormData({
@@ -201,9 +206,9 @@ export default function LoginPage() {
 
         <Card className="p-8">
           {generalError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+            <Alert variant="error" className="mb-4" onDismiss={() => setGeneralError('')}>
               {generalError}
-            </div>
+            </Alert>
           )}
 
           {/* Google OAuth Button */}
@@ -383,9 +388,9 @@ export default function LoginPage() {
             </p>
 
             {passwordChangeError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+              <Alert variant="error" className="mb-4" onDismiss={() => setPasswordChangeError('')}>
                 {passwordChangeError}
-              </div>
+              </Alert>
             )}
 
             <form onSubmit={handlePasswordChange} className="space-y-4">

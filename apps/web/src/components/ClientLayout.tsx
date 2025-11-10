@@ -7,13 +7,16 @@
 'use client';
 
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
+import { ToastProvider } from '@/components/ui';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ImpersonationProvider>
-      <ImpersonationBanner />
-      <div className="impersonation-offset">{children}</div>
-    </ImpersonationProvider>
+    <ToastProvider>
+      <ImpersonationProvider>
+        <ImpersonationBanner />
+        <div className="impersonation-offset">{children}</div>
+      </ImpersonationProvider>
+    </ToastProvider>
   );
 }
