@@ -291,3 +291,34 @@ enum InvoiceStatus {
   REFUNDED // Refunded
   OVERDUE // Past due date
 }
+
+// LLM Configuration - Tenant-specific LLM settings (tenantadmin)
+model LLMConfig {
+  id              String      @id @default(uuid())
+  provider        LLMProvider
+  apiKeyEncrypted String      @map("api_key_encrypted") // Encrypted API key
+  defaultModel    String      @map("default_model")
+  temperature     Decimal     @default(0.7) @db.Decimal(3, 2) // 0.00-1.00
+  maxTokens       Int         @default(2000) @map("max_tokens")
+  baseUrl         String?     @map("base_url") // Custom API endpoint (optional)
+  organization    String?     @map("organization") // Organization ID (OpenAI only)
+  timeout         Int         @default(30000) // Request timeout in milliseconds
+  isActive        Boolean     @default(true) @map("is_active")
+  createdBy       String      @map("created_by") // User ID who created this config
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@index([provider])
+  @@map("llm_configs")
+}
+
+enum LLMProvider {
+  OPENAI
+  ANTHROPIC
+  GOOGLE_GEMINI
+  PERPLEXITY
+  ABACUS_AI
+
+  @@map("llm_provider")
+}
