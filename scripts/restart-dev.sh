@@ -33,6 +33,9 @@ pkill -f "tsx" 2>/dev/null && echo -e "${GREEN}  ✓ Killed tsx${NC}" || echo -e
 # Kill any pnpm processes that might be hanging
 pkill -f "pnpm dev" 2>/dev/null && echo -e "${GREEN}  ✓ Killed pnpm dev processes${NC}" || echo -e "${YELLOW}  ℹ  No pnpm dev processes found${NC}"
 
+# Kill Mailpit
+pkill -f "mailpit" 2>/dev/null && echo -e "${GREEN}  ✓ Killed Mailpit${NC}" || echo -e "${YELLOW}  ℹ  No Mailpit processes found${NC}"
+
 # Wait a moment for processes to fully terminate
 sleep 2
 
@@ -57,6 +60,8 @@ check_port 3001 "API"
 check_port 3000 "Web"
 check_port 5555 "Prisma Studio (Main)"
 check_port 5556 "Prisma Studio (Tenant)"
+check_port 8025 "Mailpit Web UI"
+check_port 1025 "Mailpit SMTP"
 
 echo ""
 
@@ -65,6 +70,12 @@ echo -e "${BLUE}🚀 Starting development servers...${NC}"
 
 # Get project root directory
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Start Mailpit in background
+echo -e "${YELLOW}  Starting Mailpit (SMTP: 1025, Web UI: 8025)...${NC}"
+mailpit > /tmp/mailpit.log 2>&1 &
+MAILPIT_PID=$!
+echo -e "${GREEN}  ✓ Mailpit started (PID: $MAILPIT_PID)${NC}"
 
 # Start API server in background
 echo -e "${YELLOW}  Starting API server (port 3001)...${NC}"
@@ -127,18 +138,20 @@ printf "  ${YELLOW}%-15s %-30s %-50s${NC}\n" "───────────�
 # Print table rows
 printf "  %-15s ${BLUE}%-30s${NC} %-50s\n" "API" "http://localhost:3001" "Backend API"
 printf "  %-15s ${BLUE}%-30s${NC} %-50s\n" "Web" "http://localhost:3000" "Next.js Frontend"
+printf "  %-15s ${BLUE}%-30s${NC} %-50s\n" "Mailpit" "http://localhost:8025" "Email testing (SMTP: 1025)"
 printf "  %-15s ${BLUE}%-30s${NC} %-50s\n" "Prisma Main" "http://localhost:5555" "Browse main DB (users, tenants, roles)"
 printf "  %-15s ${BLUE}%-30s${NC} %-50s\n" "Prisma Tenant" "http://localhost:5556" "Browse ARAGROW-LLC DB (clients, projects, time entries)"
 
 echo ""
 echo -e "${BLUE}📝 Logs:${NC}"
-echo -e "  ${GREEN}•${NC} API:    tail -f /tmp/freetimechat-api.log"
-echo -e "  ${GREEN}•${NC} Web:    tail -f /tmp/freetimechat-web.log"
-echo -e "  ${GREEN}•${NC} Prisma: tail -f /tmp/prisma-studio-main.log"
-echo -e "  ${GREEN}•${NC} Prisma: tail -f /tmp/prisma-studio-tenant.log"
+echo -e "  ${GREEN}•${NC} API:     tail -f /tmp/freetimechat-api.log"
+echo -e "  ${GREEN}•${NC} Web:     tail -f /tmp/freetimechat-web.log"
+echo -e "  ${GREEN}•${NC} Mailpit: tail -f /tmp/mailpit.log"
+echo -e "  ${GREEN}•${NC} Prisma:  tail -f /tmp/prisma-studio-main.log"
+echo -e "  ${GREEN}•${NC} Prisma:  tail -f /tmp/prisma-studio-tenant.log"
 echo ""
 echo -e "${BLUE}💡 Tips:${NC}"
-echo -e "  ${GREEN}•${NC} Stop all: pkill -f 'next dev|nodemon|prisma studio'"
+echo -e "  ${GREEN}•${NC} Stop all: pkill -f 'next dev|nodemon|prisma studio|mailpit'"
 echo -e "  ${GREEN}•${NC} Change tenant: Edit DEFAULT_TENANT_DB_URL in this script"
 echo ""
 echo -e "${GREEN}🚀 Now you can restart your entire development environment with one command!${NC}"

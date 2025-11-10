@@ -142,6 +142,11 @@ async function main() {
     { name: 'admin:system-settings', description: 'Manage system settings' },
     { name: 'isadmin', description: 'Administrator status - grants full system access' },
 
+    // Account Request Management
+    { name: 'account-requests:read', description: 'View account requests' },
+    { name: 'account-requests:approve', description: 'Approve account requests' },
+    { name: 'account-requests:reject', description: 'Reject account requests' },
+
     // Security Settings
     { name: 'security.settings.read', description: 'View security settings' },
     { name: 'security.settings.write', description: 'Update security settings' },

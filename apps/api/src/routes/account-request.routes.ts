@@ -7,6 +7,7 @@
 
 import { Router } from 'express';
 import { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
+import { getEmailService } from '../services/email.service';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -144,14 +145,45 @@ router.post('/', async (req: Request, res: Response) => {
       },
     });
 
-    // TODO: Send notification to admins
-    // For now, just log it
-    console.log('🆕 New account request received:', {
-      id: accountRequest.id,
-      email: accountRequest.email,
-      fullName: accountRequest.fullName,
-      companyName: accountRequest.companyName,
-    });
+    // Send notification to admins
+    const emailService = getEmailService();
+
+    try {
+      // Render email template with account request data
+      const emailHtml = await emailService.renderTemplate('account-request-admin', {
+        fullName: accountRequest.fullName,
+        email: accountRequest.email,
+        companyName: accountRequest.companyName,
+        jobTitle: accountRequest.jobTitle,
+        phone: accountRequest.phone || '',
+        howHeardAboutUs: accountRequest.howHeardAboutUs || '',
+        reasonForAccess: accountRequest.reasonForAccess,
+        requestId: accountRequest.id,
+        submittedAt: accountRequest.createdAt.toLocaleString('en-US', {
+          dateStyle: 'full',
+          timeStyle: 'short',
+        }),
+        ipAddress: accountRequest.ipAddress || '',
+        adminPanelUrl: `${process.env.API_URL || 'http://localhost:3001'}/admin/account-requests`,
+      });
+
+      // Send email to admins
+      await emailService.sendAdminNotification('🆕 New Account Request - FreeTimeChat', emailHtml);
+
+      console.log('📧 Admin notification email sent for account request:', {
+        id: accountRequest.id,
+        email: accountRequest.email,
+      });
+    } catch (emailError) {
+      // Log error but don't fail the request
+      console.error('⚠️  Failed to send admin notification email:', emailError);
+      console.log('🆕 New account request received (email failed):', {
+        id: accountRequest.id,
+        email: accountRequest.email,
+        fullName: accountRequest.fullName,
+        companyName: accountRequest.companyName,
+      });
+    }
 
     res.status(201).json({
       status: 'success',

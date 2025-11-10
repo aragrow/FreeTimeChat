@@ -18,10 +18,12 @@ export default function AdminDashboard() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [tenants, setTenants] = useState<any[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
+  const [accountRequestStats, setAccountRequestStats] = useState<any>(null);
   const isAdmin = user?.roles?.includes('admin');
 
   useEffect(() => {
     fetchTenants();
+    fetchAccountRequestData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -75,6 +77,26 @@ export default function AdminDashboard() {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAccountRequestData = async () => {
+    try {
+      // Fetch account request stats
+      const statsResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/account-requests/stats`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setAccountRequestStats(statsData.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch account request data:', error);
     }
   };
 
@@ -201,6 +223,26 @@ export default function AdminDashboard() {
         </svg>
       ),
       color: 'bg-yellow-500',
+    });
+  }
+
+  // 6. Pending Account Requests (Admin only)
+  if (isAdmin && accountRequestStats) {
+    statCards.push({
+      title: 'Pending Requests',
+      value: accountRequestStats.pending || 0,
+      subtitle: `${accountRequestStats.total || 0} total requests`,
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      ),
+      color: 'bg-orange-500',
     });
   }
 
@@ -418,6 +460,34 @@ export default function AdminDashboard() {
             </div>
           </Card>
         </a>
+
+        {isAdmin && (
+          <a href="/admin/account-requests" className="block">
+            <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-orange-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900">Account Requests</h3>
+                  <p className="text-xs text-gray-500 mt-1">Review and manage access requests</p>
+                </div>
+              </div>
+            </Card>
+          </a>
+        )}
 
         {isAdmin && (
           <a href="/admin/roles" className="block">

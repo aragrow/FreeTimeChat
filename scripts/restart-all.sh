@@ -120,6 +120,16 @@ else
   echo -e "${GREEN}  ✓ Redis started${NC}"
 fi
 
+# Check Mailpit
+if pgrep -f mailpit >/dev/null 2>&1; then
+  echo -e "${GREEN}  ✓ Mailpit is running${NC}"
+else
+  echo -e "${YELLOW}  • Starting Mailpit...${NC}"
+  mailpit > /tmp/mailpit.log 2>&1 &
+  sleep 2
+  echo -e "${GREEN}  ✓ Mailpit started${NC}"
+fi
+
 echo ""
 
 # ============================================================================
@@ -231,6 +241,15 @@ echo -e "   ${GREEN}Password:${NC}   (none - local dev)"
 echo -e "   ${GREEN}Connect:${NC}    redis-cli"
 echo -e "   ${GREEN}Test:${NC}       redis-cli ping"
 echo -e "   ${GREEN}Service:${NC}    brew services list | grep redis"
+echo ""
+
+echo -e "${BOLD}📧 Email (Mailpit)${NC}"
+echo -e "   ${GREEN}SMTP Host:${NC}  localhost"
+echo -e "   ${GREEN}SMTP Port:${NC}  1025"
+echo -e "   ${GREEN}Web UI:${NC}     http://localhost:8025"
+echo -e "   ${GREEN}Auth:${NC}       Not required (local dev)"
+echo -e "   ${GREEN}Test:${NC}       curl http://localhost:8025/api/v1/messages"
+echo -e "   ${GREEN}Process:${NC}    pgrep -f mailpit"
 echo ""
 
 echo -e "${BOLD}📦 Package Manager${NC}"

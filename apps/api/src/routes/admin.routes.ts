@@ -9,6 +9,7 @@ import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
 import { attachClientDatabase } from '../middleware/client-database.middleware';
 import { requireAnyRole } from '../middleware/permission.middleware';
+import accountRequestsRoutes from './admin/account-requests.routes';
 import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
 import integrationTemplatesRoutes from './admin/integration-templates.routes';
@@ -33,6 +34,7 @@ router.use(authenticateJWT);
 router.use(requireAnyRole(['admin', 'tenantadmin']));
 
 // Mount admin sub-routes that DON'T need tenant database
+router.use('/account-requests', accountRequestsRoutes);
 router.use('/users', usersRoutes);
 router.use('/roles', rolesRoutes);
 router.use('/capabilities', capabilitiesRoutes);
@@ -58,6 +60,7 @@ router.get('/', (_req, res) => {
     status: 'success',
     message: 'Admin API',
     endpoints: {
+      accountRequests: '/api/v1/admin/account-requests',
       users: '/api/v1/admin/users',
       roles: '/api/v1/admin/roles',
       capabilities: '/api/v1/admin/capabilities',
