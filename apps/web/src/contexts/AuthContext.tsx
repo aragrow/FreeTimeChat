@@ -18,6 +18,7 @@ export interface User {
   role: string;
   roles?: string[]; // Array of role names: ["Admin", "User"]
   isTwoFactorEnabled: boolean;
+  trackingMode?: 'CLOCK' | 'TIME'; // User's tracking mode preference
   isImpersonating?: boolean;
   originalUserId?: string;
   impersonation?: {
@@ -41,6 +42,7 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   loginWithGoogle: () => void;
   getAuthHeaders: () => Record<string, string>;
+  fetchWithAuth: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,6 +92,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       headers['Authorization'] = `Bearer ${tokenToUse}`;
     }
     return headers;
+  };
+
+  /**
+   * Fetch with automatic token refresh on 401 errors
+   * This wraps the native fetch and automatically refreshes the token if it expires
+   */
+  const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
+    // Add auth headers to the request
+    const headers = {
+      ...getAuthHeaders(),
+      ...((options.headers as Record<string, string>) || {}),
+    };
+
+    // Make the initial request
+    let response = await fetch(url, { ...options, headers });
+
+    // If we get a 401, try to refresh the token and retry once
+    if (response.status === 401 && refreshToken) {
+      console.log('[fetchWithAuth] Token expired, attempting refresh...');
+      await refreshTokenFunc();
+
+      // Retry the request with the new token
+      const newHeaders = {
+        ...getAuthHeaders(),
+        ...((options.headers as Record<string, string>) || {}),
+      };
+      response = await fetch(url, { ...options, headers: newHeaders });
+    }
+
+    return response;
   };
 
   const checkAuthWithToken = async (token: string) => {
@@ -298,6 +330,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser,
     loginWithGoogle,
     getAuthHeaders,
+    fetchWithAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -11,8 +11,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -47,6 +46,10 @@ export default function NewTimeEntryPage() {
   const isAdmin = user?.roles?.includes('admin');
   const isTenantAdmin = user?.roles?.includes('tenantadmin');
 
+  // Get user's tracking mode (default to CLOCK if not set)
+  const userTrackingMode = user?.trackingMode || 'CLOCK';
+  const canUseManual = userTrackingMode === 'TIME';
+
   // State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -59,8 +62,8 @@ export default function NewTimeEntryPage() {
     userId: '',
     projectId: '',
     description: '',
-    startTime: '',
-    endTime: '',
+    date: '', // Just date, not datetime
+    hours: 1, // Hours worked (0-24, in 0.5 increments)
     isBillable: true,
   });
 
@@ -76,13 +79,24 @@ export default function NewTimeEntryPage() {
 
   // Fetch users and projects when tenant is selected
   useEffect(() => {
+    // Don't fetch if user is not loaded yet
+    if (!user) {
+      console.log('Skipping fetch - user not loaded yet');
+      return;
+    }
+
     if (isAdmin && !selectedTenant) {
       return;
     }
-    fetchUsers();
+
+    // Only fetch users list if admin/tenantadmin (regular users can only create entries for themselves)
+    if (isAdmin || isTenantAdmin) {
+      fetchUsers();
+    }
+
     fetchProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTenant, isAdmin, isTenantAdmin]);
+  }, [selectedTenant, isAdmin, isTenantAdmin, user]);
 
   const fetchTenants = async () => {
     try {
@@ -128,14 +142,39 @@ export default function NewTimeEntryPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects?limit=1000`, {
+      // Use different endpoint based on user role
+      const endpoint =
+        isAdmin || isTenantAdmin
+          ? `${process.env.NEXT_PUBLIC_API_URL}/admin/projects?take=1000`
+          : `${process.env.NEXT_PUBLIC_API_URL}/projects?limit=1000`;
+
+      console.log('Fetching projects:', {
+        isAdmin,
+        isTenantAdmin,
+        endpoint,
+        userRoles: user?.roles,
+      });
+
+      const response = await fetch(endpoint, {
         method: 'GET',
         headers: getAuthHeaders(),
       });
 
+      console.log('Projects response:', {
+        status: response.status,
+        ok: response.ok,
+      });
+
       if (response.ok) {
         const data = await response.json();
-        setProjects(data.data.projects || []);
+        console.log('Projects data:', data);
+        // Handle different response structures
+        const projectsList = isAdmin || isTenantAdmin ? data.data.projects || [] : data.data || [];
+        console.log('Setting projects:', projectsList);
+        setProjects(projectsList);
+      } else {
+        const errorData = await response.json();
+        console.error('Projects fetch error:', errorData);
       }
     } catch (error) {
       console.error('Failed to fetch projects:', error);
@@ -170,16 +209,12 @@ export default function NewTimeEntryPage() {
       newErrors.projectId = 'Project is required';
     }
 
-    if (!formData.startTime) {
-      newErrors.startTime = 'Start time is required';
+    if (!formData.date) {
+      newErrors.date = 'Date is required';
     }
 
-    if (formData.endTime && formData.startTime) {
-      const start = new Date(formData.startTime);
-      const end = new Date(formData.endTime);
-      if (end <= start) {
-        newErrors.endTime = 'End time must be after start time';
-      }
+    if (formData.hours <= 0 || formData.hours > 24) {
+      newErrors.hours = 'Hours must be between 0 and 24';
     }
 
     if ((isAdmin || isTenantAdmin) && !formData.userId) {
@@ -200,15 +235,30 @@ export default function NewTimeEntryPage() {
     try {
       setIsSubmitting(true);
 
-      // Calculate duration if both start and end times are provided
-      let duration = null;
-      if (formData.startTime && formData.endTime) {
-        const start = new Date(formData.startTime);
-        const end = new Date(formData.endTime);
-        duration = Math.floor((end.getTime() - start.getTime()) / 1000); // seconds
-      }
+      // Create start and end times from date and hours
+      // Start time: beginning of the selected date (8:00 AM)
+      const startTime = new Date(`${formData.date}T08:00:00`);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries`, {
+      // End time: start time + hours worked
+      const endTime = new Date(startTime.getTime() + formData.hours * 60 * 60 * 1000);
+
+      // Duration in seconds
+      const duration = Math.floor(formData.hours * 60 * 60);
+
+      // Use different endpoint based on user role
+      const endpoint =
+        isAdmin || isTenantAdmin
+          ? `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries`
+          : `${process.env.NEXT_PUBLIC_API_URL}/time-entries`;
+
+      console.log('Creating time entry:', {
+        isAdmin,
+        isTenantAdmin,
+        endpoint,
+        userRoles: user?.roles,
+      });
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
@@ -218,11 +268,16 @@ export default function NewTimeEntryPage() {
           userId: formData.userId || user?.id,
           projectId: formData.projectId,
           description: formData.description,
-          startTime: formData.startTime,
-          endTime: formData.endTime || null,
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
           duration,
           isBillable: formData.isBillable,
         }),
+      });
+
+      console.log('Time entry response:', {
+        status: response.status,
+        ok: response.ok,
       });
 
       if (response.ok) {
@@ -230,6 +285,7 @@ export default function NewTimeEntryPage() {
         router.push('/time-entries');
       } else {
         const data = await response.json();
+        console.error('Time entry creation error:', data);
         showToast('error', data.message || 'Failed to create time entry');
       }
     } catch (error) {
@@ -240,23 +296,31 @@ export default function NewTimeEntryPage() {
     }
   };
 
-  // Set default start time to current time
+  // Set default date to today
   useEffect(() => {
-    if (!formData.startTime) {
+    if (!formData.date) {
       const now = new Date();
-      // Format for datetime-local input
+      // Format for date input (YYYY-MM-DD)
       const formatted = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
         .toISOString()
-        .slice(0, 16);
-      setFormData((prev) => ({ ...prev, startTime: formatted }));
+        .slice(0, 10);
+      setFormData((prev) => ({ ...prev, date: formatted }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Check if user can use manual entry (redirect if CLOCK only)
+  useEffect(() => {
+    if (user && !isAdmin && !isTenantAdmin && !canUseManual) {
+      showToast('error', 'Your account is set to Clock mode only. Please use the time clock.');
+      router.push('/time-entries');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, canUseManual]);
+
   return (
-    <ProtectedRoute>
-      <ImpersonationBanner />
-      <div className="min-h-screen bg-gray-50 impersonation-offset">
+    <AppLayout title="Add Time Entry" showHeader={false}>
+      <div className="min-h-screen bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="space-y-6">
             {/* Header */}
@@ -370,38 +434,71 @@ export default function NewTimeEntryPage() {
                     />
                   </div>
 
-                  {/* Start Time */}
+                  {/* Date */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Start Time <span className="text-red-500">*</span>
+                      Date <span className="text-red-500">*</span>
                     </label>
                     <Input
-                      type="datetime-local"
-                      name="startTime"
-                      value={formData.startTime}
+                      type="date"
+                      name="date"
+                      value={formData.date}
                       onChange={handleInputChange}
-                      className={errors.startTime ? 'border-red-500' : ''}
+                      className={errors.date ? 'border-red-500' : ''}
                     />
-                    {errors.startTime && (
-                      <p className="mt-1 text-sm text-red-600">{errors.startTime}</p>
-                    )}
+                    {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
                   </div>
 
-                  {/* End Time */}
+                  {/* Hours with Slider */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      End Time (optional - leave blank to start timer)
+                      Hours Worked <span className="text-red-500">*</span>
                     </label>
-                    <Input
-                      type="datetime-local"
-                      name="endTime"
-                      value={formData.endTime}
-                      onChange={handleInputChange}
-                      className={errors.endTime ? 'border-red-500' : ''}
-                    />
-                    {errors.endTime && (
-                      <p className="mt-1 text-sm text-red-600">{errors.endTime}</p>
-                    )}
+                    <div className="space-y-3">
+                      {/* Manual Input */}
+                      <div className="flex items-center gap-3">
+                        <Input
+                          type="number"
+                          name="hours"
+                          value={formData.hours}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value) && value >= 0 && value <= 24) {
+                              setFormData((prev) => ({ ...prev, hours: value }));
+                            }
+                          }}
+                          step="0.5"
+                          min="0"
+                          max="24"
+                          className={`w-24 ${errors.hours ? 'border-red-500' : ''}`}
+                        />
+                        <span className="text-sm text-gray-600">hours</span>
+                      </div>
+
+                      {/* Slider */}
+                      <div className="px-1">
+                        <input
+                          type="range"
+                          min="0"
+                          max="24"
+                          step="0.5"
+                          value={formData.hours}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            setFormData((prev) => ({ ...prev, hours: value }));
+                          }}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>0h</span>
+                          <span>6h</span>
+                          <span>12h</span>
+                          <span>18h</span>
+                          <span>24h</span>
+                        </div>
+                      </div>
+                    </div>
+                    {errors.hours && <p className="mt-1 text-sm text-red-600">{errors.hours}</p>}
                   </div>
 
                   {/* Billable Checkbox */}
@@ -443,6 +540,6 @@ export default function NewTimeEntryPage() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
+    </AppLayout>
   );
 }

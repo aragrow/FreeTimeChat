@@ -431,6 +431,7 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
       roles: req.user.roles, // Use roles from JWT
       capabilities, // Add capabilities array
       isTwoFactorEnabled: user.twoFactorEnabled,
+      trackingMode: user.trackingMode, // Add tracking mode (CLOCK or TIME)
       isImpersonating: req.user.impersonation?.isImpersonating,
       originalUserId: req.user.impersonation?.adminUserId,
       impersonation: req.user.impersonation

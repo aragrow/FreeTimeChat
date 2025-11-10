@@ -12,8 +12,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { TableColumn } from '@/components/ui/Table';
-import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -79,10 +78,10 @@ export default function TimeEntriesPage() {
   const [selectedTenant, setSelectedTenant] = useState<string>('');
   const [users, setUsers] = useState<User[]>([]);
 
-  // Get user's tracking mode (default to BOTH if not set)
-  const userTrackingMode = (user as { trackingMode?: string })?.trackingMode || 'BOTH';
-  const canUseClock = userTrackingMode === 'CLOCK' || userTrackingMode === 'BOTH';
-  const canUseManual = userTrackingMode === 'TIME' || userTrackingMode === 'BOTH';
+  // Get user's tracking mode (default to CLOCK if not set)
+  const userTrackingMode = user?.trackingMode || 'CLOCK';
+  const canUseClock = userTrackingMode === 'CLOCK';
+  const canUseManual = userTrackingMode === 'TIME';
 
   // Fetch tenants (admin only)
   useEffect(() => {
@@ -94,21 +93,31 @@ export default function TimeEntriesPage() {
 
   // Fetch users when tenant is selected (admin and tenant admin)
   useEffect(() => {
+    // Don't fetch if user is not loaded yet
+    if (!user) {
+      return;
+    }
+
     if (isAdmin || isTenantAdmin) {
       fetchUsers();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTenant, isAdmin, isTenantAdmin]);
+  }, [selectedTenant, isAdmin, isTenantAdmin, user]);
 
   // Fetch time entries
   useEffect(() => {
+    // Don't fetch if user is not loaded yet
+    if (!user) {
+      return;
+    }
+
     if (isAdmin && !selectedTenant) {
       // Admin must select a tenant first
       return;
     }
     fetchTimeEntries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, statusFilter, userFilter, startDate, endDate, selectedTenant]);
+  }, [currentPage, statusFilter, userFilter, startDate, endDate, selectedTenant, user]);
 
   const fetchTenants = async () => {
     try {
@@ -159,18 +168,24 @@ export default function TimeEntriesPage() {
         ...(userFilter !== 'all' && { userId: userFilter }),
       });
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries?${params}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      // Use different endpoint based on user role
+      const endpoint =
+        isAdmin || isTenantAdmin
+          ? `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries`
+          : `${process.env.NEXT_PUBLIC_API_URL}/time-entries`;
+
+      const response = await fetch(`${endpoint}?${params}`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
 
       if (response.ok) {
         const data = await response.json();
+        // Handle different response structures
+        const entries = isAdmin || isTenantAdmin ? data.data.entries || [] : data.data || [];
+
         // Map the API response to match our frontend interface
-        const mappedEntries = (data.data.entries || []).map(
+        const mappedEntries = entries.map(
           (entry: {
             id: string;
             description?: string;
@@ -250,13 +265,16 @@ export default function TimeEntriesPage() {
 
   const handleStopTimer = async (entryId: string) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries/${entryId}/stop`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-        }
-      );
+      // Use different endpoint based on user role
+      const endpoint =
+        isAdmin || isTenantAdmin
+          ? `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries/${entryId}/stop`
+          : `${process.env.NEXT_PUBLIC_API_URL}/time-entries/${entryId}/stop`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
 
       if (response.ok) {
         showToast('success', 'Timer stopped successfully');
@@ -436,9 +454,8 @@ export default function TimeEntriesPage() {
   };
 
   return (
-    <ProtectedRoute>
-      <ImpersonationBanner />
-      <div className="min-h-screen bg-gray-50 impersonation-offset">
+    <AppLayout title="Time Entries" showHeader={false}>
+      <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="space-y-6">
             {/* Header */}
@@ -736,8 +753,9 @@ export default function TimeEntriesPage() {
                       </div>
                     </div>
 
-                    {/* Add Time Entry Button */}
-                    {(!isAdmin || selectedTenant) && (
+                    {/* Add Time Entry Button - Only for admins/tenant admins or users with TIME mode */}
+                    {((isAdmin || isTenantAdmin) && (!isAdmin || selectedTenant)) ||
+                    (!isAdmin && !isTenantAdmin && canUseManual) ? (
                       <Button
                         onClick={() => router.push('/time-entries/new')}
                         className="whitespace-nowrap w-full md:w-auto"
@@ -757,7 +775,7 @@ export default function TimeEntriesPage() {
                         </svg>
                         Add Time Entry
                       </Button>
-                    )}
+                    ) : null}
                   </div>
                 </Card>
 
@@ -794,6 +812,6 @@ export default function TimeEntriesPage() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
+    </AppLayout>
   );
 }
