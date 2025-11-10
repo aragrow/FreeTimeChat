@@ -38,6 +38,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Users', href: '/admin/users', icon: 'users' },
     { name: 'Clients', href: '/admin/clients', icon: 'building' },
     { name: 'Projects', href: '/admin/projects', icon: 'folder' },
+    { name: 'Time Entries', href: '/admin/time-entries', icon: 'clock' },
+    { name: 'Reports', href: '/admin/reports', icon: 'report' },
   ];
 
   // Navigation items only accessible to admin
@@ -126,6 +128,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               strokeLinejoin="round"
               strokeWidth={2}
               d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            />
+          </svg>
+        );
+      case 'clock':
+        return (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        );
+      case 'report':
+        return (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
         );
