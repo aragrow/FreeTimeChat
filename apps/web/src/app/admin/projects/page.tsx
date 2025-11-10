@@ -453,8 +453,8 @@ export default function ProjectsPage() {
       sortable: true,
       render: (project) => {
         const totalHours = project.totalHours || 0;
-        const allocatedHours = project.allocatedHours || 0;
-        const additionalHours = project.additionalHoursAllocated || 0;
+        const allocatedHours = Number(project.allocatedHours) || 0;
+        const additionalHours = Number(project.additionalHoursAllocated) || 0;
         const totalBudget = allocatedHours + additionalHours;
         const hasAllocation = allocatedHours > 0;
         const isOverBudget = hasAllocation && totalHours > totalBudget;
@@ -1054,8 +1054,8 @@ export default function ProjectsPage() {
                       <div>
                         <p className="text-xs text-gray-500">Total Budget</p>
                         <p className="text-lg font-semibold text-gray-900">
-                          {(editingProject.allocatedHours || 0) +
-                            (editingProject.additionalHoursAllocated || 0)}
+                          {(Number(editingProject.allocatedHours) || 0) +
+                            (Number(editingProject.additionalHoursAllocated) || 0)}
                           h
                         </p>
                       </div>
@@ -1074,8 +1074,8 @@ export default function ProjectsPage() {
                         <span>
                           {(
                             ((editingProject.totalHours || 0) /
-                              ((editingProject.allocatedHours || 0) +
-                                (editingProject.additionalHoursAllocated || 0))) *
+                              ((Number(editingProject.allocatedHours) || 0) +
+                                (Number(editingProject.additionalHoursAllocated) || 0))) *
                             100
                           ).toFixed(0)}
                           %
@@ -1085,12 +1085,12 @@ export default function ProjectsPage() {
                         <div
                           className={`h-2 rounded-full ${
                             (editingProject.totalHours || 0) >
-                            (editingProject.allocatedHours || 0) +
-                              (editingProject.additionalHoursAllocated || 0)
+                            (Number(editingProject.allocatedHours) || 0) +
+                              (Number(editingProject.additionalHoursAllocated) || 0)
                               ? 'bg-red-500'
                               : (editingProject.totalHours || 0) /
-                                    ((editingProject.allocatedHours || 0) +
-                                      (editingProject.additionalHoursAllocated || 0)) >
+                                    ((Number(editingProject.allocatedHours) || 0) +
+                                      (Number(editingProject.additionalHoursAllocated) || 0)) >
                                   0.9
                                 ? 'bg-yellow-500'
                                 : 'bg-green-500'
@@ -1098,8 +1098,8 @@ export default function ProjectsPage() {
                           style={{
                             width: `${Math.min(
                               ((editingProject.totalHours || 0) /
-                                ((editingProject.allocatedHours || 0) +
-                                  (editingProject.additionalHoursAllocated || 0))) *
+                                ((Number(editingProject.allocatedHours) || 0) +
+                                  (Number(editingProject.additionalHoursAllocated) || 0))) *
                                 100,
                               100
                             )}%`,
@@ -1110,23 +1110,23 @@ export default function ProjectsPage() {
                         <span
                           className={`text-xs font-medium ${
                             (editingProject.totalHours || 0) >
-                            (editingProject.allocatedHours || 0) +
-                              (editingProject.additionalHoursAllocated || 0)
+                            (Number(editingProject.allocatedHours) || 0) +
+                              (Number(editingProject.additionalHoursAllocated) || 0)
                               ? 'text-red-600'
                               : 'text-green-600'
                           }`}
                         >
                           {(editingProject.totalHours || 0) >
-                          (editingProject.allocatedHours || 0) +
-                            (editingProject.additionalHoursAllocated || 0)
+                          (Number(editingProject.allocatedHours) || 0) +
+                            (Number(editingProject.additionalHoursAllocated) || 0)
                             ? `Over budget by ${(
                                 (editingProject.totalHours || 0) -
-                                ((editingProject.allocatedHours || 0) +
-                                  (editingProject.additionalHoursAllocated || 0))
+                                ((Number(editingProject.allocatedHours) || 0) +
+                                  (Number(editingProject.additionalHoursAllocated) || 0))
                               ).toFixed(1)}h`
                             : `${(
-                                (editingProject.allocatedHours || 0) +
-                                (editingProject.additionalHoursAllocated || 0) -
+                                (Number(editingProject.allocatedHours) || 0) +
+                                (Number(editingProject.additionalHoursAllocated) || 0) -
                                 (editingProject.totalHours || 0)
                               ).toFixed(1)}h remaining`}
                         </span>

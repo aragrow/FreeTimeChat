@@ -61,7 +61,7 @@ interface ProjectMember {
 export default function UserDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const { hasCapability } = useCapabilities();
   const { startImpersonation } = useImpersonation();
 
@@ -80,7 +80,7 @@ export default function UserDetailPage() {
     name: '',
     email: '',
     isActive: true,
-    trackingMode: 'BOTH' as 'CLOCK' | 'TIME' | 'BOTH',
+    trackingMode: 'CLOCK' as 'CLOCK' | 'TIME',
     roleIds: [] as string[],
     projectIds: [] as string[],
   });
@@ -107,10 +107,12 @@ export default function UserDetailPage() {
   const fetchUser = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}`,
+        {
+          method: 'GET',
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -119,7 +121,7 @@ export default function UserDetailPage() {
           name: data.data.name || '',
           email: data.data.email || '',
           isActive: data.data.isActive,
-          trackingMode: data.data.trackingMode || 'BOTH',
+          trackingMode: data.data.trackingMode || 'CLOCK',
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           roleIds: data.data.roles.map((ur: any) => ur.role.id),
           projectIds: [], // Will be set by fetchUserProjects
@@ -141,10 +143,12 @@ export default function UserDetailPage() {
 
   const fetchRoles = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/roles?limit=100`,
+        {
+          method: 'GET',
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -157,10 +161,12 @@ export default function UserDetailPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects?take=1000`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/projects?take=1000`,
+        {
+          method: 'GET',
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -173,11 +179,10 @@ export default function UserDetailPage() {
 
   const fetchUserProjects = async () => {
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/user/${userId}`,
         {
           method: 'GET',
-          headers: getAuthHeaders(),
         }
       );
 
@@ -206,20 +211,22 @@ export default function UserDetailPage() {
       setIsSaving(true);
 
       // Update user basic info and roles
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          isActive: formData.isActive,
-          trackingMode: formData.trackingMode,
-          roleIds: formData.roleIds,
-        }),
-      });
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            isActive: formData.isActive,
+            trackingMode: formData.trackingMode,
+            roleIds: formData.roleIds,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -241,19 +248,20 @@ export default function UserDetailPage() {
 
       // Remove projects
       for (const member of projectsToRemove) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/${member.id}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        });
+        await fetchWithAuth(
+          `${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/${member.id}`,
+          {
+            method: 'DELETE',
+          }
+        );
       }
 
       // Add projects
       if (projectIdsToAdd.length > 0) {
         for (const projectId of projectIdsToAdd) {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members`, {
+          await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members`, {
             method: 'POST',
             headers: {
-              ...getAuthHeaders(),
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -296,10 +304,12 @@ export default function UserDetailPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
         alert('User deactivated successfully');
@@ -330,9 +340,8 @@ export default function UserDetailPage() {
         ? `/admin/users/${userId}/disable-2fa`
         : `/admin/users/${userId}/enable-2fa`;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -497,22 +506,17 @@ export default function UserDetailPage() {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      trackingMode: e.target.value as 'CLOCK' | 'TIME' | 'BOTH',
+                      trackingMode: e.target.value as 'CLOCK' | 'TIME',
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="CLOCK">Clock Only (Time Clock)</option>
                   <option value="TIME">Manual Entry Only</option>
-                  <option value="BOTH">Both Clock & Manual Entry</option>
                 </select>
               ) : (
                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                  {user.trackingMode === 'CLOCK'
-                    ? 'Clock Only'
-                    : user.trackingMode === 'TIME'
-                      ? 'Manual Entry Only'
-                      : 'Both'}
+                  {user.trackingMode === 'CLOCK' ? 'Clock Only' : 'Manual Entry Only'}
                 </span>
               )}
             </div>

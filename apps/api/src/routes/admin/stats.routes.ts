@@ -6,6 +6,7 @@
 
 import { Router } from 'express';
 import { PrismaClient as MainPrismaClient } from '../../generated/prisma-main';
+import { getDatabaseService } from '../../services/database.service';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -231,6 +232,46 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
+    // Get project and client counts from tenant database if tenant is selected
+    let projectStats = { total: 0, active: 0, inactive: 0 };
+    let clientStats = { total: 0, active: 0, inactive: 0 };
+
+    if (tenantId && tenantId !== 'all') {
+      try {
+        const databaseService = getDatabaseService();
+        const clientDb = await databaseService.getTenantDatabase(String(tenantId));
+
+        const [totalProjects, activeProjects, totalTenantClients, activeTenantClients] =
+          await Promise.all([
+            clientDb.project.count({
+              where: { deletedAt: null },
+            }),
+            clientDb.project.count({
+              where: { deletedAt: null, isActive: true },
+            }),
+            clientDb.client.count(),
+            clientDb.client.count({
+              where: { isActive: true },
+            }),
+          ]);
+
+        projectStats = {
+          total: totalProjects,
+          active: activeProjects,
+          inactive: totalProjects - activeProjects,
+        };
+
+        clientStats = {
+          total: totalTenantClients,
+          active: activeTenantClients,
+          inactive: totalTenantClients - activeTenantClients,
+        };
+      } catch (error) {
+        console.error('Error fetching tenant database stats:', error);
+        // Continue with zero counts if tenant database is unavailable
+      }
+    }
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -243,12 +284,16 @@ router.get('/', async (req: Request, res: Response) => {
           activeInLast30Days: activeUsersLast30Days,
           newInLast7Days: newUsersLast7Days,
         },
-        clients: {
-          total: totalClients,
-          active: activeClients,
-          inactive: totalClients - activeClients,
-          newInLast7Days: newClientsLast7Days,
-        },
+        clients:
+          tenantId && tenantId !== 'all'
+            ? clientStats
+            : {
+                total: totalClients,
+                active: activeClients,
+                inactive: totalClients - activeClients,
+                newInLast7Days: newClientsLast7Days,
+              },
+        projects: projectStats,
         tenants: {
           total: totalClients,
           active: activeClients,

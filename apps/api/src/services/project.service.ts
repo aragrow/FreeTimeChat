@@ -94,10 +94,10 @@ export class ProjectService {
   /**
    * List projects with pagination and filters
    */
-  async list(options: ListProjectsOptions = {}): Promise<Project[]> {
+  async list(options: ListProjectsOptions = {}): Promise<any[]> {
     const { skip = 0, take = 20, isActive, includeDeleted = false } = options;
 
-    return this.prisma.project.findMany({
+    const projects = await this.prisma.project.findMany({
       where: {
         ...(isActive !== undefined && { isActive }),
         ...(!includeDeleted && { deletedAt: null }),
@@ -112,7 +112,28 @@ export class ProjectService {
             tasks: true,
           },
         },
+        timeEntries: {
+          where: { deletedAt: null },
+          select: { duration: true },
+        },
       },
+    });
+
+    // Calculate totalHours for each project by summing time entry durations
+    return projects.map((project) => {
+      const totalSeconds = project.timeEntries.reduce((sum, entry) => {
+        return sum + (entry.duration || 0);
+      }, 0);
+
+      // Convert seconds to hours
+      const totalHours = totalSeconds / 3600;
+
+      // Remove timeEntries from response and add totalHours
+      const { timeEntries: _timeEntries, ...projectWithoutEntries } = project;
+      return {
+        ...projectWithoutEntries,
+        totalHours: Math.round(totalHours * 10) / 10, // Round to 1 decimal place
+      };
     });
   }
 

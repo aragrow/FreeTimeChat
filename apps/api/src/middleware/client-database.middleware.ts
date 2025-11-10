@@ -27,13 +27,26 @@ export async function attachClientDatabase(
       return;
     }
 
-    // Get tenantId from JWT payload
-    const { tenantId } = req.user;
+    // For admin users, allow tenant ID from header or query parameter
+    // For regular users, use tenantId from JWT
+    let tenantId: string | undefined;
+
+    if (req.user.roles?.includes('admin') || req.user.roles?.includes('tenantadmin')) {
+      // Admin can specify tenant via header or query, or use their own tenantId
+      tenantId =
+        (req.headers['x-tenant-id'] as string) ||
+        (req.query.tenantId as string) ||
+        req.user.tenantId;
+    } else {
+      // Regular users must use their own tenantId
+      tenantId = req.user.tenantId;
+    }
 
     if (!tenantId) {
       res.status(400).json({
         status: 'error',
-        message: 'User does not belong to a client',
+        message:
+          'Tenant ID required. Admins can provide X-Tenant-ID header or tenantId query parameter.',
       });
       return;
     }

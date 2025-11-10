@@ -99,61 +99,16 @@ export default function AdminDashboard() {
     );
   }
 
-  // Common stat cards for both admin and tenantadmin
-  const commonStatCards = [
-    {
-      title: 'Total Users',
-      value: stats.users?.total || 0,
-      subtitle: `${stats.users?.active || 0} active`,
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      ),
-      color: 'bg-blue-500',
-    },
-    {
-      title: 'Total Clients',
-      value: stats.clients?.total || 0,
-      subtitle: `${stats.clients?.active || 0} active`,
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-          />
-        </svg>
-      ),
-      color: 'bg-green-500',
-    },
-    {
-      title: 'Total Projects',
-      value: stats.projects?.total || 0,
-      subtitle: `${stats.projects?.active || 0} active`,
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-          />
-        </svg>
-      ),
-      color: 'bg-purple-500',
-    },
-  ];
+  // Build stat cards in logical order: General to Specific
+  // Admin view: Tenants → Users → Roles
+  // TenantAdmin view: Users
+  // When tenant is selected: Tenants → Clients → Projects → Users → Roles
+  const statCards = [];
+  const isTenantSelected = selectedTenantId && selectedTenantId !== 'all';
 
-  // Admin-only stat cards
-  const adminOnlyStatCards = [
-    {
+  // 1. Total Tenants (Admin only - Most general)
+  if (isAdmin) {
+    statCards.push({
       title: 'Total Tenants',
       value: stats.tenants?.total || 0,
       subtitle: `${stats.tenants?.active || 0} active`,
@@ -168,8 +123,70 @@ export default function AdminDashboard() {
         </svg>
       ),
       color: 'bg-indigo-500',
-    },
-    {
+    });
+  }
+
+  // 2. Total Clients (Organizations/Customers) - Show when tenant is selected
+  if (isTenantSelected) {
+    statCards.push({
+      title: 'Total Clients',
+      value: stats.clients?.total || 0,
+      subtitle: `${stats.clients?.active || 0} active`,
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+          />
+        </svg>
+      ),
+      color: 'bg-green-500',
+    });
+  }
+
+  // 3. Total Projects - Show when tenant is selected
+  if (isTenantSelected) {
+    statCards.push({
+      title: 'Total Projects',
+      value: stats.projects?.total || 0,
+      subtitle: `${stats.projects?.active || 0} active`,
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+          />
+        </svg>
+      ),
+      color: 'bg-purple-500',
+    });
+  }
+
+  // 4. Total Users (People)
+  statCards.push({
+    title: 'Total Users',
+    value: stats.users?.total || 0,
+    subtitle: `${stats.users?.active || 0} active`,
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+        />
+      </svg>
+    ),
+    color: 'bg-blue-500',
+  });
+
+  // 5. Total Roles (Admin only - System configuration)
+  if (isAdmin) {
+    statCards.push({
       title: 'Total Roles',
       value: stats.roles?.total || 0,
       subtitle: `${stats.roles?.custom || 0} custom`,
@@ -184,11 +201,8 @@ export default function AdminDashboard() {
         </svg>
       ),
       color: 'bg-yellow-500',
-    },
-  ];
-
-  // Combine stat cards based on user role
-  const statCards = isAdmin ? [...commonStatCards, ...adminOnlyStatCards] : commonStatCards;
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -295,6 +309,90 @@ export default function AdminDashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {isAdmin && (
+          <a href="/admin/tenants" className="block">
+            <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-indigo-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900">Manage Tenants</h3>
+                  <p className="text-xs text-gray-500 mt-1">Configure tenant organizations</p>
+                </div>
+              </div>
+            </Card>
+          </a>
+        )}
+
+        {isTenantSelected && !isAdmin && (
+          <a href="/admin/clients" className="block">
+            <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900">Manage Clients</h3>
+                  <p className="text-xs text-gray-500 mt-1">Manage client accounts</p>
+                </div>
+              </div>
+            </Card>
+          </a>
+        )}
+
+        {isTenantSelected && !isAdmin && (
+          <a href="/admin/projects" className="block">
+            <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-purple-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900">Manage Projects</h3>
+                  <p className="text-xs text-gray-500 mt-1">View and manage projects</p>
+                </div>
+              </div>
+            </Card>
+          </a>
+        )}
+
         <a href="/admin/users" className="block">
           <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <div className="flex items-center gap-4">
@@ -316,58 +414,6 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Manage Users</h3>
                 <p className="text-xs text-gray-500 mt-1">View and manage user accounts</p>
-              </div>
-            </div>
-          </Card>
-        </a>
-
-        <a href="/admin/clients" className="block">
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-purple-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">Manage Clients</h3>
-                <p className="text-xs text-gray-500 mt-1">Manage client accounts</p>
-              </div>
-            </div>
-          </Card>
-        </a>
-
-        <a href="/admin/projects" className="block">
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-green-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">Manage Projects</h3>
-                <p className="text-xs text-gray-500 mt-1">View and manage projects</p>
               </div>
             </div>
           </Card>
