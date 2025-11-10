@@ -308,3 +308,37 @@ enum IntegrationCategory {
 
   @@map("integration_category")
 }
+
+// Account Request - Stores account access requests from potential users
+model AccountRequest {
+  id              String               @id @default(uuid())
+  fullName        String               @map("full_name")
+  email           String               @map("email")
+  companyName     String               @map("company_name")
+  jobTitle        String               @map("job_title")
+  phone           String?              @map("phone")
+  reasonForAccess String               @map("reason_for_access") @db.Text
+  howHeardAboutUs String?              @map("how_heard_about_us")
+  ipAddress       String?              @map("ip_address") // For spam prevention tracking
+  userAgent       String?              @map("user_agent") @db.Text // Browser info for spam detection
+  status          AccountRequestStatus @default(PENDING)
+  reviewedBy      String?              @map("reviewed_by") // Admin user ID who reviewed
+  reviewedAt      DateTime?            @map("reviewed_at")
+  reviewNotes     String?              @map("review_notes") @db.Text
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@map("account_requests")
+}
+
+enum AccountRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SPAM
+
+  @@map("account_request_status")
+}

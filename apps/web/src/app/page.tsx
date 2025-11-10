@@ -130,10 +130,10 @@ export default function Home() {
               Login to Get Started
             </Link>
             <Link
-              href="/register"
+              href="/request-account"
               className="rounded-full border-2 border-blue-600 bg-white px-8 py-4 text-lg font-semibold text-blue-600 shadow-md transition-all hover:bg-blue-50 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700"
             >
-              Create Account
+              Request an Account
             </Link>
           </div>
         </div>
@@ -177,8 +177,8 @@ export default function Home() {
                 Powerful Admin
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Complete web interface for managers to view reports, manage projects, and track
-                team productivity.
+                Complete web interface for managers to view reports, manage projects, and track team
+                productivity.
               </p>
             </div>
           </div>
@@ -267,9 +267,7 @@ export default function Home() {
               {/* Volunteers */}
               <div className="rounded-2xl bg-white p-8 shadow-lg transition-all hover:scale-105 dark:bg-gray-800">
                 <div className="mb-4 text-5xl">🚀</div>
-                <h3 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
-                  Volunteer
-                </h3>
+                <h3 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">Volunteer</h3>
                 <p className="mb-6 text-gray-600 dark:text-gray-300">
                   Contribute code, design, documentation, or feedback. Help us build something
                   amazing together.

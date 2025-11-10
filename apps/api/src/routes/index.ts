@@ -5,6 +5,7 @@
  */
 
 import { Router } from 'express';
+import accountRequestRoutes from './account-request.routes';
 import adminRoutes from './admin.routes';
 import authRoutes from './auth.routes';
 import chatRoutes from './chat.routes';
@@ -33,6 +34,7 @@ const v1Router: Router = Router();
 
 // Mount v1 routes
 v1Router.use('/health', healthRoutes);
+v1Router.use('/account-requests', accountRequestRoutes); // Public route for requesting account access
 v1Router.use('/auth', authRoutes);
 v1Router.use('/oauth', oauthRoutes);
 v1Router.use('/2fa', twoFactorRoutes);
