@@ -15,7 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function ChatPage() {
   const { activeConversationId, setActiveConversationId, refreshConversations } = useChatContext();
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -32,11 +32,10 @@ export default function ChatPage() {
   const fetchMessages = async (conversationId: string) => {
     try {
       setIsLoadingMessages(true);
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/conversations/${conversationId}/messages`,
         {
           method: 'GET',
-          headers: getAuthHeaders(),
         }
       );
 
@@ -64,18 +63,27 @@ export default function ChatPage() {
       };
       setMessages((prev) => [...prev, tempUserMessage]);
 
-      // Send message to API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat`, {
+      // Send message to API with automatic token refresh
+      const requestBody: {
+        message: string;
+        conversationId?: string;
+        includeContext: boolean;
+      } = {
+        message: messageContent,
+        includeContext: true,
+      };
+
+      // Only include conversationId if it exists
+      if (activeConversationId) {
+        requestBody.conversationId = activeConversationId;
+      }
+
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/chat`, {
         method: 'POST',
         headers: {
-          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: messageContent,
-          conversationId: activeConversationId,
-          includeContext: true,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {

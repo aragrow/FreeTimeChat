@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
-import { attachClientDatabase } from '../middleware/client-database.middleware';
+import { attachChatDatabase } from '../middleware/chat-database.middleware';
 import { validate } from '../middleware/validation.middleware';
 import { ConversationService } from '../services/conversation.service';
 import { MessageService } from '../services/message.service';
@@ -24,8 +24,8 @@ import type { Request, Response } from 'express';
 
 const router = Router();
 
-// All routes require authentication and client database
-router.use(authenticateJWT, attachClientDatabase);
+// All routes require authentication and conditional database (main for admins, tenant for users)
+router.use(authenticateJWT, attachChatDatabase);
 
 /**
  * POST /api/v1/conversations

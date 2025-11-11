@@ -404,11 +404,11 @@ model LLMConfig {
 }
 
 enum LLMProvider {
-  OPENAI
-  ANTHROPIC
-  GOOGLE_GEMINI
-  PERPLEXITY
-  ABACUS_AI
+  OPENAI        @map("openai")
+  ANTHROPIC     @map("anthropic")
+  GOOGLE_GEMINI @map("google-gemini")
+  PERPLEXITY    @map("perplexity")
+  ABACUS_AI     @map("abacus-ai")
 
   @@map("llm_provider")
 }

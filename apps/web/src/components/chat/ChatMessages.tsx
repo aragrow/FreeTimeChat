@@ -2,11 +2,13 @@
  * ChatMessages Component
  *
  * Displays conversation messages with proper formatting for user and assistant messages
+ * Includes text-to-speech for assistant messages
  */
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useVoiceOutput } from '@/hooks/useVoiceOutput';
 
 export interface Message {
   id: string;
@@ -27,11 +29,22 @@ interface ChatMessagesProps {
 
 export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+
+  // Voice output hook
+  const { isSpeaking, isSupported: isVoiceSupported, speak, stop } = useVoiceOutput();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
+
+  // Reset speaking message when speech ends
+  useEffect(() => {
+    if (!isSpeaking && speakingMessageId) {
+      setSpeakingMessageId(null);
+    }
+  }, [isSpeaking, speakingMessageId]);
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -52,11 +65,25 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
     return date.toLocaleDateString();
   };
 
+  const handleSpeakMessage = (messageId: string, content: string) => {
+    if (speakingMessageId === messageId) {
+      // Stop if already speaking this message
+      stop();
+      setSpeakingMessageId(null);
+    } else {
+      // Start speaking
+      setSpeakingMessageId(messageId);
+      speak(content);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {messages.map((message) => {
         const isUser = message.role === 'USER';
         const isSystem = message.role === 'SYSTEM';
+        const isAssistant = message.role === 'ASSISTANT';
+        const isCurrentlySpeaking = speakingMessageId === message.id;
 
         if (isSystem) {
           return (
@@ -120,7 +147,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
                   <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                 </div>
 
-                {/* Timestamp and Metadata */}
+                {/* Timestamp, Metadata, and Voice Button */}
                 <div
                   className={`flex items-center gap-2 mt-1 text-xs text-gray-500 ${
                     isUser ? 'flex-row-reverse' : 'flex-row'
@@ -133,6 +160,36 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
                       {message.metadata.confidence !== undefined &&
                         ` (${Math.round(message.metadata.confidence * 100)}%)`}
                     </span>
+                  )}
+
+                  {/* Voice button for assistant messages */}
+                  {isAssistant && isVoiceSupported && (
+                    <button
+                      onClick={() => handleSpeakMessage(message.id, message.content)}
+                      className={`p-1 rounded hover:bg-gray-100 transition-colors ${
+                        isCurrentlySpeaking ? 'text-blue-500' : 'text-gray-400'
+                      }`}
+                      title={isCurrentlySpeaking ? 'Stop speaking' : 'Read aloud'}
+                    >
+                      {isCurrentlySpeaking ? (
+                        <svg
+                          className="w-4 h-4 animate-pulse"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M6 6h12v12H6z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m0-7.07a5 5 0 00-1.414 1.414M12 8v8m0 0v.01"
+                          />
+                        </svg>
+                      )}
+                    </button>
                   )}
                 </div>
               </div>

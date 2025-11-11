@@ -18,6 +18,7 @@ declare global {
       clientDatabaseUrl?: string;
       clientDb?: ClientPrismaClient;
       mainDb?: MainPrismaClient;
+      useTenantDb?: boolean; // Flag to indicate if tenant DB is being used (for chat)
     }
   }
 }

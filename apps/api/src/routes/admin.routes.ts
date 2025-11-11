@@ -14,6 +14,7 @@ import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
 import integrationTemplatesRoutes from './admin/integration-templates.routes';
 import invoicesRoutes from './admin/invoices.routes';
+import llmConfigRoutes from './admin/llm-config.routes';
 import paypalConfigRoutes from './admin/paypal-config.routes';
 import paypalIntegrationRoutes from './admin/paypal-integration.routes';
 import projectMembersRoutes from './admin/project-members.routes';
@@ -39,6 +40,7 @@ router.use('/users', usersRoutes);
 router.use('/roles', rolesRoutes);
 router.use('/capabilities', capabilitiesRoutes);
 router.use('/integration-templates', integrationTemplatesRoutes);
+router.use('/llm-config', llmConfigRoutes);
 router.use('/paypal-integration', paypalIntegrationRoutes);
 router.use('/stats', statsRoutes);
 router.use('/tenants', tenantRoutes);
@@ -67,6 +69,7 @@ router.get('/', (_req, res) => {
       clients: '/api/v1/admin/clients',
       integrationTemplates: '/api/v1/admin/integration-templates',
       invoices: '/api/v1/admin/invoices',
+      llmConfig: '/api/v1/admin/llm-config',
       paypalIntegration: '/api/v1/admin/paypal-integration',
       paypalConfig: '/api/v1/admin/paypal-config',
       projects: '/api/v1/admin/projects',

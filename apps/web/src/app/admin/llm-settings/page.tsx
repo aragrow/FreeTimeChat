@@ -67,6 +67,10 @@ export default function LLMSettingsPage() {
   } | null>(null);
   const [showDebug, setShowDebug] = useState(false);
 
+  // Delete state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Model options for each provider
   const modelOptions: Record<string, string[]> = {
     OPENAI: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o', 'gpt-4o-mini'],
@@ -76,7 +80,7 @@ export default function LLMSettingsPage() {
       'claude-3-sonnet-20240229',
       'claude-3-haiku-20240307',
     ],
-    GOOGLE_GEMINI: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'],
+    GOOGLE_GEMINI: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro', 'gemini-2.5-flash-lite'],
     PERPLEXITY: [
       'sonar',
       'sonar-pro',
@@ -289,6 +293,51 @@ export default function LLMSettingsPage() {
     setMessage(null);
   };
 
+  const handleDelete = async () => {
+    if (!activeConfig) return;
+
+    setIsDeleting(true);
+    setMessage(null);
+
+    try {
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/llm-config/${activeConfig.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Configuration deleted successfully' });
+
+        // Reset all state
+        setActiveConfig(null);
+        setProvider('OPENAI');
+        setApiKey('');
+        setDefaultModel('');
+        setTemperature(0.7);
+        setMaxTokens(2000);
+        setBaseUrl('');
+        setOrganization('');
+        setIsEditing(true); // Allow creating new config
+        setShowDeleteConfirm(false);
+
+        // Clear the success message after 3 seconds
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        const error = await response.json();
+        setMessage({ type: 'error', text: error.message || 'Failed to delete configuration' });
+        setShowDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error('Error deleting configuration:', error);
+      setMessage({ type: 'error', text: 'An error occurred while deleting' });
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -357,9 +406,19 @@ export default function LLMSettingsPage() {
               )}
             </div>
             {!isEditing && activeConfig && (
-              <Button onClick={() => setIsEditing(true)} variant="primary" size="md">
-                Edit Configuration
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button onClick={() => setIsEditing(true)} variant="primary" size="md">
+                  Edit Configuration
+                </Button>
+                <Button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  variant="outline"
+                  size="md"
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  Delete Configuration
+                </Button>
+              </div>
             )}
           </div>
 
@@ -738,6 +797,67 @@ export default function LLMSettingsPage() {
             <li>Max tokens limits the length of AI responses</li>
           </ul>
         </Card>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+              <div className="flex items-start mb-4">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-6 w-6 text-red-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-lg font-medium text-gray-900">Delete Configuration</h3>
+                  <div className="mt-2 text-sm text-gray-500">
+                    <p>
+                      Are you sure you want to delete this LLM configuration? This action cannot be
+                      undone.
+                    </p>
+                    {activeConfig && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded border border-gray-200">
+                        <p className="font-medium text-gray-900">
+                          Provider: {activeConfig.provider}
+                        </p>
+                        <p className="text-gray-600">Model: {activeConfig.defaultModel}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <Button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  variant="outline"
+                  size="md"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleDelete}
+                  size="md"
+                  disabled={isDeleting}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

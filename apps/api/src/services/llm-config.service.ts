@@ -318,20 +318,28 @@ export class LLMConfigService {
     configId: string,
     tenantId: string | null
   ): Promise<{ success: boolean; message: string }> {
-    let config;
+    let config: any;
 
     if (tenantId) {
-      // Get tenant-specific config
+      // Get tenant-specific config with raw provider string
       const prismaClient = await databaseService.getTenantDatabase(tenantId);
-      config = await prismaClient.lLMConfig.findUnique({
-        where: { id: configId },
-      });
+      const results = await prismaClient.$queryRawUnsafe<any[]>(
+        `SELECT id, provider::text as provider, api_key_encrypted, default_model,
+                temperature, max_tokens, base_url, organization, timeout, is_active
+         FROM llm_configs WHERE id = $1`,
+        configId
+      );
+      config = results[0];
     } else {
-      // Get system-wide config
+      // Get system-wide config with raw provider string
       const prismaMain = databaseService.getMainDatabase();
-      config = await prismaMain.lLMConfig.findUnique({
-        where: { id: configId },
-      });
+      const results = await prismaMain.$queryRawUnsafe<any[]>(
+        `SELECT id, provider::text as provider, api_key_encrypted, default_model,
+                temperature, max_tokens, base_url, organization, timeout, is_active
+         FROM llm_configs WHERE id = $1`,
+        configId
+      );
+      config = results[0];
     }
 
     if (!config) {
@@ -340,17 +348,18 @@ export class LLMConfigService {
 
     try {
       // Decrypt API key
-      const apiKey = this.decryptApiKey(config.apiKeyEncrypted);
+      const apiKey = this.decryptApiKey(config.api_key_encrypted);
 
       // Create provider instance
+      // Note: config.provider is now the raw database string (e.g., 'google-gemini')
       const provider = createLLMProvider({
-        provider: config.provider.toLowerCase() as any,
+        provider: config.provider as any,
         apiKey,
-        defaultModel: config.defaultModel,
-        baseUrl: config.baseUrl || undefined,
+        defaultModel: config.default_model,
+        baseUrl: config.base_url || undefined,
         organization: config.organization || undefined,
         defaultTemperature: Number(config.temperature),
-        defaultMaxTokens: config.maxTokens,
+        defaultMaxTokens: config.max_tokens,
         timeout: config.timeout,
       });
 
@@ -386,22 +395,26 @@ export class LLMConfigService {
    * @param tenantId - Tenant ID (null for system-wide)
    */
   async getActiveProvider(tenantId: string | null): Promise<BaseLLMProvider | null> {
-    let config;
+    let config: any;
 
     if (tenantId) {
-      // Get tenant-specific active config
+      // Get tenant-specific active config with raw provider string
       const prismaClient = await databaseService.getTenantDatabase(tenantId);
-      config = await prismaClient.lLMConfig.findFirst({
-        where: { isActive: true },
-        orderBy: { createdAt: 'desc' },
-      });
+      const results = await prismaClient.$queryRawUnsafe<any[]>(
+        `SELECT id, provider::text as provider, api_key_encrypted, default_model,
+                temperature, max_tokens, base_url, organization, timeout
+         FROM llm_configs WHERE is_active = true ORDER BY created_at DESC LIMIT 1`
+      );
+      config = results[0];
     } else {
-      // Get system-wide active config
+      // Get system-wide active config with raw provider string
       const prismaMain = databaseService.getMainDatabase();
-      config = await prismaMain.lLMConfig.findFirst({
-        where: { tenantId: null, isActive: true },
-        orderBy: { createdAt: 'desc' },
-      });
+      const results = await prismaMain.$queryRawUnsafe<any[]>(
+        `SELECT id, provider::text as provider, api_key_encrypted, default_model,
+                temperature, max_tokens, base_url, organization, timeout
+         FROM llm_configs WHERE tenant_id IS NULL AND is_active = true ORDER BY created_at DESC LIMIT 1`
+      );
+      config = results[0];
     }
 
     if (!config) {
@@ -410,17 +423,18 @@ export class LLMConfigService {
 
     try {
       // Decrypt API key
-      const apiKey = this.decryptApiKey(config.apiKeyEncrypted);
+      const apiKey = this.decryptApiKey(config.api_key_encrypted);
 
       // Create and return provider instance
+      // Note: config.provider is now the raw database string (e.g., 'google-gemini')
       return createLLMProvider({
-        provider: config.provider.toLowerCase() as any,
+        provider: config.provider as any,
         apiKey,
-        defaultModel: config.defaultModel,
-        baseUrl: config.baseUrl || undefined,
+        defaultModel: config.default_model,
+        baseUrl: config.base_url || undefined,
         organization: config.organization || undefined,
         defaultTemperature: Number(config.temperature),
-        defaultMaxTokens: config.maxTokens,
+        defaultMaxTokens: config.max_tokens,
         timeout: config.timeout,
       });
     } catch (error) {

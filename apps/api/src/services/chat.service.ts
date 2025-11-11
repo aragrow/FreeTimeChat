@@ -8,12 +8,15 @@
  * - Generates responses
  */
 
+import { getLLMService } from '../integrations/llm';
+import { LLMRole } from '../integrations/llm/types';
 import { ConversationService } from './conversation.service';
 import { IntentParserService } from './intent-parser.service';
 import { MessageService } from './message.service';
 import { QueryHandlerService } from './query-handler.service';
 import { TimeEntryHandlerService } from './time-entry-handler.service';
 import { UserMemoryService } from './user-memory.service';
+import type { LLMMessage } from '../integrations/llm/types';
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
@@ -218,8 +221,101 @@ export class ChatService {
   private async handleGeneralChat(
     userId: string,
     message: string,
-    _conversationId: string
+    conversationId: string
   ): Promise<string> {
+    // Get LLM service
+    const llmService = getLLMService();
+
+    // Check if LLM is configured
+    if (!llmService.isConfigured()) {
+      // Fall back to pattern-based responses
+      return this.generateFallbackResponse(userId, message);
+    }
+
+    try {
+      // Get memory context
+      const memoryContext = await this.memoryService.getMemoryContext(userId);
+
+      // Get recent conversation messages for context
+      const recentMessages = await this.messageService.getMessages(conversationId, { take: 10 });
+
+      // Build messages for LLM
+      const llmMessages: LLMMessage[] = [];
+
+      // System message with context
+      const systemContext = this.buildSystemContext(userId, memoryContext);
+      llmMessages.push({
+        role: LLMRole.SYSTEM,
+        content: systemContext,
+      });
+
+      // Add recent conversation history (last 10 messages)
+      for (const msg of recentMessages.reverse()) {
+        llmMessages.push({
+          role: msg.role === 'USER' ? LLMRole.USER : LLMRole.ASSISTANT,
+          content: msg.content,
+        });
+      }
+
+      // Add current user message if not already included
+      if (recentMessages.length === 0 || recentMessages[recentMessages.length - 1]?.role !== 'USER') {
+        llmMessages.push({
+          role: LLMRole.USER,
+          content: message,
+        });
+      }
+
+      // Get LLM response
+      const response = await llmService.complete(llmMessages, {
+        temperature: 0.7,
+        maxTokens: 500,
+      });
+
+      return response.content;
+    } catch (error) {
+      console.error('LLM request failed, falling back to pattern-based response:', error);
+      return this.generateFallbackResponse(userId, message);
+    }
+  }
+
+  /**
+   * Build system context for LLM
+   */
+  private buildSystemContext(userId: string, memoryContext: { longTerm?: { userFacts?: { factType: string; fact: string }[] } }): string {
+    const userFacts = memoryContext.longTerm?.userFacts || [];
+
+    let systemMessage = `You are FreeTimeChat, an AI assistant for time tracking and project management.
+
+Your capabilities:
+- Log time entries for projects
+- Query time tracking data
+- Provide insights about work patterns
+- Help with project management
+
+Instructions:
+- Be concise and helpful
+- Use natural, conversational language
+- When users mention time entries, guide them to use specific commands
+- Remember user context and preferences
+
+`;
+
+    if (userFacts.length > 0) {
+      systemMessage += `\nContext about this user:\n`;
+      for (const fact of userFacts) {
+        systemMessage += `- ${fact.fact}\n`;
+      }
+    }
+
+    systemMessage += `\nCurrent user ID: ${userId}`;
+
+    return systemMessage;
+  }
+
+  /**
+   * Generate fallback response when LLM is not available
+   */
+  private async generateFallbackResponse(userId: string, message: string): Promise<string> {
     // Get memory context
     const memoryContext = await this.memoryService.getMemoryContext(userId);
 

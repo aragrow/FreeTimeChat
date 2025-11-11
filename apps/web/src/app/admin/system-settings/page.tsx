@@ -13,7 +13,7 @@ import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function SystemSettingsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -25,10 +25,7 @@ export default function SystemSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/system-settings`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/system-settings`);
 
       if (response.ok) {
         const data = await response.json();
@@ -49,12 +46,11 @@ export default function SystemSettingsPage() {
     setMessage(null);
 
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/system-settings/bypass-2fa`,
         {
           method: 'PATCH',
           headers: {
-            ...getAuthHeaders(),
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ bypass: checked }),
