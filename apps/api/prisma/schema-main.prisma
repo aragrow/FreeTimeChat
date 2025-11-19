@@ -77,6 +77,17 @@ model Tenant {
   billingCountry String? @map("billing_country")
   billingEmail   String? @map("billing_email") // If different from contact email
 
+  // Invoice Address (appears on invoices)
+  invoiceContact String? @map("invoice_contact") // Contact name for invoices
+  invoiceEmail   String? @map("invoice_email") // Email shown on invoices
+  invoicePhone   String? @map("invoice_phone") // Phone shown on invoices
+  invoiceStreet  String? @map("invoice_street")
+  invoiceCity    String? @map("invoice_city")
+  invoiceState   String? @map("invoice_state")
+  invoiceZip     String? @map("invoice_zip")
+  invoiceCountry String? @map("invoice_country")
+  taxId          String? @map("tax_id") // Business tax ID / VAT number
+
   // Invoice Settings
   currency          String  @default("USD") @map("currency") // ISO 4217 currency code
   invoicePrefix     String? @map("invoice_prefix") // e.g., "INV-", "ARAG-"

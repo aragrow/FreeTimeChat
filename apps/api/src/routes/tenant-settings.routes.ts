@@ -84,6 +84,16 @@ router.get('/', async (req: Request, res: Response) => {
         billingZip: true,
         billingCountry: true,
         billingEmail: true,
+        // Invoice address (appears on invoices)
+        invoiceContact: true,
+        invoiceEmail: true,
+        invoicePhone: true,
+        invoiceStreet: true,
+        invoiceCity: true,
+        invoiceState: true,
+        invoiceZip: true,
+        invoiceCountry: true,
+        taxId: true,
         // Payment methods
         enableStripe: true,
         enablePaypal: true,
@@ -161,6 +171,16 @@ router.put('/', async (req: Request, res: Response) => {
       billingZip,
       billingCountry,
       billingEmail,
+      // Invoice address (appears on invoices)
+      invoiceContact,
+      invoiceEmail,
+      invoicePhone,
+      invoiceStreet,
+      invoiceCity,
+      invoiceState,
+      invoiceZip,
+      invoiceCountry,
+      taxId,
       // Payment methods
       enableStripe,
       enablePaypal,
@@ -222,6 +242,16 @@ router.put('/', async (req: Request, res: Response) => {
     if (billingZip !== undefined) updateData.billingZip = billingZip;
     if (billingCountry !== undefined) updateData.billingCountry = billingCountry;
     if (billingEmail !== undefined) updateData.billingEmail = billingEmail;
+    // Invoice address (appears on invoices)
+    if (invoiceContact !== undefined) updateData.invoiceContact = invoiceContact;
+    if (invoiceEmail !== undefined) updateData.invoiceEmail = invoiceEmail;
+    if (invoicePhone !== undefined) updateData.invoicePhone = invoicePhone;
+    if (invoiceStreet !== undefined) updateData.invoiceStreet = invoiceStreet;
+    if (invoiceCity !== undefined) updateData.invoiceCity = invoiceCity;
+    if (invoiceState !== undefined) updateData.invoiceState = invoiceState;
+    if (invoiceZip !== undefined) updateData.invoiceZip = invoiceZip;
+    if (invoiceCountry !== undefined) updateData.invoiceCountry = invoiceCountry;
+    if (taxId !== undefined) updateData.taxId = taxId;
     // Payment methods
     if (enableStripe !== undefined) updateData.enableStripe = enableStripe;
     if (enablePaypal !== undefined) updateData.enablePaypal = enablePaypal;
@@ -253,6 +283,16 @@ router.put('/', async (req: Request, res: Response) => {
         billingZip: true,
         billingCountry: true,
         billingEmail: true,
+        // Invoice address (appears on invoices)
+        invoiceContact: true,
+        invoiceEmail: true,
+        invoicePhone: true,
+        invoiceStreet: true,
+        invoiceCity: true,
+        invoiceState: true,
+        invoiceZip: true,
+        invoiceCountry: true,
+        taxId: true,
         // Payment methods
         enableStripe: true,
         enablePaypal: true,

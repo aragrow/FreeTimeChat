@@ -27,6 +27,25 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
   const { user, logout, fetchWithAuth } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [navConfig, setNavConfig] = useState<NavigationConfig | null>(null);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    new Set(['main', 'business', 'ar', 'ap', 'users', 'access', 'config', 'monitoring'])
+  );
+
+  // Toggle section collapse
+  const toggleSectionCollapse = (sectionId: string) => {
+    setCollapsedSections((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
+  // Check if section is collapsed
+  const isSectionCollapsed = (sectionId: string) => collapsedSections.has(sectionId);
 
   // Fetch navigation config on mount
   useEffect(() => {
@@ -70,6 +89,12 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
     ) ||
     user?.role?.toLowerCase() === 'admin' ||
     user?.role?.toLowerCase() === 'tenantadmin';
+
+  // Check if user is specifically an admin (not tenantadmin) - for access control features
+  const isAdmin =
+    user?.roles?.some(
+      (role) => role && typeof role === 'string' && role.toLowerCase() === 'admin'
+    ) || user?.role?.toLowerCase() === 'admin';
 
   return (
     <ProtectedRoute>
@@ -115,10 +140,26 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                 isNavItemEnabled('time-entries') ||
                 (hasAdminAccess && isNavItemEnabled('reports'))) && (
                 <div className="mb-4">
-                  <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  <button
+                    onClick={() => toggleSectionCollapse('main')}
+                    className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
+                  >
                     Main
-                  </p>
-                  {isNavItemEnabled('chat') && (
+                    <svg
+                      className={`w-4 h-4 transition-transform ${isSectionCollapsed('main') ? '' : 'rotate-180'}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {!isSectionCollapsed('main') && isNavItemEnabled('chat') && (
                     <a
                       href="/chat"
                       className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -139,7 +180,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                       Chat
                     </a>
                   )}
-                  {isNavItemEnabled('time-entries') && (
+                  {!isSectionCollapsed('main') && isNavItemEnabled('time-entries') && (
                     <a
                       href="/time-entries"
                       className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -161,7 +202,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                     </a>
                   )}
                   {/* Reports - Admin/TenantAdmin Only */}
-                  {hasAdminAccess && isNavItemEnabled('reports') && (
+                  {!isSectionCollapsed('main') && hasAdminAccess && isNavItemEnabled('reports') && (
                     <a
                       href="/admin/reports"
                       className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -217,10 +258,26 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                   {/* Business */}
                   {(isNavItemEnabled('clients') || isNavItemEnabled('projects')) && (
                     <div className="mb-4">
-                      <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      <button
+                        onClick={() => toggleSectionCollapse('business')}
+                        className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
+                      >
                         Business
-                      </p>
-                      {isNavItemEnabled('clients') && (
+                        <svg
+                          className={`w-4 h-4 transition-transform ${isSectionCollapsed('business') ? '' : 'rotate-180'}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      {!isSectionCollapsed('business') && isNavItemEnabled('clients') && (
                         <a
                           href="/admin/clients"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -241,7 +298,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           Clients
                         </a>
                       )}
-                      {isNavItemEnabled('projects') && (
+                      {!isSectionCollapsed('business') && isNavItemEnabled('projects') && (
                         <a
                           href="/admin/projects"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -273,10 +330,26 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                     isNavItemEnabled('products') ||
                     isNavItemEnabled('payment-terms')) && (
                     <div className="mb-4">
-                      <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      <button
+                        onClick={() => toggleSectionCollapse('ar')}
+                        className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
+                      >
                         Account Receivables
-                      </p>
-                      {isNavItemEnabled('invoices') && (
+                        <svg
+                          className={`w-4 h-4 transition-transform ${isSectionCollapsed('ar') ? '' : 'rotate-180'}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      {!isSectionCollapsed('ar') && isNavItemEnabled('invoices') && (
                         <a
                           href="/admin/invoices"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -297,7 +370,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           Invoices
                         </a>
                       )}
-                      {isNavItemEnabled('payments') && (
+                      {!isSectionCollapsed('ar') && isNavItemEnabled('payments') && (
                         <a
                           href="/admin/payments"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -318,7 +391,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           Payments
                         </a>
                       )}
-                      {isNavItemEnabled('discounts') && (
+                      {!isSectionCollapsed('ar') && isNavItemEnabled('discounts') && (
                         <a
                           href="/admin/discounts"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -339,7 +412,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           Discounts
                         </a>
                       )}
-                      {isNavItemEnabled('coupons') && (
+                      {!isSectionCollapsed('ar') && isNavItemEnabled('coupons') && (
                         <a
                           href="/admin/coupons"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -360,7 +433,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           Coupons
                         </a>
                       )}
-                      {isNavItemEnabled('products') && (
+                      {!isSectionCollapsed('ar') && isNavItemEnabled('products') && (
                         <a
                           href="/admin/products"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -381,7 +454,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           Products
                         </a>
                       )}
-                      {isNavItemEnabled('payment-terms') && (
+                      {!isSectionCollapsed('ar') && isNavItemEnabled('payment-terms') && (
                         <a
                           href="/admin/payment-terms"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -410,10 +483,26 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                     isNavItemEnabled('bills') ||
                     isNavItemEnabled('expenses')) && (
                     <div className="mb-4">
-                      <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      <button
+                        onClick={() => toggleSectionCollapse('ap')}
+                        className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
+                      >
                         Account Payables
-                      </p>
-                      {isNavItemEnabled('vendors') && (
+                        <svg
+                          className={`w-4 h-4 transition-transform ${isSectionCollapsed('ap') ? '' : 'rotate-180'}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      {!isSectionCollapsed('ap') && isNavItemEnabled('vendors') && (
                         <a
                           href="/admin/vendors"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -434,7 +523,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           Vendors
                         </a>
                       )}
-                      {isNavItemEnabled('bills') && (
+                      {!isSectionCollapsed('ap') && isNavItemEnabled('bills') && (
                         <a
                           href="/admin/bills"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -455,7 +544,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           Bills
                         </a>
                       )}
-                      {isNavItemEnabled('expenses') && (
+                      {!isSectionCollapsed('ap') && isNavItemEnabled('expenses') && (
                         <a
                           href="/admin/expenses"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -481,13 +570,29 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
 
                   {/* User Management */}
                   {(isNavItemEnabled('users') ||
-                    isNavItemEnabled('account-requests') ||
-                    isNavItemEnabled('tenants')) && (
+                    (isAdmin && isNavItemEnabled('account-requests')) ||
+                    (isAdmin && isNavItemEnabled('tenants'))) && (
                     <div className="mb-4">
-                      <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      <button
+                        onClick={() => toggleSectionCollapse('users')}
+                        className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
+                      >
                         User Management
-                      </p>
-                      {isNavItemEnabled('users') && (
+                        <svg
+                          className={`w-4 h-4 transition-transform ${isSectionCollapsed('users') ? '' : 'rotate-180'}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      {!isSectionCollapsed('users') && isNavItemEnabled('users') && (
                         <a
                           href="/admin/users"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -508,28 +613,32 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           Users
                         </a>
                       )}
-                      {isNavItemEnabled('account-requests') && (
-                        <a
-                          href="/admin/account-requests"
-                          className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                      {/* Account Requests - Admin Only */}
+                      {!isSectionCollapsed('users') &&
+                        isAdmin &&
+                        isNavItemEnabled('account-requests') && (
+                          <a
+                            href="/admin/account-requests"
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                            />
-                          </svg>
-                          Account Requests
-                        </a>
-                      )}
-                      {isNavItemEnabled('tenants') && (
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                              />
+                            </svg>
+                            Account Requests
+                          </a>
+                        )}
+                      {/* Tenants - Admin Only */}
+                      {!isSectionCollapsed('users') && isAdmin && isNavItemEnabled('tenants') && (
                         <a
                           href="/admin/tenants"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -553,13 +662,29 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                     </div>
                   )}
 
-                  {/* Access Control */}
-                  {(isNavItemEnabled('roles') || isNavItemEnabled('capabilities')) && (
+                  {/* Access Control - Admin Only (not tenantadmin) */}
+                  {isAdmin && (isNavItemEnabled('roles') || isNavItemEnabled('capabilities')) && (
                     <div className="mb-4">
-                      <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      <button
+                        onClick={() => toggleSectionCollapse('access')}
+                        className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
+                      >
                         Access Control
-                      </p>
-                      {isNavItemEnabled('roles') && (
+                        <svg
+                          className={`w-4 h-4 transition-transform ${isSectionCollapsed('access') ? '' : 'rotate-180'}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      {!isSectionCollapsed('access') && isNavItemEnabled('roles') && (
                         <a
                           href="/admin/roles"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -580,7 +705,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           Roles
                         </a>
                       )}
-                      {isNavItemEnabled('capabilities') && (
+                      {!isSectionCollapsed('access') && isNavItemEnabled('capabilities') && (
                         <a
                           href="/admin/capabilities"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -606,10 +731,26 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
 
                   {/* Configuration - Tenant Settings always visible */}
                   <div className="mb-4">
-                    <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    <button
+                      onClick={() => toggleSectionCollapse('config')}
+                      className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
+                    >
                       Configuration
-                    </p>
-                    {isNavItemEnabled('integration-templates') && (
+                      <svg
+                        className={`w-4 h-4 transition-transform ${isSectionCollapsed('config') ? '' : 'rotate-180'}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                    {!isSectionCollapsed('config') && isNavItemEnabled('integration-templates') && (
                       <a
                         href="/admin/integration-templates"
                         className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -630,7 +771,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                         Integrations
                       </a>
                     )}
-                    {isNavItemEnabled('llm-settings') && (
+                    {!isSectionCollapsed('config') && isNavItemEnabled('llm-settings') && (
                       <a
                         href="/admin/llm-settings"
                         className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -651,7 +792,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                         LLM Settings
                       </a>
                     )}
-                    {isNavItemEnabled('system-settings') && (
+                    {!isSectionCollapsed('config') && isNavItemEnabled('system-settings') && (
                       <a
                         href="/admin/system-settings"
                         className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -679,35 +820,9 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                       </a>
                     )}
                     {/* Tenant Settings always visible */}
-                    <a
-                      href="/admin/tenant-settings"
-                      className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                      </svg>
-                      Tenant Settings
-                    </a>
-                  </div>
-
-                  {/* Monitoring */}
-                  {isNavItemEnabled('audit') && (
-                    <div className="mb-4">
-                      <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                        Monitoring
-                      </p>
+                    {!isSectionCollapsed('config') && (
                       <a
-                        href="/admin/audit"
+                        href="/admin/tenant-settings"
                         className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         <svg
@@ -720,11 +835,57 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                           />
                         </svg>
-                        Audit Log
+                        Tenant Settings
                       </a>
+                    )}
+                  </div>
+
+                  {/* Monitoring */}
+                  {isNavItemEnabled('audit') && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => toggleSectionCollapse('monitoring')}
+                        className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
+                      >
+                        Monitoring
+                        <svg
+                          className={`w-4 h-4 transition-transform ${isSectionCollapsed('monitoring') ? '' : 'rotate-180'}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      {!isSectionCollapsed('monitoring') && (
+                        <a
+                          href="/admin/audit"
+                          className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          Audit Log
+                        </a>
+                      )}
                     </div>
                   )}
                 </>

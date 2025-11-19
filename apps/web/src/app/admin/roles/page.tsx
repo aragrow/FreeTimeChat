@@ -30,10 +30,23 @@ interface CreateRoleData {
 }
 
 export default function RolesPage() {
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, user } = useAuth();
   const router = useRouter();
 
   const [roles, setRoles] = useState<Role[]>([]);
+
+  // Check if user is admin (not tenantadmin)
+  const isAdmin =
+    user?.roles?.some(
+      (role) => role && typeof role === 'string' && role.toLowerCase() === 'admin'
+    ) || user?.role?.toLowerCase() === 'admin';
+
+  // Redirect non-admin users
+  useEffect(() => {
+    if (user && !isAdmin) {
+      router.push('/admin/dashboard');
+    }
+  }, [user, isAdmin, router]);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -267,6 +280,19 @@ export default function RolesPage() {
       ),
     },
   ];
+
+  // Don't render if not admin
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">403</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-600">You do not have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

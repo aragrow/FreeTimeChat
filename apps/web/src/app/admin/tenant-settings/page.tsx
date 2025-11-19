@@ -38,6 +38,16 @@ interface TenantSettings {
   billingZip: string | null;
   billingCountry: string | null;
   billingEmail: string | null;
+  // Invoice address (appears on invoices)
+  invoiceContact: string | null;
+  invoiceEmail: string | null;
+  invoicePhone: string | null;
+  invoiceStreet: string | null;
+  invoiceCity: string | null;
+  invoiceState: string | null;
+  invoiceZip: string | null;
+  invoiceCountry: string | null;
+  taxId: string | null;
   // Payment methods
   enableStripe: boolean;
   enablePaypal: boolean;
@@ -140,6 +150,16 @@ export default function TenantSettingsPage() {
   const [invoicePrefix, setInvoicePrefix] = useState('');
   const [nextInvoiceNumber, setNextInvoiceNumber] = useState(1);
   const [logoUrl, setLogoUrl] = useState('');
+  // Invoice address state
+  const [invoiceContact, setInvoiceContact] = useState('');
+  const [invoiceEmail, setInvoiceEmail] = useState('');
+  const [invoicePhone, setInvoicePhone] = useState('');
+  const [invoiceStreet, setInvoiceStreet] = useState('');
+  const [invoiceCity, setInvoiceCity] = useState('');
+  const [invoiceState, setInvoiceState] = useState('');
+  const [invoiceZip, setInvoiceZip] = useState('');
+  const [invoiceCountry, setInvoiceCountry] = useState('');
+  const [taxId, setTaxId] = useState('');
   // Payment methods state
   const [enableStripe, setEnableStripe] = useState(false);
   const [enablePaypal, setEnablePaypal] = useState(false);
@@ -185,6 +205,16 @@ export default function TenantSettingsPage() {
         setInvoicePrefix(data.data.invoicePrefix || '');
         setNextInvoiceNumber(data.data.nextInvoiceNumber || 1);
         setLogoUrl(data.data.logoUrl || '');
+        // Invoice address
+        setInvoiceContact(data.data.invoiceContact || '');
+        setInvoiceEmail(data.data.invoiceEmail || '');
+        setInvoicePhone(data.data.invoicePhone || '');
+        setInvoiceStreet(data.data.invoiceStreet || '');
+        setInvoiceCity(data.data.invoiceCity || '');
+        setInvoiceState(data.data.invoiceState || '');
+        setInvoiceZip(data.data.invoiceZip || '');
+        setInvoiceCountry(data.data.invoiceCountry || '');
+        setTaxId(data.data.taxId || '');
         // Payment methods
         setEnableStripe(data.data.enableStripe || false);
         setEnablePaypal(data.data.enablePaypal || false);
@@ -222,6 +252,16 @@ export default function TenantSettingsPage() {
             invoicePrefix: invoicePrefix || null,
             nextInvoiceNumber,
             logoUrl: logoUrl || null,
+            // Invoice address
+            invoiceContact: invoiceContact || null,
+            invoiceEmail: invoiceEmail || null,
+            invoicePhone: invoicePhone || null,
+            invoiceStreet: invoiceStreet || null,
+            invoiceCity: invoiceCity || null,
+            invoiceState: invoiceState || null,
+            invoiceZip: invoiceZip || null,
+            invoiceCountry: invoiceCountry || null,
+            taxId: taxId || null,
             // Payment methods
             enableStripe,
             enablePaypal,
@@ -333,6 +373,136 @@ export default function TenantSettingsPage() {
         )}
 
         <div className="space-y-6">
+          {/* Invoice Address */}
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Invoice Address</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              This information will appear on your invoices as the sender/from address.
+            </p>
+
+            <div className="space-y-4">
+              {/* Contact & Tax ID */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contact Name
+                  </label>
+                  <input
+                    type="text"
+                    value={invoiceContact}
+                    onChange={(e) => setInvoiceContact(e.target.value)}
+                    placeholder="Your business name or contact"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tax ID / VAT Number
+                  </label>
+                  <input
+                    type="text"
+                    value={taxId}
+                    onChange={(e) => setTaxId(e.target.value)}
+                    placeholder="e.g., 12-3456789"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Email & Phone */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Invoice Email
+                  </label>
+                  <input
+                    type="email"
+                    value={invoiceEmail}
+                    onChange={(e) => setInvoiceEmail(e.target.value)}
+                    placeholder="billing@yourcompany.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Invoice Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={invoicePhone}
+                    onChange={(e) => setInvoicePhone(e.target.value)}
+                    placeholder="+1 (555) 123-4567"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Street Address */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Street Address
+                </label>
+                <input
+                  type="text"
+                  value={invoiceStreet}
+                  onChange={(e) => setInvoiceStreet(e.target.value)}
+                  placeholder="123 Main Street, Suite 100"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* City, State, Zip */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    value={invoiceCity}
+                    onChange={(e) => setInvoiceCity(e.target.value)}
+                    placeholder="City"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    State / Province
+                  </label>
+                  <input
+                    type="text"
+                    value={invoiceState}
+                    onChange={(e) => setInvoiceState(e.target.value)}
+                    placeholder="State"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    ZIP / Postal Code
+                  </label>
+                  <input
+                    type="text"
+                    value={invoiceZip}
+                    onChange={(e) => setInvoiceZip(e.target.value)}
+                    placeholder="12345"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Country */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <input
+                  type="text"
+                  value={invoiceCountry}
+                  onChange={(e) => setInvoiceCountry(e.target.value)}
+                  placeholder="United States"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          </Card>
+
           {/* Invoice Settings */}
           <Card className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Invoice Settings</h2>

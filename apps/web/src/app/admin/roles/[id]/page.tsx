@@ -43,13 +43,26 @@ interface AllCapability {
 export default function RoleDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, user } = useAuth();
   const roleId = params?.id as string;
 
   const [role, setRole] = useState<Role | null>(null);
   const [allCapabilities, setAllCapabilities] = useState<AllCapability[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Check if user is admin (not tenantadmin)
+  const isAdmin =
+    user?.roles?.some(
+      (role) => role && typeof role === 'string' && role.toLowerCase() === 'admin'
+    ) || user?.role?.toLowerCase() === 'admin';
+
+  // Redirect non-admin users
+  useEffect(() => {
+    if (user && !isAdmin) {
+      router.push('/admin/dashboard');
+    }
+  }, [user, isAdmin, router]);
 
   // Form state
   const [name, setName] = useState('');
@@ -225,6 +238,19 @@ export default function RoleDetailPage() {
 
   if (!role) {
     return <div>Role not found</div>;
+  }
+
+  // Don't render if not admin
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">403</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-600">You do not have permission to access this page.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
