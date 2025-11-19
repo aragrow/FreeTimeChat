@@ -106,6 +106,12 @@ export class ProjectService {
       take,
       orderBy: { createdAt: 'desc' },
       include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         _count: {
           select: {
             timeEntries: true,

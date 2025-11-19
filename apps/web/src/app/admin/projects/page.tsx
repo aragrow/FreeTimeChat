@@ -19,7 +19,10 @@ interface Project extends Record<string, unknown> {
   name: string;
   description?: string;
   clientId?: string;
-  clientName?: string;
+  client?: {
+    id: string;
+    name: string;
+  };
   hourlyRate?: number;
   isBillable: boolean;
   allocatedHours?: number;
@@ -397,7 +400,7 @@ export default function ProjectsPage() {
       searchTerm === '' ||
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-      (project.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+      (project.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
 
     return matchesSearch;
   });
@@ -417,11 +420,11 @@ export default function ProjectsPage() {
       ),
     },
     {
-      key: 'clientName',
+      key: 'client',
       header: 'Client',
       sortable: true,
       render: (project) => (
-        <span className="text-sm text-gray-900">{project.clientName || 'N/A'}</span>
+        <span className="text-sm text-gray-900">{project.client?.name || 'N/A'}</span>
       ),
     },
     {
