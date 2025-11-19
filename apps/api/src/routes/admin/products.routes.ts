@@ -165,7 +165,7 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const { name, description, sku, clientId, isBillable, rate, unit } = req.body;
+    const { name, description, sku, clientId, imageUrl, rate, unit } = req.body;
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -197,7 +197,7 @@ router.post('/', async (req: Request, res: Response) => {
         description: description?.trim() || null,
         sku: sku?.trim() || null,
         clientId: clientId || null,
-        isBillable: isBillable !== false,
+        imageUrl: imageUrl?.trim() || null,
         rate: rate ? parseFloat(rate) : null,
         unit: unit?.trim() || null,
         isActive: true,
@@ -248,7 +248,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const { name, description, sku, clientId, isBillable, rate, unit, isActive } = req.body;
+    const { name, description, sku, clientId, imageUrl, rate, unit, isActive } = req.body;
 
     // Check if product exists
     const existingProduct = await req.clientDb.product.findUnique({
@@ -287,7 +287,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (description !== undefined) updateData.description = description?.trim() || null;
     if (sku !== undefined) updateData.sku = sku?.trim() || null;
     if (clientId !== undefined) updateData.clientId = clientId || null;
-    if (isBillable !== undefined) updateData.isBillable = isBillable;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl?.trim() || null;
     if (rate !== undefined) updateData.rate = rate ? parseFloat(rate) : null;
     if (unit !== undefined) updateData.unit = unit?.trim() || null;
     if (isActive !== undefined) updateData.isActive = isActive;

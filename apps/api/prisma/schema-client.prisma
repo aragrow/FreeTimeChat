@@ -67,9 +67,9 @@ model Product {
   sku         String? // Stock Keeping Unit
   clientId    String?   @map("client_id") // Optional - if null, it's a tenant-level product
   client      Client?   @relation(fields: [clientId], references: [id])
-  isBillable  Boolean   @default(true) @map("is_billable")
-  rate        Decimal?  @db.Decimal(10, 2) // Product rate
-  unit        String? // e.g., "hour", "unit", "project", "month"
+  imageUrl    String?   @map("image_url") // Product image URL
+  rate        Decimal?  @db.Decimal(10, 2) // Product rate/price
+  unit        String? // e.g., "unit", "piece", "kg", "lb", "pack", "box"
   isActive    Boolean   @default(true) @map("is_active")
   expenses    Expense[]
   createdAt   DateTime  @default(now()) @map("created_at")

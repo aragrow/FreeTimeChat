@@ -25,7 +25,7 @@ interface Product {
   sku: string | null;
   clientId: string | null;
   client: Client | null;
-  isBillable: boolean;
+  imageUrl: string | null;
   rate: number | null;
   unit: string | null;
   isActive: boolean;
@@ -56,7 +56,7 @@ export default function ProductsPage() {
     description: '',
     sku: '',
     clientId: '',
-    isBillable: true,
+    imageUrl: '',
     rate: '',
     unit: '',
   });
@@ -238,7 +238,7 @@ export default function ProductsPage() {
       description: '',
       sku: '',
       clientId: '',
-      isBillable: true,
+      imageUrl: '',
       rate: '',
       unit: '',
     });
@@ -251,7 +251,7 @@ export default function ProductsPage() {
       description: product.description || '',
       sku: product.sku || '',
       clientId: product.clientId || '',
-      isBillable: product.isBillable,
+      imageUrl: product.imageUrl || '',
       rate: product.rate ? product.rate.toString() : '',
       unit: product.unit || '',
     });
@@ -352,9 +352,6 @@ export default function ProductsPage() {
                   Rate
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Billable
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Status
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
@@ -370,13 +367,42 @@ export default function ProductsPage() {
                   className="hover:bg-gray-50 cursor-pointer"
                 >
                   <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{product.name}</div>
-                    {product.sku && <div className="text-sm text-gray-500">SKU: {product.sku}</div>}
-                    {product.description && (
-                      <div className="text-sm text-gray-500 truncate max-w-xs">
-                        {product.description}
+                    <div className="flex items-center gap-3">
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-10 h-10 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
+                          <svg
+                            className="w-5 h-5 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-medium text-gray-900">{product.name}</div>
+                        {product.sku && (
+                          <div className="text-sm text-gray-500">SKU: {product.sku}</div>
+                        )}
+                        {product.description && (
+                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                            {product.description}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {product.client?.name || (
@@ -392,17 +418,6 @@ export default function ProductsPage() {
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        product.isBillable
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {product.isBillable ? 'Yes' : 'No'}
-                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
@@ -451,7 +466,7 @@ export default function ProductsPage() {
               ))}
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                     No products found
                   </td>
                 </tr>
@@ -541,9 +556,33 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Image URL (optional)
+                </label>
+                <Input
+                  type="url"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                />
+                {formData.imageUrl && (
+                  <div className="mt-2">
+                    <img
+                      src={formData.imageUrl}
+                      alt="Preview"
+                      className="w-20 h-20 object-cover rounded border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rate</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
                   <Input
                     type="number"
                     step="0.01"
@@ -560,23 +599,19 @@ export default function ProductsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select unit</option>
-                    <option value="hour">Hour</option>
                     <option value="unit">Unit</option>
-                    <option value="project">Project</option>
-                    <option value="month">Month</option>
-                    <option value="year">Year</option>
+                    <option value="piece">Piece</option>
+                    <option value="pack">Pack</option>
+                    <option value="box">Box</option>
+                    <option value="dozen">Dozen</option>
+                    <option value="kg">Kilogram (kg)</option>
+                    <option value="g">Gram (g)</option>
+                    <option value="lb">Pound (lb)</option>
+                    <option value="oz">Ounce (oz)</option>
+                    <option value="liter">Liter</option>
+                    <option value="ml">Milliliter (ml)</option>
+                    <option value="gallon">Gallon</option>
                   </select>
-                </div>
-                <div className="flex items-center">
-                  <label className="flex items-center gap-2 mt-6">
-                    <input
-                      type="checkbox"
-                      checked={formData.isBillable}
-                      onChange={(e) => setFormData({ ...formData, isBillable: e.target.checked })}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm text-gray-700">Billable</span>
-                  </label>
                 </div>
               </div>
             </div>
@@ -656,9 +691,33 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Image URL (optional)
+                </label>
+                <Input
+                  type="url"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                />
+                {formData.imageUrl && (
+                  <div className="mt-2">
+                    <img
+                      src={formData.imageUrl}
+                      alt="Preview"
+                      className="w-20 h-20 object-cover rounded border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rate</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
                   <Input
                     type="number"
                     step="0.01"
@@ -675,23 +734,19 @@ export default function ProductsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select unit</option>
-                    <option value="hour">Hour</option>
                     <option value="unit">Unit</option>
-                    <option value="project">Project</option>
-                    <option value="month">Month</option>
-                    <option value="year">Year</option>
+                    <option value="piece">Piece</option>
+                    <option value="pack">Pack</option>
+                    <option value="box">Box</option>
+                    <option value="dozen">Dozen</option>
+                    <option value="kg">Kilogram (kg)</option>
+                    <option value="g">Gram (g)</option>
+                    <option value="lb">Pound (lb)</option>
+                    <option value="oz">Ounce (oz)</option>
+                    <option value="liter">Liter</option>
+                    <option value="ml">Milliliter (ml)</option>
+                    <option value="gallon">Gallon</option>
                   </select>
-                </div>
-                <div className="flex items-center">
-                  <label className="flex items-center gap-2 mt-6">
-                    <input
-                      type="checkbox"
-                      checked={formData.isBillable}
-                      onChange={(e) => setFormData({ ...formData, isBillable: e.target.checked })}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm text-gray-700">Billable</span>
-                  </label>
                 </div>
               </div>
             </div>
