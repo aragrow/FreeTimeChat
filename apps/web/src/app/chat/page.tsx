@@ -166,7 +166,7 @@ export default function ChatPage() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Welcome to FreeTimeChat
+                  Welcome to AfricAI Digital Books
                 </h3>
                 <p className="text-gray-600 mb-6">
                   Start a conversation by typing a message below. I can help you track time, query

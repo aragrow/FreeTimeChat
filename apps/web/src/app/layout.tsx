@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'FreeTimeChat - AI-Powered Time Tracking',
+  title: 'AfricAI Digital Books - Smart Business Management',
   description:
-    'Track your time with natural language. Chat with AI to log hours, query reports, and manage your projects.',
+    'Manage your business with AI-powered tools. Track expenses, time, projects, and clients with intelligent automation.',
 };
 
 export default function RootLayout({

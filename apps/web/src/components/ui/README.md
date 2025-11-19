@@ -1,6 +1,6 @@
 # UI Components Library
 
-Shared UI components for FreeTimeChat web application. All components are built with TypeScript, Tailwind CSS, and follow accessibility best practices.
+Shared UI components for AfricAI Digital Books web application. All components are built with TypeScript, Tailwind CSS, and follow accessibility best practices.
 
 ## Components
 

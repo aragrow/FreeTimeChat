@@ -100,7 +100,7 @@ export default function Verify2FAPage() {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">FreeTimeChat</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">AfricAI Digital Books</h1>
           <h2 className="text-2xl font-semibold text-gray-700">Two-factor authentication</h2>
           <p className="mt-2 text-sm text-gray-600">Enter the code from your authenticator app</p>
         </div>

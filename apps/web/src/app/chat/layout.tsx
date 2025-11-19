@@ -116,7 +116,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
             {/* Sidebar Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-gray-900">FreeTimeChat</h1>
+                <h1 className="text-xl font-bold text-gray-900">AfricAI</h1>
               </div>
               <button
                 onClick={() => setSidebarOpen(false)}

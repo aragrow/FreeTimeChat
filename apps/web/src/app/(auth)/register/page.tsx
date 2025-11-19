@@ -167,7 +167,7 @@ export default function RegisterPage() {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">FreeTimeChat</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">AfricAI Digital Books</h1>
           <h2 className="text-2xl font-semibold text-gray-700">Create your account</h2>
           <p className="mt-2 text-sm text-gray-600">
             Already have an account?{' '}

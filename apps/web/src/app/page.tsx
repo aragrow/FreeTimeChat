@@ -1,86 +1,60 @@
 import Link from 'next/link';
 
-// Custom FreeTimeChat Logo SVG
-function FreeTimeChatLogo() {
+// Custom AfricAI Digital Books Logo SVG
+function AfricAILogo() {
   return (
     <svg
       viewBox="0 0 200 200"
       className="h-32 w-32 md:h-40 md:w-40"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Clock Circle */}
-      <circle
-        cx="100"
-        cy="100"
-        r="85"
-        fill="none"
-        stroke="url(#gradient1)"
-        strokeWidth="6"
+      {/* Book Base */}
+      <path
+        d="M30 50 L100 30 L170 50 L170 160 L100 180 L30 160 Z"
+        fill="url(#gradient1)"
         className="drop-shadow-lg"
       />
 
-      {/* Clock Face */}
-      <circle cx="100" cy="100" r="70" fill="white" className="drop-shadow-md" />
-
-      {/* Hour Marks */}
-      {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => {
-        const radian = (angle * Math.PI) / 180;
-        const x1 = 100 + 60 * Math.cos(radian);
-        const y1 = 100 + 60 * Math.sin(radian);
-        const x2 = 100 + 55 * Math.cos(radian);
-        const y2 = 100 + 55 * Math.sin(radian);
-        return (
-          <line
-            key={angle}
-            x1={x1}
-            y1={y1}
-            x2={x2}
-            y2={y2}
-            stroke="#3b82f6"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-        );
-      })}
-
-      {/* Clock Hands - showing 10:10 (classic watch ad time) */}
-      {/* Hour Hand */}
-      <line
-        x1="100"
-        y1="100"
-        x2="100"
-        y2="55"
+      {/* Book Spine */}
+      <path
+        d="M100 30 L100 180"
         stroke="#1e40af"
-        strokeWidth="6"
-        strokeLinecap="round"
-        className="drop-shadow"
-      />
-      {/* Minute Hand */}
-      <line
-        x1="100"
-        y1="100"
-        x2="130"
-        y2="70"
-        stroke="#3b82f6"
-        strokeWidth="5"
-        strokeLinecap="round"
-        className="drop-shadow"
+        strokeWidth="4"
       />
 
-      {/* Center Dot */}
-      <circle cx="100" cy="100" r="6" fill="#1e40af" />
+      {/* Left Page */}
+      <path
+        d="M35 55 L95 38 L95 170 L35 155 Z"
+        fill="white"
+        className="drop-shadow-md"
+      />
 
-      {/* Chat Bubble */}
-      <g transform="translate(135, 135)">
+      {/* Right Page */}
+      <path
+        d="M105 38 L165 55 L165 155 L105 170 Z"
+        fill="white"
+        className="drop-shadow-md"
+      />
+
+      {/* AI Circuit Lines on Left Page */}
+      <g stroke="#3b82f6" strokeWidth="2" fill="none">
+        <line x1="45" y1="70" x2="85" y2="60" />
+        <line x1="45" y1="90" x2="85" y2="80" />
+        <line x1="45" y1="110" x2="75" y2="100" />
+        <circle cx="45" cy="70" r="3" fill="#3b82f6" />
+        <circle cx="45" cy="90" r="3" fill="#3b82f6" />
+        <circle cx="45" cy="110" r="3" fill="#3b82f6" />
+      </g>
+
+      {/* AI Brain Icon on Right Page */}
+      <g transform="translate(115, 80)">
+        <circle cx="20" cy="20" r="18" fill="url(#gradient2)" />
         <path
-          d="M0,0 L40,0 C50,0 50,10 50,10 L50,30 C50,30 50,40 40,40 L15,40 L5,50 L5,40 C5,40 0,40 0,30 L0,10 C0,10 0,0 10,0 Z"
-          fill="url(#gradient2)"
-          className="drop-shadow-lg"
+          d="M12 15 Q15 10 20 12 Q25 10 28 15 M12 25 Q15 30 20 28 Q25 30 28 25 M10 20 L14 20 M26 20 L30 20"
+          stroke="white"
+          strokeWidth="2"
+          fill="none"
         />
-        {/* Chat dots */}
-        <circle cx="15" cy="20" r="3" fill="white" />
-        <circle cx="25" cy="20" r="3" fill="white" />
-        <circle cx="35" cy="20" r="3" fill="white" />
       </g>
 
       {/* Gradients */}
@@ -106,19 +80,19 @@ export default function Home() {
         <div className="flex flex-col items-center text-center">
           {/* Logo */}
           <div className="mb-8 animate-fade-in">
-            <FreeTimeChatLogo />
+            <AfricAILogo />
           </div>
 
           {/* Title */}
           <h1 className="mb-6 text-5xl font-bold tracking-tight text-gray-900 dark:text-white md:text-6xl lg:text-7xl">
             <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              FreeTimeChat
+              AfricAI Digital Books
             </span>
           </h1>
 
           {/* Tagline */}
           <p className="mb-8 max-w-2xl text-xl text-gray-600 dark:text-gray-300 md:text-2xl">
-            Time tracking made simple through natural conversation
+            Smart business management powered by AI
           </p>
 
           {/* CTA Buttons */}
@@ -143,19 +117,18 @@ export default function Home() {
       <section className="container mx-auto px-4 py-16">
         <div className="mx-auto max-w-4xl">
           <h2 className="mb-12 text-center text-4xl font-bold text-gray-900 dark:text-white">
-            What is FreeTimeChat?
+            What is AfricAI Digital Books?
           </h2>
 
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             {/* Feature 1 */}
             <div className="rounded-2xl bg-white p-6 shadow-lg transition-all hover:shadow-xl dark:bg-gray-800">
-              <div className="mb-4 text-4xl">💬</div>
+              <div className="mb-4 text-4xl">📒</div>
               <h3 className="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
-                Chat Interface
+                Expense Tracking
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Track time naturally by chatting. Simply tell us what you worked on, and we handle
-                the rest.
+                Scan receipts with AI to automatically extract and categorize expenses. No manual data entry.
               </p>
             </div>
 
@@ -163,10 +136,10 @@ export default function Home() {
             <div className="rounded-2xl bg-white p-6 shadow-lg transition-all hover:shadow-xl dark:bg-gray-800">
               <div className="mb-4 text-4xl">⏱️</div>
               <h3 className="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
-                Smart Time Tracking
+                Time & Project Management
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Automatic time entry creation from your conversations. No complex forms or timers.
+                Track billable hours, manage projects, and generate invoices with intelligent automation.
               </p>
             </div>
 
@@ -174,11 +147,21 @@ export default function Home() {
             <div className="rounded-2xl bg-white p-6 shadow-lg transition-all hover:shadow-xl dark:bg-gray-800">
               <div className="mb-4 text-4xl">📊</div>
               <h3 className="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
-                Powerful Admin
+                Accounting
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Complete web interface for managers to view reports, manage projects, and track team
-                productivity.
+                Manage invoices, track payments, and keep your books organized with simple financial tools.
+              </p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="rounded-2xl bg-white p-6 shadow-lg transition-all hover:shadow-xl dark:bg-gray-800">
+              <div className="mb-4 text-4xl">🤖</div>
+              <h3 className="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
+                AI-Powered Insights
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Chat with AI to query your business data, generate reports, and get actionable insights.
               </p>
             </div>
           </div>
@@ -195,7 +178,7 @@ export default function Home() {
               <p>✓ Revenue under $25,000 per year</p>
             </div>
             <p className="text-xl opacity-90">
-              No credit card required. No hidden fees. Just free time tracking for small teams,
+              No credit card required. No hidden fees. Just free time tracking and accounting for small teams,
               forever.
             </p>
           </div>
@@ -208,7 +191,7 @@ export default function Home() {
           <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white">Our Mission</h2>
           <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-gray-800">
             <p className="mb-6 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
-              FreeTimeChat is built on a simple principle:{' '}
+              AfricAI Digital Books is built on a simple principle:{' '}
               <span className="font-semibold text-blue-600 dark:text-blue-400">
                 great tools should be accessible to everyone
               </span>
@@ -218,7 +201,7 @@ export default function Home() {
               All revenue from larger companies is reinvested directly into development, hosting,
               maintenance, and improvements. Our goal is to end each year at a{' '}
               <span className="font-bold text-green-600 dark:text-green-400">$0 balance</span>,
-              ensuring every dollar goes back into making FreeTimeChat better for everyone.
+              ensuring every dollar goes back into making AfricAI Digital Books better for everyone.
             </p>
             <p className="text-lg font-semibold text-gray-900 dark:text-white">
               No investors. No exit strategy. Just sustainable software for the long term.
@@ -285,10 +268,10 @@ export default function Home() {
       <section className="container mx-auto px-4 py-16">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
-            Ready to simplify your time tracking?
+            Ready to streamline your business?
           </h2>
           <p className="mb-8 text-lg text-gray-600 dark:text-gray-300">
-            Join teams who track time through conversation instead of complex forms.
+            Join businesses using AI to manage expenses, track time, and gain insights.
           </p>
           <Link
             href="/login"
@@ -302,7 +285,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-white py-8 dark:border-gray-700 dark:bg-gray-800">
         <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-400">
-          <p>© 2025 FreeTimeChat. Built with ❤️ for small teams everywhere.</p>
+          <p>© 2025 AfricAI Digital Books. Built with ❤️ for small teams everywhere.</p>
         </div>
       </footer>
     </div>

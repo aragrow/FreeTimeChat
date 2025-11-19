@@ -135,7 +135,7 @@ export default function Setup2FAPage() {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">FreeTimeChat</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">AfricAI Digital Books</h1>
           <h2 className="text-2xl font-semibold text-gray-700">
             {step === 'setup' && 'Set up two-factor authentication'}
             {step === 'verify' && 'Verify your code'}

@@ -22,7 +22,7 @@ export default function PrivacyPage() {
           {/* Introduction */}
           <section>
             <p className="text-gray-700 leading-relaxed">
-              FreeTimeChat (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is committed to
+              AfricAI Digital Books (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is committed to
               protecting your privacy. This Privacy Policy explains how we collect, use, disclose,
               and safeguard your information when you use our time tracking application and related
               services (collectively, the &quot;Service&quot;).
@@ -433,7 +433,7 @@ export default function PrivacyPage() {
                 contact us:
               </p>
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="font-semibold">FreeTimeChat Privacy Team</p>
+                <p className="font-semibold">AfricAI Digital Books Privacy Team</p>
                 <p>Email: privacy@freetimechat.com</p>
                 <p>Email: support@freetimechat.com</p>
                 <p>Website: https://freetimechat.com/support</p>
@@ -447,7 +447,7 @@ export default function PrivacyPage() {
           {/* Footer */}
           <section className="border-t pt-6">
             <p className="text-sm text-gray-600">
-              By using FreeTimeChat, you acknowledge that you have read and understood this Privacy
+              By using AfricAI Digital Books, you acknowledge that you have read and understood this Privacy
               Policy.
             </p>
             <div className="mt-4 flex gap-4">

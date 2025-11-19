@@ -1,6 +1,6 @@
-# FreeTimeChat Web App
+# AfricAI Digital Books Web App
 
-Next.js frontend application for FreeTimeChat with dual interface:
+Next.js frontend application for AfricAI Digital Books with dual interface:
 
 - **Chat Interface**: Natural language time entry
 - **Admin Dashboard**: User and system management
@@ -35,7 +35,7 @@ Required variables:
 
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
-NEXT_PUBLIC_APP_NAME=FreeTimeChat
+NEXT_PUBLIC_APP_NAME=AfricAI Digital Books
 ```
 
 ## Authentication System

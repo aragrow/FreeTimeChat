@@ -1,4 +1,4 @@
-# FreeTimeChat
+# AfricAI Digital Books
 
 A modern time tracking application with a unique dual-interface architecture:
 
@@ -46,7 +46,7 @@ A modern time tracking application with a unique dual-interface architecture:
 ## Project Structure
 
 ```
-FreeTimeChat/
+AfricAI Digital Books/
 ├── .claude/                   # Documentation
 │   ├── instructions.md        # Project overview
 │   ├── git.md                 # Git best practices
@@ -81,7 +81,7 @@ FreeTimeChat/
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd FreeTimeChat
+cd AfricAI Digital Books
 
 # Install dependencies
 pnpm install
@@ -148,7 +148,7 @@ node scripts/commit.js
 
 ```
 ========================================
-   FreeTimeChat Automated Commit
+   AfricAI Digital Books Automated Commit
 ========================================
 
 Step 1: Current Status

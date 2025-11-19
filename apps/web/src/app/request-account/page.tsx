@@ -76,7 +76,7 @@ export default function RequestAccountPage() {
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Request Submitted!</h2>
             <p className="text-lg text-gray-600 mb-8">
-              Thank you for your interest in FreeTimeChat. We have received your account request and
+              Thank you for your interest in AfricAI Digital Books. We have received your account request and
               will review it within 1-2 business days.
             </p>
             <p className="text-gray-600 mb-8">
@@ -101,7 +101,7 @@ export default function RequestAccountPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Request Account Access</h1>
           <p className="text-gray-600">
-            Please fill out the form below to request access to FreeTimeChat. Our team will review
+            Please fill out the form below to request access to AfricAI Digital Books. Our team will review
             your request and get back to you within 1-2 business days.
           </p>
         </div>
@@ -220,7 +220,7 @@ export default function RequestAccountPage() {
           {/* Reason for Access */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Why do you want to use FreeTimeChat? <span className="text-red-500">*</span>
+              Why do you want to use AfricAI Digital Books? <span className="text-red-500">*</span>
             </label>
             <textarea
               value={formData.reasonForAccess}
@@ -229,7 +229,7 @@ export default function RequestAccountPage() {
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
                 errors.reasonForAccess ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
-              placeholder="Tell us about your team, your needs, and how you plan to use FreeTimeChat..."
+              placeholder="Tell us about your team, your needs, and how you plan to use AfricAI Digital Books..."
               required
             />
             {errors.reasonForAccess && (

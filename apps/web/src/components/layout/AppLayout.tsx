@@ -52,7 +52,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
               className="flex items-center gap-2 cursor-pointer"
               onClick={() => router.push('/')}
             >
-              <h1 className="text-xl font-bold text-gray-900">FreeTimeChat</h1>
+              <h1 className="text-xl font-bold text-gray-900">AfricAI</h1>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}

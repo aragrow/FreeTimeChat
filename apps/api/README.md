@@ -1,6 +1,6 @@
-# FreeTimeChat API
+# AfricAI Digital Books API
 
-Express backend API for FreeTimeChat application.
+Express backend API for AfricAI Digital Books application.
 
 ## Features
 

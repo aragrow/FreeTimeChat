@@ -22,8 +22,8 @@ export default function TermsPage() {
           {/* Introduction */}
           <section>
             <p className="text-gray-700 leading-relaxed">
-              Welcome to FreeTimeChat. These Terms of Service (&quot;Terms&quot;) govern your access
-              to and use of FreeTimeChat&apos;s time tracking application, website, and services
+              Welcome to AfricAI Digital Books. These Terms of Service (&quot;Terms&quot;) govern your access
+              to and use of AfricAI Digital Books&apos;s time tracking application, website, and services
               (collectively, the &quot;Service&quot;). By accessing or using the Service, you agree
               to be bound by these Terms.
             </p>
@@ -36,7 +36,7 @@ export default function TermsPage() {
             </h2>
             <div className="space-y-4 text-gray-700">
               <p>
-                By creating an account, accessing, or using FreeTimeChat, you acknowledge that you
+                By creating an account, accessing, or using AfricAI Digital Books, you acknowledge that you
                 have read, understood, and agree to be bound by these Terms and our Privacy Policy.
                 If you do not agree to these Terms, you may not use the Service.
               </p>
@@ -54,7 +54,7 @@ export default function TermsPage() {
             </h2>
             <div className="space-y-4 text-gray-700">
               <p>
-                FreeTimeChat is a time tracking application that provides:
+                AfricAI Digital Books is a time tracking application that provides:
               </p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Chat-based time entry interface for employees</li>
@@ -74,7 +74,7 @@ export default function TermsPage() {
             </h2>
             <div className="space-y-4 text-gray-700">
               <p>
-                FreeTimeChat offers a free tier for qualifying small businesses:
+                AfricAI Digital Books offers a free tier for qualifying small businesses:
               </p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Companies with fewer than 5 employees</li>
@@ -139,7 +139,7 @@ export default function TermsPage() {
             <div className="space-y-4 text-gray-700">
               <p>
                 <strong>Data Ownership:</strong> You retain ownership of all data you input into
-                the Service. FreeTimeChat does not claim ownership of your time entries, projects,
+                the Service. AfricAI Digital Books does not claim ownership of your time entries, projects,
                 or other user-generated content.
               </p>
               <p>
@@ -166,8 +166,8 @@ export default function TermsPage() {
             </h2>
             <div className="space-y-4 text-gray-700">
               <p>
-                <strong>FreeTimeChat IP:</strong> The Service, including its design, code,
-                features, and documentation, is owned by FreeTimeChat and protected by copyright,
+                <strong>AfricAI Digital Books IP:</strong> The Service, including its design, code,
+                features, and documentation, is owned by AfricAI Digital Books and protected by copyright,
                 trademark, and other intellectual property laws.
               </p>
               <p>
@@ -307,7 +307,7 @@ export default function TermsPage() {
             </h2>
             <div className="space-y-4 text-gray-700">
               <p>
-                You agree to indemnify, defend, and hold harmless FreeTimeChat, its officers,
+                You agree to indemnify, defend, and hold harmless AfricAI Digital Books, its officers,
                 directors, employees, and agents from any claims, liabilities, damages, losses, and
                 expenses arising from:
               </p>
@@ -414,7 +414,7 @@ export default function TermsPage() {
             <div className="space-y-4 text-gray-700">
               <p>
                 <strong>Entire Agreement:</strong> These Terms, together with our Privacy Policy,
-                constitute the entire agreement between you and FreeTimeChat.
+                constitute the entire agreement between you and AfricAI Digital Books.
               </p>
               <p>
                 <strong>Severability:</strong> If any provision of these Terms is found to be
@@ -442,7 +442,7 @@ export default function TermsPage() {
                 If you have questions about these Terms, please contact us at:
               </p>
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="font-semibold">FreeTimeChat Support</p>
+                <p className="font-semibold">AfricAI Digital Books Support</p>
                 <p>Email: legal@freetimechat.com</p>
                 <p>Email: support@freetimechat.com</p>
                 <p>Website: https://freetimechat.com/support</p>
@@ -453,7 +453,7 @@ export default function TermsPage() {
           {/* Footer */}
           <section className="border-t pt-6">
             <p className="text-sm text-gray-600">
-              By using FreeTimeChat, you acknowledge that you have read and understood these Terms
+              By using AfricAI Digital Books, you acknowledge that you have read and understood these Terms
               of Service and agree to be bound by them.
             </p>
             <div className="mt-4 flex gap-4">

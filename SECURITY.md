@@ -1,8 +1,8 @@
-# Security Guidelines for FreeTimeChat
+# Security Guidelines for AfricAI Digital Books
 
 ## Overview
 
-FreeTimeChat implements comprehensive security measures to protect against
+AfricAI Digital Books implements comprehensive security measures to protect against
 common web vulnerabilities including XSS, SQL Injection, CSRF, and unauthorized
 access.
 

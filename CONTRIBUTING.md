@@ -1,6 +1,6 @@
-# Contributing to FreeTimeChat
+# Contributing to AfricAI Digital Books
 
-Thank you for your interest in contributing to FreeTimeChat! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to AfricAI Digital Books! This document provides guidelines and instructions for contributing.
 
 ## Quick Start
 
@@ -16,7 +16,7 @@ Thank you for your interest in contributing to FreeTimeChat! This document provi
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd FreeTimeChat
+   cd AfricAI Digital Books
    ```
 
 2. **Install dependencies**
@@ -298,4 +298,4 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ---
 
-Thank you for contributing to FreeTimeChat! 🎉
+Thank you for contributing to AfricAI Digital Books! 🎉

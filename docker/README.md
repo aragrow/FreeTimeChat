@@ -1,6 +1,6 @@
 # Docker Development Environment
 
-This directory contains Docker configuration for FreeTimeChat local development.
+This directory contains Docker configuration for AfricAI Digital Books local development.
 
 ## Services
 
@@ -129,7 +129,7 @@ docker-compose exec postgres psql -U freetimechat -d freetimechat_client_dev
 2. Open http://localhost:5050
 3. Login with credentials above
 4. Add server:
-   - Name: `FreeTimeChat Local`
+   - Name: `AfricAI Local`
    - Host: `postgres` (use service name, not localhost)
    - Port: `5432`
    - Database: `freetimechat_main`

@@ -255,7 +255,7 @@ export default function AdminDashboard() {
           <p className="text-gray-600 mt-1">
             {stats?.selectedTenant
               ? `Overview for ${stats.selectedTenant.name}`
-              : 'Overview of your FreeTimeChat system'}
+              : 'Overview of your AfricAI system'}
           </p>
         </div>
 

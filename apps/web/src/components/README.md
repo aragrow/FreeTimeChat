@@ -1,6 +1,6 @@
 # Components
 
-Reusable React components for the FreeTimeChat web application.
+Reusable React components for the AfricAI Digital Books web application.
 
 ## Structure
 
