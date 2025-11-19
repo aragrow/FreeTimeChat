@@ -174,6 +174,7 @@ router.post('/', async (req: Request, res: Response) => {
       invoicePrefix,
       invoiceNextNumber,
       invoiceNumberPadding,
+      preferredPaymentMethod,
     } = req.body;
 
     // Validate required fields
@@ -217,6 +218,7 @@ router.post('/', async (req: Request, res: Response) => {
         invoicePrefix: invoicePrefix?.trim() || null,
         invoiceNextNumber: invoiceNextNumber || 1,
         invoiceNumberPadding: invoiceNumberPadding || 5,
+        preferredPaymentMethod: preferredPaymentMethod || null,
         isActive: true,
       },
     });
@@ -289,6 +291,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       invoicePrefix,
       invoiceNextNumber,
       invoiceNumberPadding,
+      preferredPaymentMethod,
       isActive,
     } = req.body;
 
@@ -351,6 +354,8 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (invoicePrefix !== undefined) updateData.invoicePrefix = invoicePrefix?.trim() || null;
     if (invoiceNextNumber !== undefined) updateData.invoiceNextNumber = invoiceNextNumber;
     if (invoiceNumberPadding !== undefined) updateData.invoiceNumberPadding = invoiceNumberPadding;
+    if (preferredPaymentMethod !== undefined)
+      updateData.preferredPaymentMethod = preferredPaymentMethod || null;
     if (isActive !== undefined) updateData.isActive = isActive;
 
     // Update client

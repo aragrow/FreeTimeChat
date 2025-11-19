@@ -82,6 +82,16 @@ model Tenant {
   nextInvoiceNumber Int     @default(1) @map("next_invoice_number")
   logoUrl           String? @map("logo_url") // URL to tenant logo
 
+  // Payment Methods
+  enableStripe         Boolean @default(false) @map("enable_stripe")
+  enablePaypal         Boolean @default(false) @map("enable_paypal")
+  stripePublishableKey String? @map("stripe_publishable_key")
+  stripeSecretKey      String? @map("stripe_secret_key")
+  paypalClientId       String? @map("paypal_client_id")
+  paypalClientSecret   String? @map("paypal_client_secret")
+  paypalSandbox        Boolean @default(true) @map("paypal_sandbox") // Use sandbox mode for testing
+  defaultPaymentMethod String? @map("default_payment_method") // 'stripe', 'paypal', or null
+
   users            User[]
   securitySettings SecuritySettings[]
   createdAt        DateTime           @default(now()) @map("created_at")

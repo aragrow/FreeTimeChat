@@ -39,6 +39,7 @@ interface Client {
   billingContactEmail: string | null;
   billingContactPhone: string | null;
   hourlyRate: number | null;
+  preferredPaymentMethod: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -50,6 +51,12 @@ interface Client {
     tenantKey: string;
     isActive: boolean;
   };
+}
+
+interface TenantSettings {
+  enableStripe: boolean;
+  enablePaypal: boolean;
+  defaultPaymentMethod: string | null;
 }
 
 export default function ClientsPage() {
@@ -88,7 +95,11 @@ export default function ClientsPage() {
     billingContactEmail: '',
     billingContactPhone: '',
     hourlyRate: '',
+    preferredPaymentMethod: '',
   });
+
+  // Tenant settings for payment method options
+  const [tenantSettings, setTenantSettings] = useState<TenantSettings | null>(null);
 
   // Available tenants for dropdown (only for system admins)
   const [tenants, setTenants] = useState<Array<{ id: string; name: string; tenantKey: string }>>(
@@ -97,12 +108,33 @@ export default function ClientsPage() {
 
   useEffect(() => {
     fetchClients();
+    fetchTenantSettings();
     // Only fetch tenants for system admins
     if (!userIsTenantAdmin) {
       fetchTenants();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchTerm, includeInactive, userIsTenantAdmin]);
+
+  const fetchTenantSettings = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenant-settings`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setTenantSettings({
+          enableStripe: result.data.enableStripe || false,
+          enablePaypal: result.data.enablePaypal || false,
+          defaultPaymentMethod: result.data.defaultPaymentMethod || null,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch tenant settings:', error);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -197,6 +229,7 @@ export default function ClientsPage() {
           billingContactEmail: '',
           billingContactPhone: '',
           hourlyRate: '',
+          preferredPaymentMethod: '',
         });
         fetchClients();
       } else {
@@ -243,6 +276,7 @@ export default function ClientsPage() {
           billingContactEmail: '',
           billingContactPhone: '',
           hourlyRate: '',
+          preferredPaymentMethod: '',
         });
         fetchClients();
       } else {
@@ -358,6 +392,7 @@ export default function ClientsPage() {
       billingContactEmail: client.billingContactEmail || '',
       billingContactPhone: client.billingContactPhone || '',
       hourlyRate: client.hourlyRate ? client.hourlyRate.toString() : '',
+      preferredPaymentMethod: client.preferredPaymentMethod || '',
     });
   };
 
@@ -748,6 +783,29 @@ export default function ClientsPage() {
                     placeholder="0.00"
                   />
                 </div>
+                {tenantSettings && (tenantSettings.enableStripe || tenantSettings.enablePaypal) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Preferred Payment Method
+                    </label>
+                    <select
+                      value={formData.preferredPaymentMethod}
+                      onChange={(e) =>
+                        setFormData({ ...formData, preferredPaymentMethod: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">
+                        Use tenant default
+                        {tenantSettings.defaultPaymentMethod
+                          ? ` (${tenantSettings.defaultPaymentMethod})`
+                          : ''}
+                      </option>
+                      {tenantSettings.enableStripe && <option value="stripe">Stripe</option>}
+                      {tenantSettings.enablePaypal && <option value="paypal">PayPal</option>}
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -772,6 +830,7 @@ export default function ClientsPage() {
                     billingContactEmail: '',
                     billingContactPhone: '',
                     hourlyRate: '',
+                    preferredPaymentMethod: '',
                   });
                 }}
               >
@@ -1001,6 +1060,29 @@ export default function ClientsPage() {
                     placeholder="0.00"
                   />
                 </div>
+                {tenantSettings && (tenantSettings.enableStripe || tenantSettings.enablePaypal) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Preferred Payment Method
+                    </label>
+                    <select
+                      value={formData.preferredPaymentMethod}
+                      onChange={(e) =>
+                        setFormData({ ...formData, preferredPaymentMethod: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">
+                        Use tenant default
+                        {tenantSettings.defaultPaymentMethod
+                          ? ` (${tenantSettings.defaultPaymentMethod})`
+                          : ''}
+                      </option>
+                      {tenantSettings.enableStripe && <option value="stripe">Stripe</option>}
+                      {tenantSettings.enablePaypal && <option value="paypal">PayPal</option>}
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1025,6 +1107,7 @@ export default function ClientsPage() {
                     billingContactEmail: '',
                     billingContactPhone: '',
                     hourlyRate: '',
+                    preferredPaymentMethod: '',
                   });
                 }}
               >

@@ -84,6 +84,14 @@ router.get('/', async (req: Request, res: Response) => {
         billingZip: true,
         billingCountry: true,
         billingEmail: true,
+        // Payment methods
+        enableStripe: true,
+        enablePaypal: true,
+        stripePublishableKey: true,
+        // Don't expose secret keys in GET
+        paypalClientId: true,
+        paypalSandbox: true,
+        defaultPaymentMethod: true,
       },
     });
 
@@ -151,6 +159,15 @@ router.put('/', async (req: Request, res: Response) => {
       billingZip,
       billingCountry,
       billingEmail,
+      // Payment methods
+      enableStripe,
+      enablePaypal,
+      stripePublishableKey,
+      stripeSecretKey,
+      paypalClientId,
+      paypalClientSecret,
+      paypalSandbox,
+      defaultPaymentMethod,
     } = req.body;
 
     // Validate currency if provided
@@ -177,6 +194,15 @@ router.put('/', async (req: Request, res: Response) => {
       return;
     }
 
+    // Validate default payment method
+    if (defaultPaymentMethod && !['stripe', 'paypal'].includes(defaultPaymentMethod)) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Invalid payment method. Must be "stripe" or "paypal"',
+      });
+      return;
+    }
+
     // Build update data
     const updateData: Record<string, unknown> = {};
     if (currency !== undefined) updateData.currency = currency;
@@ -192,6 +218,15 @@ router.put('/', async (req: Request, res: Response) => {
     if (billingZip !== undefined) updateData.billingZip = billingZip;
     if (billingCountry !== undefined) updateData.billingCountry = billingCountry;
     if (billingEmail !== undefined) updateData.billingEmail = billingEmail;
+    // Payment methods
+    if (enableStripe !== undefined) updateData.enableStripe = enableStripe;
+    if (enablePaypal !== undefined) updateData.enablePaypal = enablePaypal;
+    if (stripePublishableKey !== undefined) updateData.stripePublishableKey = stripePublishableKey;
+    if (stripeSecretKey !== undefined) updateData.stripeSecretKey = stripeSecretKey;
+    if (paypalClientId !== undefined) updateData.paypalClientId = paypalClientId;
+    if (paypalClientSecret !== undefined) updateData.paypalClientSecret = paypalClientSecret;
+    if (paypalSandbox !== undefined) updateData.paypalSandbox = paypalSandbox;
+    if (defaultPaymentMethod !== undefined) updateData.defaultPaymentMethod = defaultPaymentMethod;
 
     const tenant = await prisma.tenant.update({
       where: { id: currentUser.tenantId },
@@ -212,6 +247,13 @@ router.put('/', async (req: Request, res: Response) => {
         billingZip: true,
         billingCountry: true,
         billingEmail: true,
+        // Payment methods
+        enableStripe: true,
+        enablePaypal: true,
+        stripePublishableKey: true,
+        paypalClientId: true,
+        paypalSandbox: true,
+        defaultPaymentMethod: true,
       },
     });
 

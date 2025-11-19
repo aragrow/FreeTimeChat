@@ -47,6 +47,8 @@ model Client {
   invoicePrefix        String?   @map("invoice_prefix") // e.g., "INV-", "ABC-"
   invoiceNextNumber    Int       @default(1) @map("invoice_next_number")
   invoiceNumberPadding Int       @default(5) @map("invoice_number_padding") // e.g., 5 = "00001"
+  // Payment Preferences
+  preferredPaymentMethod String? @map("preferred_payment_method") // 'stripe', 'paypal', or null (uses tenant default)
   projects             Project[]
   products             Product[]
   invoices             Invoice[]
