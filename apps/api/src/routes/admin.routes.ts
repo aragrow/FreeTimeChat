@@ -57,7 +57,6 @@ router.use('/clients', attachClientDatabase, clientsRoutes);
 router.use('/expenses', attachClientDatabase, expensesRoutes);
 router.use('/invoices', attachClientDatabase, invoicesRoutes);
 router.use('/paypal-config', attachClientDatabase, paypalConfigRoutes);
-router.use('/products', attachClientDatabase, productsRoutes);
 router.use('/projects', attachClientDatabase, projectsRoutes);
 router.use('/project-members', attachClientDatabase, projectMembersRoutes);
 router.use('/reports', attachClientDatabase, reportsRoutes);
@@ -69,6 +68,7 @@ router.use('/coupons', attachClientDatabase, couponsRoutes);
 router.use('/discounts', attachClientDatabase, discountsRoutes);
 router.use('/payments', attachClientDatabase, paymentsRoutes);
 router.use('/payment-terms', attachClientDatabase, paymentTermsRoutes);
+router.use('/products', attachClientDatabase, productsRoutes);
 
 // Admin dashboard root endpoint
 router.get('/', (_req, res) => {
@@ -87,7 +87,6 @@ router.get('/', (_req, res) => {
       llmConfig: '/api/v1/admin/llm-config',
       paypalIntegration: '/api/v1/admin/paypal-integration',
       paypalConfig: '/api/v1/admin/paypal-config',
-      products: '/api/v1/admin/products',
       projects: '/api/v1/admin/projects',
       projectMembers: '/api/v1/admin/project-members',
       reports: '/api/v1/admin/reports',
@@ -100,6 +99,7 @@ router.get('/', (_req, res) => {
       discounts: '/api/v1/admin/discounts',
       payments: '/api/v1/admin/payments',
       paymentTerms: '/api/v1/admin/payment-terms',
+      products: '/api/v1/admin/products',
     },
   });
 });
