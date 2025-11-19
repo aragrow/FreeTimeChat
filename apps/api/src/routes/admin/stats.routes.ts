@@ -232,28 +232,195 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Get project and client counts from tenant database if tenant is selected
+    // Get project, client, timekeeping and accounting stats from tenant database
     let projectStats = { total: 0, active: 0, inactive: 0 };
-    let clientStats = { total: 0, active: 0, inactive: 0 };
+    let clientStats = { total: 0, active: 0, inactive: 0, newInLast7Days: 0 };
+    let timekeepingStats = {
+      totalEntries: 0,
+      hoursThisWeek: 0,
+      hoursThisMonth: 0,
+      billableHoursThisMonth: 0,
+      nonBillableHoursThisMonth: 0,
+      totalTasks: 0,
+      tasksTodo: 0,
+      tasksInProgress: 0,
+      tasksDone: 0,
+      tasksOverdue: 0,
+    };
+    let accountingStats = {
+      totalInvoices: 0,
+      draftInvoices: 0,
+      sentInvoices: 0,
+      paidInvoices: 0,
+      overdueInvoices: 0,
+      totalRevenue: 0,
+      outstandingBalance: 0,
+      totalExpenses: 0,
+      pendingExpenses: 0,
+      approvedExpenses: 0,
+      activeDiscounts: 0,
+      activeCoupons: 0,
+    };
 
-    if (tenantId && tenantId !== 'all') {
+    // Determine tenant to query (for tenant admins, always use their tenant)
+    const queryTenantId =
+      isTenantAdmin && !isAdmin && currentUser.tenantId
+        ? currentUser.tenantId
+        : tenantId && tenantId !== 'all'
+          ? String(tenantId)
+          : null;
+
+    if (queryTenantId) {
       try {
         const databaseService = getDatabaseService();
-        const clientDb = await databaseService.getTenantDatabase(String(tenantId));
+        const clientDb = await databaseService.getTenantDatabase(queryTenantId);
 
-        const [totalProjects, activeProjects, totalTenantClients, activeTenantClients] =
-          await Promise.all([
-            clientDb.project.count({
-              where: { deletedAt: null },
-            }),
-            clientDb.project.count({
-              where: { deletedAt: null, isActive: true },
-            }),
-            clientDb.client.count(),
-            clientDb.client.count({
-              where: { isActive: true },
-            }),
-          ]);
+        // Date calculations
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        const [
+          totalProjects,
+          activeProjects,
+          totalTenantClients,
+          activeTenantClients,
+          newTenantClientsLast7Days,
+          // Timekeeping stats
+          totalTimeEntries,
+          timeEntriesThisWeek,
+          timeEntriesThisMonth,
+          billableEntriesThisMonth,
+          nonBillableEntriesThisMonth,
+          totalTasks,
+          tasksTodo,
+          tasksInProgress,
+          tasksDone,
+          overdueTasks,
+          // Accounting stats
+          totalInvoices,
+          draftInvoices,
+          sentInvoices,
+          paidInvoices,
+          overdueInvoices,
+          invoiceRevenue,
+          outstandingInvoices,
+          totalExpenses,
+          pendingExpenses,
+          approvedExpenses,
+          activeDiscounts,
+          activeCoupons,
+        ] = await Promise.all([
+          // Projects
+          clientDb.project.count({
+            where: { deletedAt: null },
+          }),
+          clientDb.project.count({
+            where: { deletedAt: null, isActive: true },
+          }),
+          // Clients
+          clientDb.client.count({
+            where: { deletedAt: null },
+          }),
+          clientDb.client.count({
+            where: { isActive: true, deletedAt: null },
+          }),
+          clientDb.client.count({
+            where: {
+              deletedAt: null,
+              createdAt: { gte: sevenDaysAgo },
+            },
+          }),
+          // Time Entries
+          clientDb.timeEntry.count({
+            where: { deletedAt: null },
+          }),
+          clientDb.timeEntry.aggregate({
+            where: {
+              deletedAt: null,
+              startTime: { gte: startOfWeek },
+            },
+            _sum: { duration: true },
+          }),
+          clientDb.timeEntry.aggregate({
+            where: {
+              deletedAt: null,
+              startTime: { gte: startOfMonth },
+            },
+            _sum: { duration: true },
+          }),
+          clientDb.timeEntry.aggregate({
+            where: {
+              deletedAt: null,
+              startTime: { gte: startOfMonth },
+              isBillable: true,
+            },
+            _sum: { duration: true },
+          }),
+          clientDb.timeEntry.aggregate({
+            where: {
+              deletedAt: null,
+              startTime: { gte: startOfMonth },
+              isBillable: false,
+            },
+            _sum: { duration: true },
+          }),
+          // Tasks
+          clientDb.task.count(),
+          clientDb.task.count({ where: { status: 'TODO' } }),
+          clientDb.task.count({ where: { status: 'IN_PROGRESS' } }),
+          clientDb.task.count({ where: { status: 'DONE' } }),
+          clientDb.task.count({
+            where: {
+              status: { in: ['TODO', 'IN_PROGRESS'] },
+              dueDate: { lt: now },
+            },
+          }),
+          // Invoices
+          clientDb.invoice.count(),
+          clientDb.invoice.count({ where: { status: 'DRAFT' } }),
+          clientDb.invoice.count({ where: { status: { in: ['SENT', 'VIEWED'] } } }),
+          clientDb.invoice.count({ where: { status: 'PAID' } }),
+          clientDb.invoice.count({ where: { status: 'OVERDUE' } }),
+          clientDb.invoice.aggregate({
+            where: { status: 'PAID' },
+            _sum: { totalAmount: true },
+          }),
+          clientDb.invoice.aggregate({
+            where: { status: { in: ['SENT', 'VIEWED', 'OVERDUE', 'PARTIAL_PAID'] } },
+            _sum: { amountDue: true },
+          }),
+          // Expenses
+          clientDb.expense.aggregate({
+            where: { deletedAt: null },
+            _sum: { amount: true },
+          }),
+          clientDb.expense.count({
+            where: { deletedAt: null, status: 'PENDING' },
+          }),
+          clientDb.expense.count({
+            where: { deletedAt: null, status: 'APPROVED' },
+          }),
+          // Discounts
+          clientDb.discount.count({
+            where: {
+              deletedAt: null,
+              isActive: true,
+              OR: [{ validUntil: null }, { validUntil: { gte: now } }],
+            },
+          }),
+          // Coupons
+          clientDb.coupon.count({
+            where: {
+              deletedAt: null,
+              isActive: true,
+              validUntil: { gte: now },
+            },
+          }),
+        ]);
 
         projectStats = {
           total: totalProjects,
@@ -265,6 +432,38 @@ router.get('/', async (req: Request, res: Response) => {
           total: totalTenantClients,
           active: activeTenantClients,
           inactive: totalTenantClients - activeTenantClients,
+          newInLast7Days: newTenantClientsLast7Days,
+        };
+
+        // Convert duration (seconds) to hours
+        const toHours = (seconds: number | null) => Math.round(((seconds || 0) / 3600) * 10) / 10;
+
+        timekeepingStats = {
+          totalEntries: totalTimeEntries,
+          hoursThisWeek: toHours(timeEntriesThisWeek._sum.duration),
+          hoursThisMonth: toHours(timeEntriesThisMonth._sum.duration),
+          billableHoursThisMonth: toHours(billableEntriesThisMonth._sum.duration),
+          nonBillableHoursThisMonth: toHours(nonBillableEntriesThisMonth._sum.duration),
+          totalTasks,
+          tasksTodo,
+          tasksInProgress,
+          tasksDone,
+          tasksOverdue: overdueTasks,
+        };
+
+        accountingStats = {
+          totalInvoices,
+          draftInvoices,
+          sentInvoices,
+          paidInvoices,
+          overdueInvoices,
+          totalRevenue: Number(invoiceRevenue._sum.totalAmount || 0),
+          outstandingBalance: Number(outstandingInvoices._sum.amountDue || 0),
+          totalExpenses: Number(totalExpenses._sum.amount || 0),
+          pendingExpenses,
+          approvedExpenses,
+          activeDiscounts,
+          activeCoupons,
         };
       } catch (error) {
         console.error('Error fetching tenant database stats:', error);
@@ -284,16 +483,17 @@ router.get('/', async (req: Request, res: Response) => {
           activeInLast30Days: activeUsersLast30Days,
           newInLast7Days: newUsersLast7Days,
         },
-        clients:
-          tenantId && tenantId !== 'all'
-            ? clientStats
-            : {
-                total: totalClients,
-                active: activeClients,
-                inactive: totalClients - activeClients,
-                newInLast7Days: newClientsLast7Days,
-              },
+        clients: queryTenantId
+          ? clientStats
+          : {
+              total: totalClients,
+              active: activeClients,
+              inactive: totalClients - activeClients,
+              newInLast7Days: newClientsLast7Days,
+            },
         projects: projectStats,
+        timekeeping: timekeepingStats,
+        accounting: accountingStats,
         tenants: {
           total: totalClients,
           active: activeClients,
