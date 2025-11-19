@@ -41,9 +41,10 @@ export class ImpersonationService {
       throw new Error('Impersonation is currently disabled');
     }
 
-    // Verify admin has permission
+    // Verify user has impersonation permission (admin or tenantadmin)
     const isAdmin = await this.roleService.userHasRole(adminUserId, 'admin');
-    if (!isAdmin) {
+    const isTenantAdmin = await this.roleService.userHasRole(adminUserId, 'tenantadmin');
+    if (!isAdmin && !isTenantAdmin) {
       throw new Error('Only administrators can impersonate users');
     }
 

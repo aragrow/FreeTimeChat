@@ -234,6 +234,8 @@ async function main() {
     'users:create',
     'users:update',
     'users:delete',
+    // Impersonation (tenant-scoped - can only impersonate users in their tenant)
+    'admin:impersonate',
     // Tenant management (read-only for their own tenant)
     'tenants:read',
     // Project management (tenant-scoped)

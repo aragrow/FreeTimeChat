@@ -32,6 +32,7 @@ import systemSettingsRoutes from './admin/system-settings.routes';
 import tasksRoutes from './admin/tasks.routes';
 import timeEntriesRoutes from './admin/time-entries.routes';
 import usersRoutes from './admin/users.routes';
+import tenantSettingsRoutes from './tenant-settings.routes';
 import tenantRoutes from './tenant.routes';
 
 const router = Router();
@@ -50,6 +51,7 @@ router.use('/llm-config', llmConfigRoutes);
 router.use('/paypal-integration', paypalIntegrationRoutes);
 router.use('/stats', statsRoutes);
 router.use('/tenants', tenantRoutes);
+router.use('/tenant-settings', tenantSettingsRoutes);
 router.use('/system-settings', systemSettingsRoutes);
 
 // Mount admin sub-routes that NEED tenant database (attach middleware first)

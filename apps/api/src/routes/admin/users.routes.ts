@@ -193,6 +193,10 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { email, name, password, clientId, roleIds } = req.body;
+    const currentUser = req.user as JWTPayload;
+    const userRoles = currentUser.roles || [];
+    const isTenantAdmin = userRoles.includes('tenantadmin');
+    const isAdmin = userRoles.includes('admin');
 
     // Validate required fields
     if (!email || !name) {
@@ -213,8 +217,23 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    // Verify client exists if provided
-    if (clientId) {
+    // Determine the tenant ID for the new user
+    // - If tenant admin (not admin): always use their own tenant
+    // - If admin: use provided clientId or null
+    let targetTenantId: string | null = null;
+
+    if (isTenantAdmin && !isAdmin) {
+      // Tenant admins can only create users for their own tenant
+      if (!currentUser.tenantId) {
+        res.status(403).json({
+          status: 'error',
+          message: 'You must belong to a tenant to create users',
+        });
+        return;
+      }
+      targetTenantId = currentUser.tenantId;
+    } else if (clientId) {
+      // Admin provided a specific clientId
       const client = await prisma.tenant.findUnique({
         where: { id: clientId },
       });
@@ -226,6 +245,7 @@ router.post('/', async (req: Request, res: Response) => {
         });
         return;
       }
+      targetTenantId = clientId;
     }
 
     // Hash password if provided
@@ -234,12 +254,12 @@ router.post('/', async (req: Request, res: Response) => {
       passwordHash = await passwordService.hash(password);
     }
 
-    // Create user (tenantId can be null for system admins)
+    // Create user
     const user = await userService.create({
       email,
       name,
       passwordHash,
-      tenantId: clientId || null,
+      tenantId: targetTenantId,
     });
 
     // Assign roles if provided

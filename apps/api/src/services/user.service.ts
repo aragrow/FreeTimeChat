@@ -96,7 +96,7 @@ export class UserService {
     email: string;
     passwordHash?: string;
     name: string;
-    tenantId: string;
+    tenantId: string | null;
     googleId?: string;
     requirePasswordChange?: boolean;
   }): Promise<User> {
@@ -135,7 +135,7 @@ export class UserService {
     email: string;
     passwordHash?: string;
     name: string;
-    tenantId: string;
+    tenantId: string | null;
     googleId?: string;
     requirePasswordChange?: boolean;
   }): Promise<User> {

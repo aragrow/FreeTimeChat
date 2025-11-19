@@ -76,6 +76,12 @@ model Tenant {
   billingCountry String? @map("billing_country")
   billingEmail   String? @map("billing_email") // If different from contact email
 
+  // Invoice Settings
+  currency          String  @default("USD") @map("currency") // ISO 4217 currency code
+  invoicePrefix     String? @map("invoice_prefix") // e.g., "INV-", "ARAG-"
+  nextInvoiceNumber Int     @default(1) @map("next_invoice_number")
+  logoUrl           String? @map("logo_url") // URL to tenant logo
+
   users            User[]
   securitySettings SecuritySettings[]
   createdAt        DateTime           @default(now()) @map("created_at")
