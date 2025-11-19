@@ -18,6 +18,10 @@ interface Currency {
   symbol: string;
 }
 
+interface NavigationConfig {
+  enabledItems: string[];
+}
+
 interface TenantSettings {
   id: string;
   name: string;
@@ -41,7 +45,87 @@ interface TenantSettings {
   paypalClientId: string | null;
   paypalSandbox: boolean;
   defaultPaymentMethod: string | null;
+  // Navigation config
+  navigationConfig: NavigationConfig | null;
 }
+
+// Define all navigation items that can be toggled
+const NAVIGATION_ITEMS = {
+  main: {
+    label: 'Main',
+    items: [
+      { id: 'chat', label: 'Chat', description: 'AI chat assistant' },
+      { id: 'time-entries', label: 'Time Entries', description: 'Track time spent on tasks' },
+      { id: 'reports', label: 'Reports', description: 'View analytics and reports' },
+    ],
+  },
+  business: {
+    label: 'Business',
+    items: [
+      { id: 'clients', label: 'Clients', description: 'Manage customer accounts' },
+      { id: 'projects', label: 'Projects', description: 'Project management' },
+    ],
+  },
+  accountReceivables: {
+    label: 'Account Receivables',
+    items: [
+      { id: 'invoices', label: 'Invoices', description: 'Create and manage invoices' },
+      { id: 'payments', label: 'Payments', description: 'Track incoming payments' },
+      { id: 'discounts', label: 'Discounts', description: 'Manage discount rules' },
+      { id: 'coupons', label: 'Coupons', description: 'Create promotional coupons' },
+      { id: 'products', label: 'Products', description: 'Product catalog' },
+      { id: 'payment-terms', label: 'Payment Terms', description: 'Define payment conditions' },
+    ],
+  },
+  accountPayables: {
+    label: 'Account Payables',
+    items: [
+      { id: 'vendors', label: 'Vendors', description: 'Manage supplier accounts' },
+      { id: 'bills', label: 'Bills', description: 'Track payable invoices' },
+      { id: 'expenses', label: 'Expenses', description: 'Record business expenses' },
+    ],
+  },
+  userManagement: {
+    label: 'User Management',
+    items: [
+      { id: 'users', label: 'Users', description: 'Manage user accounts' },
+      { id: 'account-requests', label: 'Account Requests', description: 'Review signup requests' },
+      { id: 'tenants', label: 'Tenants', description: 'Manage tenant organizations' },
+    ],
+  },
+  accessControl: {
+    label: 'Access Control',
+    items: [
+      { id: 'roles', label: 'Roles', description: 'Define user roles' },
+      { id: 'capabilities', label: 'Capabilities', description: 'Manage permissions' },
+    ],
+  },
+  configuration: {
+    label: 'Configuration',
+    items: [
+      {
+        id: 'integration-templates',
+        label: 'Integrations',
+        description: 'External service integrations',
+      },
+      { id: 'llm-settings', label: 'LLM Settings', description: 'AI model configuration' },
+      { id: 'system-settings', label: 'System Settings', description: 'Global system settings' },
+    ],
+  },
+  monitoring: {
+    label: 'Monitoring',
+    items: [{ id: 'audit', label: 'Audit Log', description: 'View activity logs' }],
+  },
+};
+
+// Get all item IDs for default state (all enabled)
+const getAllItemIds = () => {
+  const ids: string[] = [];
+  Object.values(NAVIGATION_ITEMS).forEach((section) => {
+    section.items.forEach((item) => ids.push(item.id));
+  });
+  return ids;
+};
 
 export default function TenantSettingsPage() {
   const { fetchWithAuth } = useAuth();
@@ -65,6 +149,8 @@ export default function TenantSettingsPage() {
   const [paypalClientSecret, setPaypalClientSecret] = useState('');
   const [paypalSandbox, setPaypalSandbox] = useState(true);
   const [defaultPaymentMethod, setDefaultPaymentMethod] = useState('');
+  // Navigation settings state
+  const [enabledNavItems, setEnabledNavItems] = useState<string[]>(getAllItemIds());
 
   useEffect(() => {
     fetchCurrencies();
@@ -106,6 +192,8 @@ export default function TenantSettingsPage() {
         setPaypalClientId(data.data.paypalClientId || '');
         setPaypalSandbox(data.data.paypalSandbox ?? true);
         setDefaultPaymentMethod(data.data.defaultPaymentMethod || '');
+        // Navigation config - default to all enabled if not set
+        setEnabledNavItems(data.data.navigationConfig?.enabledItems || getAllItemIds());
       } else {
         setMessage({ type: 'error', text: 'Failed to load tenant settings' });
       }
@@ -143,6 +231,8 @@ export default function TenantSettingsPage() {
             paypalClientSecret: paypalClientSecret || null,
             paypalSandbox,
             defaultPaymentMethod: defaultPaymentMethod || null,
+            // Navigation config
+            navigationConfig: { enabledItems: enabledNavItems },
           }),
         }
       );
@@ -164,6 +254,41 @@ export default function TenantSettingsPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Navigation item toggle handler
+  const toggleNavItem = (itemId: string) => {
+    setEnabledNavItems((prev) =>
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+    );
+  };
+
+  // Toggle all items in a section
+  const toggleSection = (sectionKey: string) => {
+    const section = NAVIGATION_ITEMS[sectionKey as keyof typeof NAVIGATION_ITEMS];
+    const sectionItemIds = section.items.map((item) => item.id);
+    const allEnabled = sectionItemIds.every((id) => enabledNavItems.includes(id));
+
+    if (allEnabled) {
+      // Disable all items in section
+      setEnabledNavItems((prev) => prev.filter((id) => !sectionItemIds.includes(id)));
+    } else {
+      // Enable all items in section
+      setEnabledNavItems((prev) => [...new Set([...prev, ...sectionItemIds])]);
+    }
+  };
+
+  // Check if all items in section are enabled
+  const isSectionFullyEnabled = (sectionKey: string) => {
+    const section = NAVIGATION_ITEMS[sectionKey as keyof typeof NAVIGATION_ITEMS];
+    return section.items.every((item) => enabledNavItems.includes(item.id));
+  };
+
+  // Check if some items in section are enabled
+  const isSectionPartiallyEnabled = (sectionKey: string) => {
+    const section = NAVIGATION_ITEMS[sectionKey as keyof typeof NAVIGATION_ITEMS];
+    const enabledCount = section.items.filter((item) => enabledNavItems.includes(item.id)).length;
+    return enabledCount > 0 && enabledCount < section.items.length;
   };
 
   if (isLoading) {
@@ -463,6 +588,76 @@ export default function TenantSettingsPage() {
                 </div>
               )}
             </div>
+          </Card>
+
+          {/* Navigation Settings */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Navigation Menu</h2>
+                <p className="text-sm text-gray-500">
+                  Choose which menu items to show. Disabled items will be hidden from the sidebar.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEnabledNavItems(getAllItemIds())}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                Enable All
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {Object.entries(NAVIGATION_ITEMS).map(([sectionKey, section]) => (
+                <div key={sectionKey} className="border border-gray-200 rounded-lg p-4">
+                  {/* Section header with toggle all */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <input
+                      type="checkbox"
+                      checked={isSectionFullyEnabled(sectionKey)}
+                      ref={(el) => {
+                        if (el) {
+                          el.indeterminate = isSectionPartiallyEnabled(sectionKey);
+                        }
+                      }}
+                      onChange={() => toggleSection(sectionKey)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="font-medium text-gray-900">{section.label}</span>
+                    <span className="text-xs text-gray-500">
+                      ({section.items.filter((item) => enabledNavItems.includes(item.id)).length}/
+                      {section.items.length} enabled)
+                    </span>
+                  </div>
+
+                  {/* Individual items */}
+                  <div className="ml-7 space-y-2">
+                    {section.items.map((item) => (
+                      <label
+                        key={item.id}
+                        className="flex items-start gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded -ml-2"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={enabledNavItems.includes(item.id)}
+                          onChange={() => toggleNavItem(item.id)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
+                        />
+                        <div className="flex-1">
+                          <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                          <p className="text-xs text-gray-500">{item.description}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-4 text-xs text-gray-500">
+              Note: Tenant Settings will always remain accessible to administrators.
+            </p>
           </Card>
 
           {/* Save Button */}

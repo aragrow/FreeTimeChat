@@ -10,6 +10,7 @@ import { authenticateJWT } from '../middleware/auth.middleware';
 import { attachClientDatabase } from '../middleware/client-database.middleware';
 import { requireAnyRole } from '../middleware/permission.middleware';
 import accountRequestsRoutes from './admin/account-requests.routes';
+import billsRoutes from './admin/bills.routes';
 import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
 import couponsRoutes from './admin/coupons.routes';
@@ -33,6 +34,7 @@ import systemSettingsRoutes from './admin/system-settings.routes';
 import tasksRoutes from './admin/tasks.routes';
 import timeEntriesRoutes from './admin/time-entries.routes';
 import usersRoutes from './admin/users.routes';
+import vendorsRoutes from './admin/vendors.routes';
 import tenantSettingsRoutes from './tenant-settings.routes';
 import tenantRoutes from './tenant.routes';
 
@@ -73,6 +75,8 @@ router.use('/discounts', attachClientDatabase, discountsRoutes);
 router.use('/payments', attachClientDatabase, paymentsRoutes);
 router.use('/payment-terms', attachClientDatabase, paymentTermsRoutes);
 router.use('/products', attachClientDatabase, productsRoutes);
+router.use('/vendors', attachClientDatabase, vendorsRoutes);
+router.use('/bills', attachClientDatabase, billsRoutes);
 
 // Admin dashboard root endpoint
 router.get('/', (_req, res) => {
@@ -104,6 +108,8 @@ router.get('/', (_req, res) => {
       payments: '/api/v1/admin/payments',
       paymentTerms: '/api/v1/admin/payment-terms',
       products: '/api/v1/admin/products',
+      vendors: '/api/v1/admin/vendors',
+      bills: '/api/v1/admin/bills',
     },
   });
 });

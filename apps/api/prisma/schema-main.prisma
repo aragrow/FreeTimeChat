@@ -93,6 +93,9 @@ model Tenant {
   paypalSandbox        Boolean @default(true) @map("paypal_sandbox") // Use sandbox mode for testing
   defaultPaymentMethod String? @map("default_payment_method") // 'stripe', 'paypal', or null
 
+  // Navigation Settings - which menu items to show/hide
+  navigationConfig Json? @map("navigation_config") // { enabledItems: string[] }
+
   users            User[]
   securitySettings SecuritySettings[]
   createdAt        DateTime           @default(now()) @map("created_at")

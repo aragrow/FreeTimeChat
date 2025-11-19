@@ -20,42 +20,42 @@ datasource db {
 }
 
 model Client {
-  id                   String    @id @default(uuid())
-  name                 String
-  slug                 String    @unique
-  companyName          String?   @map("company_name")
-  isActive             Boolean   @default(true) @map("is_active")
-  hourlyRate           Decimal?  @map("hourly_rate") @db.Decimal(10, 2)
-  discountPercentage   Decimal?  @default(0) @map("discount_percentage") @db.Decimal(5, 2)
+  id                     String    @id @default(uuid())
+  name                   String
+  slug                   String    @unique
+  companyName            String?   @map("company_name")
+  isActive               Boolean   @default(true) @map("is_active")
+  hourlyRate             Decimal?  @map("hourly_rate") @db.Decimal(10, 2)
+  discountPercentage     Decimal?  @default(0) @map("discount_percentage") @db.Decimal(5, 2)
   // Contact Information
-  email                String?
-  phone                String?
-  website              String?
-  contactPerson        String?   @map("contact_person")
+  email                  String?
+  phone                  String?
+  website                String?
+  contactPerson          String?   @map("contact_person")
   // Billing Address
-  billingAddressLine1  String?   @map("billing_address_line1")
-  billingAddressLine2  String?   @map("billing_address_line2")
-  billingCity          String?   @map("billing_city")
-  billingState         String?   @map("billing_state")
-  billingPostalCode    String?   @map("billing_postal_code")
-  billingCountry       String?   @map("billing_country")
+  billingAddressLine1    String?   @map("billing_address_line1")
+  billingAddressLine2    String?   @map("billing_address_line2")
+  billingCity            String?   @map("billing_city")
+  billingState           String?   @map("billing_state")
+  billingPostalCode      String?   @map("billing_postal_code")
+  billingCountry         String?   @map("billing_country")
   // Billing Contact
-  billingContactName   String?   @map("billing_contact_name")
-  billingContactEmail  String?   @map("billing_contact_email")
-  billingContactPhone  String?   @map("billing_contact_phone")
+  billingContactName     String?   @map("billing_contact_name")
+  billingContactEmail    String?   @map("billing_contact_email")
+  billingContactPhone    String?   @map("billing_contact_phone")
   // Invoice Numbering
-  invoicePrefix        String?   @map("invoice_prefix") // e.g., "INV-", "ABC-"
-  invoiceNextNumber    Int       @default(1) @map("invoice_next_number")
-  invoiceNumberPadding Int       @default(5) @map("invoice_number_padding") // e.g., 5 = "00001"
+  invoicePrefix          String?   @map("invoice_prefix") // e.g., "INV-", "ABC-"
+  invoiceNextNumber      Int       @default(1) @map("invoice_next_number")
+  invoiceNumberPadding   Int       @default(5) @map("invoice_number_padding") // e.g., 5 = "00001"
   // Payment Preferences
-  preferredPaymentMethod String? @map("preferred_payment_method") // 'stripe', 'paypal', or null (uses tenant default)
-  projects             Project[]
-  products             Product[]
-  invoices             Invoice[]
-  expenses             Expense[]
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @updatedAt @map("updated_at")
-  deletedAt            DateTime? @map("deleted_at")
+  preferredPaymentMethod String?   @map("preferred_payment_method") // 'stripe', 'paypal', or null (uses tenant default)
+  projects               Project[]
+  products               Product[]
+  invoices               Invoice[]
+  expenses               Expense[]
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  deletedAt              DateTime? @map("deleted_at")
 
   @@index([slug])
   @@index([isActive])
@@ -664,4 +664,145 @@ enum PaymentStatus {
   FAILED
   REFUNDED
   CANCELLED
+}
+
+// =============================================================================
+// Accounts Payable - Vendors and Bills
+// =============================================================================
+
+// Vendor - Suppliers/vendors we pay money to
+model Vendor {
+  id                String    @id @default(uuid())
+  name              String
+  companyName       String?   @map("company_name")
+  // Contact Information
+  email             String?
+  phone             String?
+  website           String?
+  contactPerson     String?   @map("contact_person")
+  // Address
+  addressLine1      String?   @map("address_line1")
+  addressLine2      String?   @map("address_line2")
+  city              String?
+  state             String?
+  postalCode        String?   @map("postal_code")
+  country           String?
+  // Payment Information
+  paymentTermDays   Int       @default(30) @map("payment_term_days") // Net 30, Net 60, etc.
+  accountNumber     String?   @map("account_number") // Our account with this vendor
+  taxId             String?   @map("tax_id") // Vendor's tax ID
+  // Bank details for payments
+  bankName          String?   @map("bank_name")
+  bankAccountNumber String?   @map("bank_account_number")
+  bankRoutingNumber String?   @map("bank_routing_number")
+  // Notes
+  notes             String?   @db.Text
+  // Status
+  isActive          Boolean   @default(true) @map("is_active")
+  // Relations
+  bills             Bill[]
+  // Metadata
+  createdBy         String    @map("created_by") // User ID
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  @@index([name])
+  @@index([email])
+  @@index([isActive])
+  @@map("vendors")
+}
+
+// Bill - What we owe to vendors (AP equivalent of Invoice)
+model Bill {
+  id              String        @id @default(uuid())
+  billNumber      String        @unique @map("bill_number") // e.g., "BILL-00001"
+  vendorId        String        @map("vendor_id")
+  vendor          Vendor        @relation(fields: [vendorId], references: [id])
+  // External reference
+  vendorInvoiceNo String?       @map("vendor_invoice_no") // Vendor's invoice number
+  // Status
+  status          BillStatus    @default(DRAFT)
+  // Dates
+  billDate        DateTime      @map("bill_date") // Date on the bill
+  dueDate         DateTime      @map("due_date")
+  paidDate        DateTime?     @map("paid_date")
+  // Amounts
+  subtotal        Decimal       @db.Decimal(10, 2)
+  taxRate         Decimal       @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  taxAmount       Decimal       @default(0) @map("tax_amount") @db.Decimal(10, 2)
+  discountAmount  Decimal       @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  totalAmount     Decimal       @map("total_amount") @db.Decimal(10, 2)
+  amountPaid      Decimal       @default(0) @map("amount_paid") @db.Decimal(10, 2)
+  amountDue       Decimal       @map("amount_due") @db.Decimal(10, 2)
+  // Details
+  note            String?       @db.Text
+  // Relations
+  items           BillItem[]
+  payments        BillPayment[]
+  // Metadata
+  createdBy       String        @map("created_by") // User ID
+  approvedBy      String?       @map("approved_by") // User ID who approved
+  approvedAt      DateTime?     @map("approved_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([vendorId])
+  @@index([status])
+  @@index([billDate])
+  @@index([dueDate])
+  @@map("bills")
+}
+
+// Bill Item - Line items on a bill
+model BillItem {
+  id                String   @id @default(uuid())
+  billId            String   @map("bill_id")
+  bill              Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+  description       String   @db.Text
+  quantity          Decimal  @db.Decimal(10, 2)
+  unitPrice         Decimal  @map("unit_price") @db.Decimal(10, 2)
+  amount            Decimal  @db.Decimal(10, 2) // quantity * unitPrice
+  // Optional categorization
+  expenseCategoryId String?  @map("expense_category_id") // Link to expense category
+  projectId         String?  @map("project_id") // Optional project assignment
+  // Metadata
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([billId])
+  @@index([expenseCategoryId])
+  @@index([projectId])
+  @@map("bill_items")
+}
+
+// Bill Payment - Payments made on bills
+model BillPayment {
+  id              String        @id @default(uuid())
+  billId          String        @map("bill_id")
+  bill            Bill          @relation(fields: [billId], references: [id], onDelete: Cascade)
+  amount          Decimal       @db.Decimal(10, 2)
+  paymentDate     DateTime      @map("payment_date")
+  paymentMethod   PaymentMethod @map("payment_method")
+  // External references
+  transactionId   String?       @map("transaction_id")
+  referenceNumber String?       @map("reference_number") // Check number, etc.
+  // Details
+  note            String?       @db.Text
+  // Metadata
+  paidBy          String        @map("paid_by") // User ID who made payment
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([billId])
+  @@index([paymentDate])
+  @@map("bill_payments")
+}
+
+enum BillStatus {
+  DRAFT // Not yet received/entered
+  RECEIVED // Bill received from vendor
+  APPROVED // Approved for payment
+  PARTIAL_PAID // Partially paid
+  PAID // Fully paid
+  CANCELLED // Cancelled
+  OVERDUE // Past due date
 }

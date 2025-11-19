@@ -92,6 +92,8 @@ router.get('/', async (req: Request, res: Response) => {
         paypalClientId: true,
         paypalSandbox: true,
         defaultPaymentMethod: true,
+        // Navigation settings
+        navigationConfig: true,
       },
     });
 
@@ -168,6 +170,8 @@ router.put('/', async (req: Request, res: Response) => {
       paypalClientSecret,
       paypalSandbox,
       defaultPaymentMethod,
+      // Navigation settings
+      navigationConfig,
     } = req.body;
 
     // Validate currency if provided
@@ -227,6 +231,8 @@ router.put('/', async (req: Request, res: Response) => {
     if (paypalClientSecret !== undefined) updateData.paypalClientSecret = paypalClientSecret;
     if (paypalSandbox !== undefined) updateData.paypalSandbox = paypalSandbox;
     if (defaultPaymentMethod !== undefined) updateData.defaultPaymentMethod = defaultPaymentMethod;
+    // Navigation settings
+    if (navigationConfig !== undefined) updateData.navigationConfig = navigationConfig;
 
     const tenant = await prisma.tenant.update({
       where: { id: currentUser.tenantId },
@@ -254,6 +260,8 @@ router.put('/', async (req: Request, res: Response) => {
         paypalClientId: true,
         paypalSandbox: true,
         defaultPaymentMethod: true,
+        // Navigation settings
+        navigationConfig: true,
       },
     });
 
