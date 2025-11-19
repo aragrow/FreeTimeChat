@@ -50,6 +50,7 @@ model Client {
   projects             Project[]
   products             Product[]
   invoices             Invoice[]
+  expenses             Expense[]
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
   deletedAt            DateTime? @map("deleted_at")
@@ -63,13 +64,14 @@ model Product {
   id          String    @id @default(uuid())
   name        String
   description String?   @db.Text
-  sku         String?   // Stock Keeping Unit
+  sku         String? // Stock Keeping Unit
   clientId    String?   @map("client_id") // Optional - if null, it's a tenant-level product
   client      Client?   @relation(fields: [clientId], references: [id])
   isBillable  Boolean   @default(true) @map("is_billable")
   rate        Decimal?  @db.Decimal(10, 2) // Product rate
-  unit        String?   // e.g., "hour", "unit", "project", "month"
+  unit        String? // e.g., "hour", "unit", "project", "month"
   isActive    Boolean   @default(true) @map("is_active")
+  expenses    Expense[]
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -99,6 +101,7 @@ model Project {
   timeEntries              TimeEntry[]
   tasks                    Task[]
   members                  ProjectMember[]
+  expenses                 Expense[]
   createdAt                DateTime        @default(now()) @map("created_at")
   updatedAt                DateTime        @updatedAt @map("updated_at")
   deletedAt                DateTime?       @map("deleted_at")
@@ -381,3 +384,107 @@ enum LLMProvider {
 
   @@map("llm_provider")
 }
+
+// Expense Tracking System
+model ExpenseCategory {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  icon        String? // Icon name for UI display
+  color       String? // Color code for UI display
+  isSystem    Boolean   @default(false) @map("is_system") // System categories can't be deleted
+  isActive    Boolean   @default(true) @map("is_active")
+  expenses    Expense[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("expense_categories")
+}
+
+model Expense {
+  id              String              @id @default(uuid())
+  // Assignment - expense can be at tenant, client, or product level
+  clientId        String?             @map("client_id")
+  client          Client?             @relation(fields: [clientId], references: [id])
+  productId       String?             @map("product_id")
+  product         Product?            @relation(fields: [productId], references: [id])
+  projectId       String?             @map("project_id")
+  project         Project?            @relation(fields: [projectId], references: [id])
+  // Category
+  categoryId      String              @map("category_id")
+  category        ExpenseCategory     @relation(fields: [categoryId], references: [id])
+  // Expense details
+  description     String
+  vendor          String? // Merchant/vendor name
+  amount          Decimal             @db.Decimal(10, 2)
+  currency        String              @default("USD")
+  expenseDate     DateTime            @map("expense_date")
+  // Payment details
+  paymentMethod   String?             @map("payment_method") // Cash, Credit Card, Debit Card, Check, etc.
+  reference       String? // Receipt number, transaction ID, etc.
+  // Reimbursement tracking
+  isReimbursable  Boolean             @default(false) @map("is_reimbursable")
+  isReimbursed    Boolean             @default(false) @map("is_reimbursed")
+  reimbursedAt    DateTime?           @map("reimbursed_at")
+  reimbursedBy    String?             @map("reimbursed_by") // User ID
+  // Tax
+  taxAmount       Decimal?            @map("tax_amount") @db.Decimal(10, 2)
+  taxRate         Decimal?            @map("tax_rate") @db.Decimal(5, 2)
+  // Status
+  status          ExpenseStatus       @default(PENDING)
+  approvedBy      String?             @map("approved_by") // User ID
+  approvedAt      DateTime?           @map("approved_at")
+  rejectedBy      String?             @map("rejected_by") // User ID
+  rejectedAt      DateTime?           @map("rejected_at")
+  rejectionReason String?             @map("rejection_reason")
+  // Notes
+  notes           String?             @db.Text
+  // Metadata from OCR/AI parsing
+  ocrData         Json?               @map("ocr_data") // Raw OCR data from receipt
+  aiConfidence    Decimal?            @map("ai_confidence") @db.Decimal(3, 2) // AI parsing confidence 0-1
+  // Audit
+  createdBy       String              @map("created_by") // User ID
+  updatedBy       String?             @map("updated_by") // User ID
+  attachments     ExpenseAttachment[]
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  deletedAt       DateTime?           @map("deleted_at")
+
+  @@index([clientId])
+  @@index([productId])
+  @@index([projectId])
+  @@index([categoryId])
+  @@index([expenseDate])
+  @@index([status])
+  @@index([createdBy])
+  @@map("expenses")
+}
+
+model ExpenseAttachment {
+  id            String   @id @default(uuid())
+  expenseId     String   @map("expense_id")
+  expense       Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  fileName      String   @map("file_name")
+  fileType      String   @map("file_type") // MIME type
+  fileSize      Int      @map("file_size") // Size in bytes
+  filePath      String   @map("file_path") // Storage path
+  thumbnailPath String?  @map("thumbnail_path") // Thumbnail for images
+  isReceipt     Boolean  @default(false) @map("is_receipt") // Primary receipt flag
+  uploadedBy    String   @map("uploaded_by") // User ID
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([expenseId])
+  @@map("expense_attachments")
+}
+
+enum ExpenseStatus {
+  PENDING // Awaiting approval
+  APPROVED // Approved
+  REJECTED // Rejected
+  PAID // Paid/reimbursed
+  CANCELLED // Cancelled
+}
+
+// Add relation to Client for expenses
+// Add relation to Product for expenses

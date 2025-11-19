@@ -12,6 +12,7 @@ import { requireAnyRole } from '../middleware/permission.middleware';
 import accountRequestsRoutes from './admin/account-requests.routes';
 import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
+import expensesRoutes from './admin/expenses.routes';
 import integrationTemplatesRoutes from './admin/integration-templates.routes';
 import invoicesRoutes from './admin/invoices.routes';
 import llmConfigRoutes from './admin/llm-config.routes';
@@ -49,6 +50,7 @@ router.use('/system-settings', systemSettingsRoutes);
 
 // Mount admin sub-routes that NEED tenant database (attach middleware first)
 router.use('/clients', attachClientDatabase, clientsRoutes);
+router.use('/expenses', attachClientDatabase, expensesRoutes);
 router.use('/invoices', attachClientDatabase, invoicesRoutes);
 router.use('/paypal-config', attachClientDatabase, paypalConfigRoutes);
 router.use('/products', attachClientDatabase, productsRoutes);
@@ -69,6 +71,7 @@ router.get('/', (_req, res) => {
       roles: '/api/v1/admin/roles',
       capabilities: '/api/v1/admin/capabilities',
       clients: '/api/v1/admin/clients',
+      expenses: '/api/v1/admin/expenses',
       integrationTemplates: '/api/v1/admin/integration-templates',
       invoices: '/api/v1/admin/invoices',
       llmConfig: '/api/v1/admin/llm-config',
