@@ -18,6 +18,8 @@ interface SignTokenOptions {
   tenantId: string;
   databaseName: string;
   impersonation?: ImpersonationMetadata;
+  customAccessExpiry?: string;
+  customRefreshExpiry?: string;
 }
 
 interface TokenPair {
@@ -80,7 +82,7 @@ export class JWTService {
     // @ts-expect-error - jsonwebtoken types are overly strict for RS256 with string expiresIn
     return jwt.sign(payload, this.privateKey, {
       algorithm: 'RS256',
-      expiresIn: this.accessTokenExpiry,
+      expiresIn: options.customAccessExpiry || this.accessTokenExpiry,
       issuer: this.issuer,
       audience: this.audience,
     });
@@ -89,7 +91,7 @@ export class JWTService {
   /**
    * Sign a refresh token (simpler payload)
    */
-  signRefreshToken(userId: string, familyId: string): string {
+  signRefreshToken(userId: string, familyId: string, customRefreshExpiry?: string): string {
     // Generate unique JWT ID to prevent duplicate tokens
     const jti = crypto.randomBytes(16).toString('hex');
 
@@ -104,7 +106,7 @@ export class JWTService {
       this.privateKey,
       {
         algorithm: 'RS256',
-        expiresIn: this.refreshTokenExpiry,
+        expiresIn: customRefreshExpiry || this.refreshTokenExpiry,
         issuer: this.issuer,
         audience: this.audience,
       }
@@ -117,7 +119,7 @@ export class JWTService {
   generateTokenPair(options: SignTokenOptions, familyId: string): TokenPair {
     return {
       accessToken: this.signAccessToken(options),
-      refreshToken: this.signRefreshToken(options.userId, familyId),
+      refreshToken: this.signRefreshToken(options.userId, familyId, options.customRefreshExpiry),
     };
   }
 

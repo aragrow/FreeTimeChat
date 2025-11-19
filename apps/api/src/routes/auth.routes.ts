@@ -20,8 +20,9 @@ const authService = getAuthService();
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { email, password, tenantKey, skipTwoFactor } = req.body as LoginRequest & {
+    const { email, password, tenantKey, skipTwoFactor, rememberMe } = req.body as LoginRequest & {
       skipTwoFactor?: boolean;
+      rememberMe?: boolean;
     };
 
     // Validate input
@@ -36,7 +37,19 @@ router.post('/login', async (req: Request, res: Response) => {
     // Development only: Allow skipping 2FA
     const shouldSkipTwoFactor = skipTwoFactor === true && process.env.NODE_ENV !== 'production';
 
-    const result = await authService.login(email, password, tenantKey, shouldSkipTwoFactor);
+    // Get IP and user agent for tracking
+    const ipAddress = req.ip || req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    const result = await authService.login(
+      email,
+      password,
+      tenantKey,
+      shouldSkipTwoFactor,
+      ipAddress,
+      userAgent,
+      rememberMe
+    );
 
     res.status(200).json({
       status: 'success',

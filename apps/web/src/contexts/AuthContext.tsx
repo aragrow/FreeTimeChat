@@ -35,7 +35,8 @@ interface AuthContextType {
   login: (
     email: string,
     password: string,
-    tenantKey?: string
+    tenantKey?: string,
+    rememberMe?: boolean
   ) => Promise<{ requires2FA?: boolean; requiresPasswordChange?: boolean; error?: string }>;
   logout: () => Promise<void>;
   verify2FA: (code: string) => Promise<{ success: boolean; error?: string }>;
@@ -204,14 +205,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (
     email: string,
     password: string,
-    tenantKey?: string
+    tenantKey?: string,
+    rememberMe?: boolean
   ): Promise<{ requires2FA?: boolean; requiresPasswordChange?: boolean; error?: string }> => {
     try {
-      const body: { email: string; password: string; tenantKey?: string; skipTwoFactor?: boolean } =
-        {
-          email,
-          password,
-        };
+      const body: {
+        email: string;
+        password: string;
+        tenantKey?: string;
+        skipTwoFactor?: boolean;
+        rememberMe?: boolean;
+      } = {
+        email,
+        password,
+        rememberMe,
+      };
 
       if (tenantKey) {
         body.tenantKey = tenantKey;

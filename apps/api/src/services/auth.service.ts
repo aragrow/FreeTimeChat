@@ -62,7 +62,8 @@ export class AuthService {
     tenantKey?: string,
     skipTwoFactor?: boolean,
     ipAddress?: string,
-    userAgent?: string
+    userAgent?: string,
+    rememberMe?: boolean
   ): Promise<LoginResponse> {
     // Find user by email with customer relation
     const user = await this.prisma.user.findUnique({
@@ -221,6 +222,11 @@ export class AuthService {
         roles: roles.length > 0 ? roles : ['user'],
         tenantId: user.tenantId || 'system',
         databaseName: user.tenant?.databaseName || 'freetimechat_client_dev',
+        // Extended expiry when "Remember me" is checked
+        ...(rememberMe && {
+          customAccessExpiry: '1h', // 1 hour instead of 15m
+          customRefreshExpiry: '30d', // 30 days instead of 7d
+        }),
       },
       familyId
     );
