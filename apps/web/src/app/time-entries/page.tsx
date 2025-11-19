@@ -489,7 +489,7 @@ export default function TimeEntriesPage() {
                     {canUseClock && (
                       <Button
                         onClick={isClockedIn ? handleClockOut : handleClockIn}
-                        variant={isClockedIn ? 'destructive' : 'default'}
+                        variant={isClockedIn ? 'danger' : 'primary'}
                       >
                         <svg
                           className="w-5 h-5 mr-2"
@@ -786,10 +786,14 @@ export default function TimeEntriesPage() {
                       icon="clock"
                       title="No time entries yet"
                       description="Start tracking time by creating your first time entry or use the chat to log time naturally."
-                      actionLabel="Add Time Entry"
-                      onAction={() => router.push('/time-entries/new')}
-                      secondaryActionLabel="Go to Chat"
-                      onSecondaryAction={() => router.push('/chat')}
+                      action={{
+                        label: 'Add Time Entry',
+                        onClick: () => router.push('/time-entries/new'),
+                      }}
+                      secondaryAction={{
+                        label: 'Go to Chat',
+                        onClick: () => router.push('/chat'),
+                      }}
                     />
                   </Card>
                 ) : (

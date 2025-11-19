@@ -124,7 +124,9 @@ export class GeminiProvider extends BaseLLMProvider {
       );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
         throw new LLMError(
           errorData.error?.message || `API request failed: ${response.statusText}`,
           this.getProviderName(),
@@ -133,7 +135,7 @@ export class GeminiProvider extends BaseLLMProvider {
         );
       }
 
-      const data: GeminiResponse = await response.json();
+      const data = (await response.json()) as GeminiResponse;
 
       const candidate = data.candidates[0];
       if (!candidate) {
@@ -195,7 +197,9 @@ export class GeminiProvider extends BaseLLMProvider {
       );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
         throw new LLMError(
           errorData.error?.message || `API request failed: ${response.statusText}`,
           this.getProviderName(),
@@ -270,24 +274,35 @@ export class GeminiProvider extends BaseLLMProvider {
   }
 
   private convertMessages(messages: LLMMessage[]): GeminiContent[] {
+    // Import extractTextContent locally to avoid circular dependency issues
+    const extractText = (content: string | import('../types').LLMContentPart[]): string => {
+      if (typeof content === 'string') return content;
+      return content
+        .filter((part): part is import('../types').LLMTextContentPart => part.type === 'text')
+        .map((part) => part.text)
+        .join('\n');
+    };
+
     // Gemini doesn't have a separate system role, merge system messages into user message
     const converted: GeminiContent[] = [];
     let systemMessage = '';
 
     for (const msg of messages) {
-      if (msg.role === LLMRole.SYSTEM) {
-        systemMessage += `${msg.content}\n`;
-      } else if (msg.role === LLMRole.USER) {
-        const content = systemMessage ? systemMessage + msg.content : msg.content;
+      const msgRole = String(msg.role);
+      if (msgRole === LLMRole.SYSTEM || msgRole === 'system') {
+        systemMessage += `${extractText(msg.content)}\n`;
+      } else if (msgRole === LLMRole.USER || msgRole === 'user') {
+        const textContent = extractText(msg.content);
+        const content = systemMessage ? systemMessage + textContent : textContent;
         converted.push({
           role: 'user',
           parts: [{ text: content }],
         });
         systemMessage = '';
-      } else if (msg.role === LLMRole.ASSISTANT) {
+      } else {
         converted.push({
           role: 'model',
-          parts: [{ text: msg.content }],
+          parts: [{ text: extractText(msg.content) }],
         });
       }
     }

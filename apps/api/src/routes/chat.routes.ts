@@ -20,6 +20,7 @@ import {
   getRatingsSchema,
   getRatingAnalyticsSchema,
 } from '../validation/rating.validation';
+import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -180,7 +181,7 @@ router.post(
       const { messageId } = req.params;
       const { ratingType, rating, feedback, metadata } = req.body;
 
-      const ratingService = new RatingService(req.clientDb);
+      const ratingService = new RatingService(req.clientDb as ClientPrismaClient);
 
       // Use getOrCreateRating to prevent duplicates and allow updates
       const result = await ratingService.getOrCreateRating({
@@ -225,7 +226,7 @@ router.get(
       }
 
       const { messageId } = req.params;
-      const ratingService = new RatingService(req.clientDb);
+      const ratingService = new RatingService(req.clientDb as ClientPrismaClient);
 
       const ratings = await ratingService.getRatingsByMessage(messageId);
 
@@ -260,7 +261,7 @@ router.get(
         return;
       }
 
-      const ratingService = new RatingService(req.clientDb);
+      const ratingService = new RatingService(req.clientDb as ClientPrismaClient);
       const analytics = await ratingService.getRatingAnalytics();
 
       res.json({

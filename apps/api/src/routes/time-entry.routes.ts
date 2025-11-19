@@ -24,6 +24,7 @@ import {
   totalHoursReportSchema,
   updateTimeEntrySchema,
 } from '../validation/time-entry.validation';
+import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -49,7 +50,7 @@ router.post('/', validate(createTimeEntrySchema), async (req: Request, res: Resp
       return;
     }
 
-    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
 
     // Check for overlaps if endTime is provided
     if (endTime) {
@@ -108,7 +109,7 @@ router.post('/start', validate(startTimeEntrySchema), async (req: Request, res: 
       return;
     }
 
-    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
     const timeEntry = await timeEntryService.start({
       userId: req.user.sub,
       projectId,
@@ -142,7 +143,7 @@ router.post('/:id/stop', validate(stopTimeEntrySchema), async (req: Request, res
 
     const { id } = req.params;
 
-    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
     const timeEntry = await timeEntryService.stop(id);
 
     res.json({
@@ -170,7 +171,7 @@ router.get('/active', async (req: Request, res: Response) => {
       return;
     }
 
-    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
     const activeEntry = await timeEntryService.findActiveByUserId(req.user.sub);
 
     res.json({
@@ -209,7 +210,7 @@ router.get('/', validate(listTimeEntriesSchema), async (req: Request, res: Respo
 
     const skip = (page - 1) * limit;
 
-    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
     const [timeEntries, total] = await Promise.all([
       timeEntryService.list({
         skip,
@@ -255,7 +256,7 @@ router.get('/:id', validate(getTimeEntryByIdSchema), async (req: Request, res: R
 
     const { id } = req.params;
 
-    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
     const timeEntry = await timeEntryService.getById(id);
 
     if (!timeEntry) {
@@ -293,7 +294,7 @@ router.patch('/:id', validate(updateTimeEntrySchema), async (req: Request, res: 
     const { id } = req.params;
     const { description, startTime, endTime, duration } = req.body;
 
-    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
 
     // Check if time entry exists
     const existing = await timeEntryService.getById(id);
@@ -358,7 +359,7 @@ router.delete('/:id', validate(deleteTimeEntrySchema), async (req: Request, res:
     const { id } = req.params;
     const permanent = req.query.permanent === 'true';
 
-    const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
 
     // Check if time entry exists
     const existing = await timeEntryService.getById(id);
@@ -409,7 +410,10 @@ router.post(
 
       const { id } = req.params;
 
-      const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
+      const timeEntryService = new TimeEntryService(
+        req.clientDb as ClientPrismaClient,
+        req.mainDb!
+      );
       const restored = await timeEntryService.restore(id);
 
       res.json({
@@ -452,7 +456,10 @@ router.get(
         return;
       }
 
-      const timeEntryService = new TimeEntryService(req.clientDb, req.mainDb!);
+      const timeEntryService = new TimeEntryService(
+        req.clientDb as ClientPrismaClient,
+        req.mainDb!
+      );
       const totalHours = await timeEntryService.getTotalHours(req.user.sub, startDate, endDate);
 
       res.json({
@@ -491,7 +498,7 @@ router.get(
       const startDate = new Date(req.query.startDate as string);
       const endDate = new Date(req.query.endDate as string);
 
-      const overtimeService = new OvertimeCalculationService(req.clientDb);
+      const overtimeService = new OvertimeCalculationService(req.clientDb as ClientPrismaClient);
       const summary = await overtimeService.getOvertimeSummary(req.user.sub, startDate, endDate);
 
       res.json({
@@ -555,7 +562,7 @@ router.post(
 
       const compensationType = user.compensationType || 'HOURLY';
 
-      const overtimeService = new OvertimeCalculationService(req.clientDb);
+      const overtimeService = new OvertimeCalculationService(req.clientDb as ClientPrismaClient);
       const updatedCount = await overtimeService.recalculateWeekOvertime(
         userId,
         weekStart,
@@ -601,7 +608,7 @@ router.get(
       const projectId = req.query.projectId as string;
 
       // Get time entries with billability information
-      const entries = await req.clientDb.timeEntry.findMany({
+      const entries = await (req.clientDb as ClientPrismaClient).timeEntry.findMany({
         where: {
           userId,
           ...(projectId && { projectId }),
@@ -628,30 +635,59 @@ router.get(
       });
 
       // Calculate totals
-      const billableEntries = entries.filter((e) => e.isBillable);
-      const nonBillableEntries = entries.filter((e) => !e.isBillable);
+      const billableEntries = entries.filter((e: { isBillable: boolean }) => e.isBillable);
+      const nonBillableEntries = entries.filter((e: { isBillable: boolean }) => !e.isBillable);
 
-      const billableHours = billableEntries.reduce((sum, e) => {
-        const hours = e.duration ? e.duration / 3600 : 0;
-        return sum + hours;
-      }, 0);
+      const billableHours = billableEntries.reduce(
+        (sum: number, e: { duration: number | null }) => {
+          const hours = e.duration ? e.duration / 3600 : 0;
+          return sum + hours;
+        },
+        0
+      );
 
-      const nonBillableHours = nonBillableEntries.reduce((sum, e) => {
-        const hours = e.duration ? e.duration / 3600 : 0;
-        return sum + hours;
-      }, 0);
+      const nonBillableHours = nonBillableEntries.reduce(
+        (sum: number, e: { duration: number | null }) => {
+          const hours = e.duration ? e.duration / 3600 : 0;
+          return sum + hours;
+        },
+        0
+      );
 
-      const billableRegularHours = billableEntries.reduce((sum, e) => {
-        return sum + (e.regularHours ? parseFloat(e.regularHours.toString()) : 0);
-      }, 0);
+      const billableRegularHours = billableEntries.reduce(
+        (sum: number, e: { regularHours: unknown }) => {
+          return sum + (e.regularHours ? parseFloat(e.regularHours.toString()) : 0);
+        },
+        0
+      );
 
-      const billableOvertimeHours = billableEntries.reduce((sum, e) => {
-        return sum + (e.overtimeHours ? parseFloat(e.overtimeHours.toString()) : 0);
-      }, 0);
+      const billableOvertimeHours = billableEntries.reduce(
+        (sum: number, e: { overtimeHours: unknown }) => {
+          return sum + (e.overtimeHours ? parseFloat(e.overtimeHours.toString()) : 0);
+        },
+        0
+      );
 
       // Group by project
       const byProject = entries.reduce(
-        (acc, entry) => {
+        (
+          acc: Record<
+            string,
+            {
+              projectId: string;
+              projectName: string;
+              billableHours: number;
+              nonBillableHours: number;
+              totalHours: number;
+            }
+          >,
+          entry: {
+            projectId: string;
+            project: { name: string };
+            duration: number | null;
+            isBillable: boolean;
+          }
+        ) => {
           const key = entry.projectId;
           if (!acc[key]) {
             acc[key] = {

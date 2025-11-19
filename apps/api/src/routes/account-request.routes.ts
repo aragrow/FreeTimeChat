@@ -185,7 +185,7 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       status: 'success',
       message:
         'Thank you for your request! We will review your application and get back to you within 1-2 business days.',
@@ -195,7 +195,7 @@ router.post('/', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error creating account request:', error);
-    res.status(500).json({
+    return res.status(500).json({
       status: 'error',
       message: 'Failed to submit account request. Please try again later.',
     });

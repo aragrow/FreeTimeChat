@@ -16,6 +16,7 @@ import {
   listProjectsSchema,
   updateProjectSchema,
 } from '../../validation/project.validation';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -34,21 +35,20 @@ router.post('/', validate(createProjectSchema), async (req: Request, res: Respon
       return;
     }
 
-    const { name, description, clientId, hourlyRate, isBillable, allocatedHours } = req.body;
+    const { name, description, clientId, isBillableProject, defaultBillable } = req.body;
 
     if (!name) {
       res.status(400).json({ status: 'error', message: 'Project name is required' });
       return;
     }
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
     const project = await projectService.create({
       name,
       description,
-      clientId: clientId && clientId.trim() !== '' ? clientId : undefined,
-      hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
-      isBillable: isBillable ?? true,
-      allocatedHours: allocatedHours ? parseFloat(allocatedHours) : undefined,
+      clientId: clientId && clientId.trim() !== '' ? clientId : '',
+      isBillableProject: isBillableProject ?? true,
+      defaultBillable: defaultBillable ?? true,
     });
 
     res.status(201).json({
@@ -83,7 +83,7 @@ router.get('/', validate(listProjectsSchema), async (req: Request, res: Response
 
     const skip = (page - 1) * take;
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
     const projects = await projectService.list({
       skip,
       take,
@@ -124,7 +124,7 @@ router.get('/:id', validate(getProjectByIdSchema), async (req: Request, res: Res
 
     const { id } = req.params;
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
     const project = await projectService.getById(id);
 
     if (!project) {
@@ -154,10 +154,9 @@ router.put('/:id', validate(updateProjectSchema), async (req: Request, res: Resp
     }
 
     const { id } = req.params;
-    const { name, description, isActive, clientId, hourlyRate, isBillable, allocatedHours } =
-      req.body;
+    const { name, description, isActive, isBillableProject, defaultBillable } = req.body;
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
 
     // Check if project exists
     const existing = await projectService.getById(id);
@@ -170,10 +169,8 @@ router.put('/:id', validate(updateProjectSchema), async (req: Request, res: Resp
       name,
       description,
       isActive,
-      clientId: clientId && clientId.trim() !== '' ? clientId : undefined,
-      hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
-      isBillable,
-      allocatedHours: allocatedHours ? parseFloat(allocatedHours) : undefined,
+      isBillableProject,
+      defaultBillable,
     });
 
     res.json({
@@ -200,7 +197,7 @@ router.delete('/:id', validate(deleteProjectSchema), async (req: Request, res: R
 
     const { id } = req.params;
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
 
     // Check if project exists
     const existing = await projectService.getById(id);

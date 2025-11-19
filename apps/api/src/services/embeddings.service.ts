@@ -231,8 +231,9 @@ export class EmbeddingsService {
     }
 
     try {
-      // Try to load from database
-      const config = await this.llmConfigService.getActiveConfig(tenantId);
+      // Try to load from database using the raw config method
+      // which includes apiKeyEncrypted and embedding settings
+      const config = await this.llmConfigService.getActiveConfigRaw(tenantId);
 
       if (config && config.embeddingEnabled) {
         const apiKey = this.llmConfigService.decryptApiKey(config.apiKeyEncrypted);

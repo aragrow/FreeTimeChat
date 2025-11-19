@@ -10,6 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import multer from 'multer';
 import sharp from 'sharp';
+import type { RequestHandler } from 'express';
 
 // Configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
@@ -34,12 +35,7 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 // Image types that can have thumbnails generated
-const IMAGE_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-];
+const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export interface UploadedFile {
   originalName: string;
@@ -67,13 +63,13 @@ export class FileUploadService {
   /**
    * Get multer middleware configured for expense uploads
    */
-  getMulterMiddleware(options: { fieldName?: string; maxCount?: number } = {}) {
+  getMulterMiddleware(options: { fieldName?: string; maxCount?: number } = {}): RequestHandler {
     const { fieldName = 'file', maxCount = 1 } = options;
 
     const storage = multer.memoryStorage(); // Use memory storage for processing
 
     const fileFilter = (
-      req: Express.Request,
+      _req: Express.Request,
       file: Express.Multer.File,
       cb: multer.FileFilterCallback
     ) => {

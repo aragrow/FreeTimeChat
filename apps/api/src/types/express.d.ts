@@ -7,6 +7,7 @@
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 import type { JWTPayload } from '@freetimechat/types';
+import type { Request } from 'express';
 
 declare global {
   namespace Express {
@@ -23,4 +24,11 @@ declare global {
   }
 }
 
-export {};
+/**
+ * Request type with required authenticated user
+ */
+export interface AuthenticatedRequest extends Request {
+  user: JWTPayload;
+  clientDb: ClientPrismaClient | MainPrismaClient;
+  mainDb: MainPrismaClient;
+}

@@ -6,7 +6,6 @@
 
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Conversation } from '../generated/prisma-client';
-import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
 export interface CreateConversationData {
   userId: string;
@@ -26,7 +25,7 @@ export interface ListConversationsOptions {
 }
 
 export class ConversationService {
-  constructor(private prisma: ClientPrismaClient | MainPrismaClient) {}
+  constructor(private prisma: ClientPrismaClient) {}
 
   /**
    * Start a new conversation

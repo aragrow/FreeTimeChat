@@ -115,7 +115,6 @@ export class SQLSecurityService {
    */
   private detectSQLInjection(sql: string): { isSafe: boolean; issues: SecurityIssue[] } {
     const issues: SecurityIssue[] = [];
-    const _sqlUpper = sql.toUpperCase();
 
     // Common SQL injection patterns
     const injectionPatterns = [
@@ -244,24 +243,17 @@ export class SQLSecurityService {
     let confidence = 100;
     const sqlUpper = sql.toUpperCase();
 
-    // Determine allowed operations by role
-    const _allowedOperations: Record<UserRole, string[]> = {
-      admin: ['SELECT'], // Admin: Only SELECT, limited to tenant data
-      tenantadmin: ['SELECT'], // Tenant Admin: Only SELECT, limited to tenant data
-      user: ['SELECT', 'UPDATE'], // User: SELECT and UPDATE, only their own data
-    };
-
     // Check if operation is allowed for this role
     const isSelect = sqlUpper.trim().startsWith('SELECT');
     const isUpdate = sqlUpper.trim().startsWith('UPDATE');
     const isInsert = sqlUpper.trim().startsWith('INSERT');
 
-    if (userRole === 'admin' || userRole === 'tenantadmin') {
+    if (_userRole === 'admin' || _userRole === 'tenantadmin') {
       if (!isSelect) {
         issues.push({
           severity: 'critical',
           type: 'RBAC_VIOLATION',
-          message: `Role '${userRole}' can only execute SELECT statements`,
+          message: `Role '${_userRole}' can only execute SELECT statements`,
           detectedPattern: sql.substring(0, 50),
         });
         confidence = 0;
@@ -269,7 +261,7 @@ export class SQLSecurityService {
 
       // Admin and tenantadmin must have tenant filtering
       // We'll check this in the WHERE clause validation
-    } else if (userRole === 'user') {
+    } else if (_userRole === 'user') {
       if (!isSelect && !isUpdate) {
         issues.push({
           severity: 'critical',

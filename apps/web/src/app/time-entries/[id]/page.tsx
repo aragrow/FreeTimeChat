@@ -248,7 +248,7 @@ export default function TimeEntryDetailPage() {
                   {entry.isBillable ? (
                     <Badge variant="success">Billable</Badge>
                   ) : (
-                    <Badge variant="secondary">Non-Billable</Badge>
+                    <Badge variant="default">Non-Billable</Badge>
                   )}
                   {!entry.endTime && (
                     <Badge variant="primary" className="ml-2">

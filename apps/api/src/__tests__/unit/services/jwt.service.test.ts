@@ -109,7 +109,14 @@ describe('JWTService', () => {
       const role = 'user';
       const clientId = 'client-456';
 
-      const token = jwtService.signAccessToken({ userId, email, role, clientId });
+      const token = jwtService.signAccessToken({
+        userId,
+        email,
+        role,
+        tenantId: clientId,
+        roles: [role],
+        databaseName: 'test_db',
+      });
       const decoded = jwtService.verifyAccessToken(token);
 
       expect(decoded.sub).toBe(userId);

@@ -7,6 +7,7 @@
 
 import { Router } from 'express';
 import { PrismaClient as MainPrismaClient } from '../../generated/prisma-main';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -26,7 +27,8 @@ router.get('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const configs = await req.clientDb.payPalTenantConfig.findMany({
+    const clientDb = req.clientDb as ClientPrismaClient;
+    const configs = await clientDb.payPalTenantConfig.findMany({
       orderBy: { createdAt: 'desc' },
     });
 
@@ -171,8 +173,9 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    const clientDb = req.clientDb as ClientPrismaClient;
     // Check if config already exists
-    const existing = await req.clientDb.payPalTenantConfig.findFirst({
+    const existing = await clientDb.payPalTenantConfig.findFirst({
       where: { paypalIntegrationId },
     });
 
@@ -180,7 +183,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     if (existing) {
       // Update existing
-      config = await req.clientDb.payPalTenantConfig.update({
+      config = await clientDb.payPalTenantConfig.update({
         where: { id: existing.id },
         data: {
           isEnabled: isEnabled !== undefined ? isEnabled : existing.isEnabled,
@@ -198,7 +201,7 @@ router.post('/', async (req: Request, res: Response) => {
       });
     } else {
       // Create new
-      config = await req.clientDb.payPalTenantConfig.create({
+      config = await clientDb.payPalTenantConfig.create({
         data: {
           paypalIntegrationId,
           isEnabled: isEnabled !== undefined ? isEnabled : true,
@@ -251,8 +254,9 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
+    const clientDb = req.clientDb as ClientPrismaClient;
 
-    const existing = await req.clientDb.payPalTenantConfig.findUnique({
+    const existing = await clientDb.payPalTenantConfig.findUnique({
       where: { id },
     });
 
@@ -264,7 +268,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    await req.clientDb.payPalTenantConfig.delete({
+    await clientDb.payPalTenantConfig.delete({
       where: { id },
     });
 

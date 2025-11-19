@@ -4,28 +4,32 @@
  * Phase 5: Validation for rating endpoints
  */
 
-import Joi from 'joi';
+import { z } from 'zod';
 
-export const createRatingSchema = Joi.object({
-  body: Joi.object({
-    ratingType: Joi.string().valid('PREVIEW', 'REPORT').required(),
-    rating: Joi.string().valid('BAD', 'OK', 'GOOD').required(),
-    feedback: Joi.string().max(2000).optional().allow(''),
-    metadata: Joi.object().optional(),
+export const createRatingSchema = z.object({
+  body: z.object({
+    ratingType: z.enum(['PREVIEW', 'REPORT']),
+    rating: z.enum(['BAD', 'OK', 'GOOD']),
+    feedback: z.string().max(2000).optional(),
+    metadata: z.record(z.string(), z.any()).optional(),
   }),
-  params: Joi.object({
-    messageId: Joi.string().uuid().required(),
+  params: z.object({
+    messageId: z.string().uuid(),
   }),
 });
 
-export const getRatingsSchema = Joi.object({
-  params: Joi.object({
-    messageId: Joi.string().uuid().required(),
+export const getRatingsSchema = z.object({
+  params: z.object({
+    messageId: z.string().uuid(),
   }),
 });
 
-export const getRatingAnalyticsSchema = Joi.object({
-  query: Joi.object({
-    ratingType: Joi.string().valid('PREVIEW', 'REPORT').optional(),
+export const getRatingAnalyticsSchema = z.object({
+  query: z.object({
+    ratingType: z.enum(['PREVIEW', 'REPORT']).optional(),
   }),
 });
+
+export type CreateRatingInput = z.infer<typeof createRatingSchema>;
+export type GetRatingsInput = z.infer<typeof getRatingsSchema>;
+export type GetRatingAnalyticsInput = z.infer<typeof getRatingAnalyticsSchema>;

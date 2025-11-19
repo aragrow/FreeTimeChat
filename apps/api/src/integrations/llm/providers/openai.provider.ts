@@ -7,6 +7,7 @@
 import { BaseLLMProvider } from '../base-provider';
 import { LLMError, LLMRole } from '../types';
 import type {
+  LLMContentPart,
   LLMMessage,
   LLMProviderCapabilities,
   LLMProviderConfig,
@@ -17,7 +18,7 @@ import type {
 
 interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: string | LLMContentPart[];
   name?: string;
 }
 
@@ -147,7 +148,9 @@ export class OpenAIProvider extends BaseLLMProvider {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
         throw new LLMError(
           errorData.error?.message || `API request failed: ${response.statusText}`,
           this.getProviderName(),
@@ -156,7 +159,7 @@ export class OpenAIProvider extends BaseLLMProvider {
         );
       }
 
-      const data: OpenAIResponse = await response.json();
+      const data = (await response.json()) as OpenAIResponse;
 
       return {
         content: data.choices[0]?.message.content || '',
@@ -212,7 +215,9 @@ export class OpenAIProvider extends BaseLLMProvider {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
         throw new LLMError(
           errorData.error?.message || `API request failed: ${response.statusText}`,
           this.getProviderName(),

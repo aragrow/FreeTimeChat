@@ -5,10 +5,11 @@
  */
 
 import { Router } from 'express';
-import type { Request, Response } from 'express';
 import { getExpenseService } from '../../services/expense.service';
 import { getFileUploadService } from '../../services/file-upload.service';
 import { getReceiptParserService } from '../../services/receipt-parser.service';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
+import type { Request, Response } from 'express';
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.get('/categories', async (req: Request, res: Response) => {
       return;
     }
 
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
     const includeInactive = req.query.includeInactive === 'true';
     const categories = await expenseService.listCategories(includeInactive);
 
@@ -57,7 +58,7 @@ router.post('/categories', async (req: Request, res: Response) => {
       return;
     }
 
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
     const category = await expenseService.createCategory({
       name: name.trim(),
       description: description?.trim(),
@@ -90,7 +91,7 @@ router.put('/categories/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, description, icon, color } = req.body;
 
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
     const category = await expenseService.updateCategory(id, {
       name: name?.trim(),
       description: description?.trim(),
@@ -121,7 +122,7 @@ router.delete('/categories/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
 
     await expenseService.deleteCategory(id);
 
@@ -150,7 +151,7 @@ router.post('/categories/seed', async (req: Request, res: Response) => {
       return;
     }
 
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
     await expenseService.seedCategories();
 
     res.status(200).json({
@@ -198,7 +199,7 @@ router.get('/', async (req: Request, res: Response) => {
     const orderBy = (req.query.orderBy as 'date' | 'amount' | 'created') || 'date';
     const orderDir = (req.query.orderDir as 'asc' | 'desc') || 'desc';
 
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
     const { expenses, total } = await expenseService.list({
       filter,
       skip,
@@ -242,7 +243,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     if (req.query.clientId) filter.clientId = req.query.clientId as string;
     if (req.query.projectId) filter.projectId = req.query.projectId as string;
 
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
     const stats = await expenseService.getStats(filter);
 
     res.status(200).json({
@@ -267,7 +268,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
     const expense = await expenseService.findById(id);
 
     if (!expense) {
@@ -328,7 +329,7 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
     const expense = await expenseService.createExpense(
       {
         description: description.trim(),
@@ -373,7 +374,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
 
     // Check if expense exists
     const existing = await expenseService.findById(id);
@@ -445,7 +446,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
 
     const existing = await expenseService.findById(id);
     if (!existing) {
@@ -479,7 +480,7 @@ router.post('/:id/approve', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
 
     const expense = await expenseService.approve(id, req.user.sub);
 
@@ -507,7 +508,7 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
 
     const { id } = req.params;
     const { reason } = req.body;
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
 
     const expense = await expenseService.reject(id, req.user.sub, reason);
 
@@ -534,7 +535,7 @@ router.post('/:id/reimburse', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
 
     const expense = await expenseService.markReimbursed(id, req.user.sub);
 
@@ -580,7 +581,7 @@ router.post('/:id/attachments', async (req: Request, res: Response) => {
       }
 
       const { id } = req.params;
-      const expenseService = getExpenseService(req.clientDb!);
+      const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
 
       // Verify expense exists
       const expense = await expenseService.findById(id);
@@ -636,11 +637,11 @@ router.delete('/:id/attachments/:attachmentId', async (req: Request, res: Respon
     }
 
     const { attachmentId } = req.params;
-    const expenseService = getExpenseService(req.clientDb);
+    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
 
     // Get attachment to delete file
     const attachments = await expenseService.getAttachments(req.params.id);
-    const attachment = attachments.find(a => a.id === attachmentId);
+    const attachment = attachments.find((a) => a.id === attachmentId);
 
     if (attachment) {
       // Delete file from storage
@@ -705,11 +706,11 @@ router.post('/parse-receipt', async (req: Request, res: Response) => {
 
         // Match category if found
         if (parsedData.category) {
-          const expenseService = getExpenseService(req.clientDb!);
+          const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
           const categories = await expenseService.listCategories();
           const categoryId = await receiptParser.matchCategory(parsedData.category, categories);
           if (categoryId) {
-            (parsedData as Record<string, unknown>).categoryId = categoryId;
+            (parsedData as unknown as Record<string, unknown>).categoryId = categoryId;
           }
         }
 
@@ -770,7 +771,7 @@ router.post('/create-from-receipt', async (req: Request, res: Response) => {
       }
 
       try {
-        const expenseService = getExpenseService(req.clientDb!);
+        const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
         const receiptParser = getReceiptParserService();
 
         // Parse receipt
@@ -790,14 +791,14 @@ router.post('/create-from-receipt', async (req: Request, res: Response) => {
 
         // Fall back to Miscellaneous if no category matched
         if (!categoryId) {
-          const miscCategory = categories.find(c => c.name === 'Miscellaneous');
+          const miscCategory = categories.find((c) => c.name === 'Miscellaneous');
           categoryId = miscCategory?.id || categories[0]?.id;
         }
 
         if (!categoryId) {
           res.status(400).json({
             status: 'error',
-            message: 'No expense categories available. Please seed categories first.'
+            message: 'No expense categories available. Please seed categories first.',
           });
           return;
         }
@@ -817,7 +818,7 @@ router.post('/create-from-receipt', async (req: Request, res: Response) => {
             paymentMethod: parsedData.paymentMethod,
             reference: parsedData.reference,
             taxAmount: parsedData.taxAmount,
-            ocrData: parsedData as Record<string, unknown>,
+            ocrData: parsedData as unknown as Record<string, unknown>,
             aiConfidence: parsedData.confidence,
           },
           req.user!.sub

@@ -17,6 +17,7 @@ import {
   restoreProjectSchema,
   updateProjectSchema,
 } from '../validation/project.validation';
+import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -42,7 +43,7 @@ router.post('/', validate(createProjectSchema), async (req: Request, res: Respon
       return;
     }
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
     const project = await projectService.create({
       name,
       description,
@@ -84,7 +85,7 @@ router.get('/', validate(listProjectsSchema), async (req: Request, res: Response
 
     const skip = (page - 1) * limit;
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
     const [projects, total] = await Promise.all([
       projectService.list({ skip, take: limit, isActive, includeDeleted }),
       projectService.count(isActive, includeDeleted),
@@ -119,7 +120,7 @@ router.get('/:id', validate(getProjectByIdSchema), async (req: Request, res: Res
 
     const { id } = req.params;
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
     const project = await projectService.getById(id);
 
     if (!project) {
@@ -157,7 +158,7 @@ router.patch('/:id', validate(updateProjectSchema), async (req: Request, res: Re
     const { id } = req.params;
     const { name, description, isActive, startDate, endDate } = req.body;
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
 
     // Check if project exists
     const existing = await projectService.getById(id);
@@ -199,7 +200,7 @@ router.delete('/:id', validate(deleteProjectSchema), async (req: Request, res: R
     const { id } = req.params;
     const permanent = req.query.permanent === 'true';
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
 
     // Check if project exists
     const existing = await projectService.getById(id);
@@ -241,7 +242,7 @@ router.post('/:id/restore', validate(restoreProjectSchema), async (req: Request,
 
     const { id } = req.params;
 
-    const projectService = new ProjectService(req.clientDb);
+    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
     const restored = await projectService.restore(id);
 
     res.json({

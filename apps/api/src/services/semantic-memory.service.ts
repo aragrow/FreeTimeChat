@@ -15,7 +15,6 @@
 import { embeddingsService } from './embeddings.service';
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Message } from '../generated/prisma-client';
-import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
 export interface EmbeddingMetadata {
   messageId: string;
@@ -40,7 +39,7 @@ export interface SemanticSearchResult {
 }
 
 export class SemanticMemoryService {
-  constructor(private prisma: ClientPrismaClient | MainPrismaClient) {}
+  constructor(private prisma: ClientPrismaClient) {}
 
   /**
    * Generate embedding for text using tenant-specific or system-wide provider

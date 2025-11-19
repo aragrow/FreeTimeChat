@@ -18,6 +18,7 @@ import {
   removeUserFromProjectSchema,
   updateMemberBillabilitySchema,
 } from '../validation/project-member.validation';
+import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 
 const router: Router = Router();
 
@@ -39,7 +40,7 @@ router.post('/:id/members', validate(assignUserToProjectSchema), async (req, res
     const { id: projectId } = req.params;
     const { userId, isBillable } = req.body;
 
-    const service = new ProjectMemberService(req.clientDb);
+    const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
     const member = await service.assignUserToProject({
       projectId,
       userId,
@@ -70,7 +71,7 @@ router.post('/:id/members/bulk', validate(bulkAssignUsersSchema), async (req, re
     const { id: projectId } = req.params;
     const { userIds, isBillable } = req.body;
 
-    const service = new ProjectMemberService(req.clientDb);
+    const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
     const count = await service.bulkAssignUsers(projectId, userIds, isBillable);
 
     res.status(201).json({
@@ -98,7 +99,7 @@ router.get('/:id/members', validate(getProjectMembersSchema), async (req, res, n
 
     const { id: projectId } = req.params;
 
-    const service = new ProjectMemberService(req.clientDb);
+    const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
     const members = await service.getProjectMembers(projectId);
 
     res.json({
@@ -128,7 +129,7 @@ router.patch(
       const { id: projectId, userId } = req.params;
       const { isBillable } = req.body;
 
-      const service = new ProjectMemberService(req.clientDb);
+      const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
       const member = await service.setUserBillability(projectId, userId, { isBillable });
 
       res.json({
@@ -158,7 +159,7 @@ router.delete(
 
       const { id: projectId, userId } = req.params;
 
-      const service = new ProjectMemberService(req.clientDb);
+      const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
       await service.removeUserFromProject(projectId, userId);
 
       res.status(204).send();
@@ -182,7 +183,7 @@ router.get('/users/:userId/projects', validate(getUserProjectsSchema), async (re
 
     const { userId } = req.params;
 
-    const service = new ProjectMemberService(req.clientDb);
+    const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
     const projects = await service.getUserProjects(userId);
 
     res.json({
@@ -211,7 +212,7 @@ router.get(
 
       const { id: projectId, userId } = req.params;
 
-      const service = new ProjectMemberService(req.clientDb);
+      const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
       const effectiveBillability = await service.getEffectiveBillability(projectId, userId);
 
       res.json({

@@ -6,7 +6,6 @@
 
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Message, MessageRole } from '../generated/prisma-client';
-import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
 export interface AddMessageData {
   conversationId: string;
@@ -30,7 +29,7 @@ export interface GetMessagesOptions {
 }
 
 export class MessageService {
-  constructor(private prisma: ClientPrismaClient | MainPrismaClient) {}
+  constructor(private prisma: ClientPrismaClient) {}
 
   /**
    * Add a message to a conversation

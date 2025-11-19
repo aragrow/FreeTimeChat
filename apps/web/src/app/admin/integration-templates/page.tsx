@@ -45,7 +45,7 @@ const CATEGORIES = [
 const FIELD_TYPES = ['string', 'number', 'boolean', 'password', 'url', 'email'];
 
 export default function IntegrationTemplatesPage() {
-  const { token } = useAuth();
+  const { getAuthHeaders } = useAuth();
   const [templates, setTemplates] = useState<IntegrationTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -75,7 +75,7 @@ export default function IntegrationTemplatesPage() {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/integration-templates`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: getAuthHeaders(),
         }
       );
       const data = await response.json();
@@ -137,8 +137,8 @@ export default function IntegrationTemplatesPage() {
       const response = await fetch(url, {
         method,
         headers: {
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -205,7 +205,7 @@ export default function IntegrationTemplatesPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/integration-templates/${id}`,
         {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: getAuthHeaders(),
         }
       );
 

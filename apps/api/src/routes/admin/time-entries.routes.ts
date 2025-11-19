@@ -6,6 +6,7 @@
  */
 
 import { Router } from 'express';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -65,7 +66,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     const [entries, total] = await Promise.all([
-      req.clientDb.timeEntry.findMany({
+      (req.clientDb as ClientPrismaClient).timeEntry.findMany({
         where,
         include: {
           project: {
@@ -82,7 +83,7 @@ router.get('/', async (req: Request, res: Response) => {
         skip,
         take,
       }),
-      req.clientDb.timeEntry.count({ where }),
+      (req.clientDb as ClientPrismaClient).timeEntry.count({ where }),
     ]);
 
     res.status(200).json({
@@ -122,7 +123,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     const { id } = req.params;
 
-    const entry = await req.clientDb.timeEntry.findUnique({
+    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.findUnique({
       where: { id },
       include: {
         project: {
@@ -222,7 +223,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Verify project exists
-    const project = await req.clientDb.project.findUnique({
+    const project = await (req.clientDb as ClientPrismaClient).project.findUnique({
       where: { id: projectId },
     });
 
@@ -243,7 +244,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Create time entry
-    const entry = await req.clientDb.timeEntry.create({
+    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.create({
       data: {
         userId: entryUserId,
         projectId,
@@ -316,7 +317,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     } = req.body;
 
     // Check if entry exists
-    const existingEntry = await req.clientDb.timeEntry.findUnique({
+    const existingEntry = await (req.clientDb as ClientPrismaClient).timeEntry.findUnique({
       where: { id },
     });
 
@@ -346,7 +347,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
     if (projectId !== undefined) {
       // Verify project exists
-      const project = await req.clientDb.project.findUnique({
+      const project = await (req.clientDb as ClientPrismaClient).project.findUnique({
         where: { id: projectId },
       });
       if (!project) {
@@ -383,7 +384,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (isBillable !== undefined) updateData.isBillable = isBillable;
 
     // Update time entry
-    const entry = await req.clientDb.timeEntry.update({
+    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.update({
       where: { id },
       data: updateData,
       include: {
@@ -428,7 +429,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
 
     // Check if entry exists
-    const existingEntry = await req.clientDb.timeEntry.findUnique({
+    const existingEntry = await (req.clientDb as ClientPrismaClient).timeEntry.findUnique({
       where: { id },
     });
 
@@ -462,7 +463,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     // Soft delete entry
-    const entry = await req.clientDb.timeEntry.update({
+    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.update({
       where: { id },
       data: {
         deletedAt: new Date(),
@@ -508,7 +509,7 @@ router.post('/:id/start', async (req: Request, res: Response) => {
     }
 
     // Verify project exists
-    const project = await req.clientDb.project.findUnique({
+    const project = await (req.clientDb as ClientPrismaClient).project.findUnique({
       where: { id: projectId },
     });
 
@@ -521,7 +522,7 @@ router.post('/:id/start', async (req: Request, res: Response) => {
     }
 
     // Create time entry with start time only
-    const entry = await req.clientDb.timeEntry.create({
+    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.create({
       data: {
         userId: req.user.sub,
         projectId,
@@ -571,7 +572,7 @@ router.post('/:id/stop', async (req: Request, res: Response) => {
     const { id } = req.params;
 
     // Check if entry exists
-    const existingEntry = await req.clientDb.timeEntry.findUnique({
+    const existingEntry = await (req.clientDb as ClientPrismaClient).timeEntry.findUnique({
       where: { id },
     });
 
@@ -613,7 +614,7 @@ router.post('/:id/stop', async (req: Request, res: Response) => {
     const overtimeHours = Math.max(0, totalHours - 8);
 
     // Update time entry
-    const entry = await req.clientDb.timeEntry.update({
+    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.update({
       where: { id },
       data: {
         endTime,

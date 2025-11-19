@@ -7,6 +7,7 @@
 
 import { Router } from 'express';
 import { PrismaClient as MainPrismaClient } from '../../generated/prisma-main';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -35,8 +36,9 @@ router.get('/', async (req: Request, res: Response) => {
     if (status) where.status = status as string;
     if (clientId) where.clientId = clientId as string;
 
+    const clientDb = req.clientDb as ClientPrismaClient;
     const [invoices, total] = await Promise.all([
-      req.clientDb.invoice.findMany({
+      clientDb.invoice.findMany({
         where,
         include: {
           client: {
@@ -52,7 +54,7 @@ router.get('/', async (req: Request, res: Response) => {
         skip,
         take,
       }),
-      req.clientDb.invoice.count({ where }),
+      clientDb.invoice.count({ where }),
     ]);
 
     res.status(200).json({
@@ -91,8 +93,9 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
+    const clientDb = req.clientDb as ClientPrismaClient;
 
-    const invoice = await req.clientDb.invoice.findUnique({
+    const invoice = await clientDb.invoice.findUnique({
       where: { id },
       include: {
         client: true,
@@ -158,8 +161,9 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    const clientDb = req.clientDb as ClientPrismaClient;
     // Verify client exists
-    const client = await req.clientDb.client.findUnique({
+    const client = await clientDb.client.findUnique({
       where: { id: clientId },
     });
 
@@ -184,7 +188,7 @@ router.post('/', async (req: Request, res: Response) => {
     const amountDue = totalAmount;
 
     // Create invoice
-    const invoice = await req.clientDb.invoice.create({
+    const invoice = await clientDb.invoice.create({
       data: {
         invoiceNumber,
         clientId,
@@ -226,7 +230,7 @@ router.post('/', async (req: Request, res: Response) => {
     });
 
     // Update client's next invoice number
-    await req.clientDb.client.update({
+    await clientDb.client.update({
       where: { id: clientId },
       data: { invoiceNextNumber: client.invoiceNextNumber + 1 },
     });
@@ -267,8 +271,9 @@ router.post('/:id/send-paypal', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
+    const clientDb = req.clientDb as ClientPrismaClient;
 
-    const invoice = await req.clientDb.invoice.findUnique({
+    const invoice = await clientDb.invoice.findUnique({
       where: { id },
       include: {
         client: true,
@@ -293,7 +298,7 @@ router.post('/:id/send-paypal', async (req: Request, res: Response) => {
     }
 
     // Get PayPal tenant config
-    const paypalConfig = await req.clientDb.payPalTenantConfig.findFirst({
+    const paypalConfig = await clientDb.payPalTenantConfig.findFirst({
       where: { isEnabled: true },
     });
 
@@ -468,7 +473,7 @@ router.post('/:id/send-paypal', async (req: Request, res: Response) => {
     }
 
     // Update local invoice
-    const updatedInvoice = await req.clientDb.invoice.update({
+    const updatedInvoice = await clientDb.invoice.update({
       where: { id },
       data: {
         status: 'SENT',
@@ -523,7 +528,8 @@ router.post('/:id/record-payment', async (req: Request, res: Response) => {
       return;
     }
 
-    const invoice = await req.clientDb.invoice.findUnique({
+    const clientDb = req.clientDb as ClientPrismaClient;
+    const invoice = await clientDb.invoice.findUnique({
       where: { id },
       include: { payments: true },
     });
@@ -537,7 +543,7 @@ router.post('/:id/record-payment', async (req: Request, res: Response) => {
     }
 
     // Create payment record
-    const payment = await req.clientDb.invoicePayment.create({
+    const payment = await clientDb.invoicePayment.create({
       data: {
         invoiceId: id,
         amount,
@@ -561,7 +567,7 @@ router.post('/:id/record-payment', async (req: Request, res: Response) => {
     }
 
     // Update invoice
-    const updatedInvoice = await req.clientDb.invoice.update({
+    const updatedInvoice = await clientDb.invoice.update({
       where: { id },
       data: {
         amountPaid: totalPaid,

@@ -35,7 +35,8 @@ export function useVoiceInput({
   const [error, setError] = useState<string | null>(null);
   const [isSupported, setIsSupported] = useState(false);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
 
   // Check if Web Speech API is supported
   useEffect(() => {
@@ -54,14 +55,15 @@ export function useVoiceInput({
         setError(null);
       };
 
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognition.onresult = (event: any) => {
         let finalTranscript = '';
         let interimTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
+            finalTranscript += `${transcript} `;
           } else {
             interimTranscript += transcript;
           }
@@ -75,7 +77,8 @@ export function useVoiceInput({
         }
       };
 
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognition.onerror = (event: any) => {
         let errorMessage = 'Speech recognition error';
 
         switch (event.error) {

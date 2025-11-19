@@ -7,82 +7,57 @@
 import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/permission.middleware';
-import { getClientService } from '../services/client.service';
 import { getDatabaseService } from '../services/database.service';
-import { getJWTService } from '../services/jwt.service';
+import { getTenantService } from '../services/tenant.service';
 import type { Request, Response } from 'express';
 
 const router = Router();
-const clientService = getClientService();
+const tenantService = getTenantService();
 const databaseService = getDatabaseService();
-const jwtService = getJWTService();
 
 /**
  * POST /api/v1/admin/clients
- * Create a new client (tenant) with database and admin user
+ * Create a new client (tenant)
  */
 router.post('/', authenticateJWT, requireRole('admin'), async (req: Request, res: Response) => {
   try {
-    const { name, email, adminName, adminPassword } = req.body;
+    const { name, slug, tenantKey, contactEmail } = req.body;
 
     // Validate required fields
-    if (!name || !email || !adminName || !adminPassword) {
+    if (!name || !slug || !tenantKey) {
       res.status(400).json({
         status: 'error',
         message: 'Missing required fields',
-        required: ['name', 'email', 'adminName', 'adminPassword'],
+        required: ['name', 'slug', 'tenantKey'],
       });
       return;
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Invalid email format',
-      });
-      return;
+    // Validate email format if provided
+    if (contactEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(contactEmail)) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Invalid email format',
+        });
+        return;
+      }
     }
 
-    // Validate password strength
-    if (adminPassword.length < 8) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Password must be at least 8 characters',
-      });
-      return;
-    }
-
-    // Create client
-    const result = await clientService.createClient({
+    // Create tenant
+    const tenant = await tenantService.create({
       name,
-      email,
-      adminName,
-      adminPassword,
-    });
-
-    // Generate access token for the new admin user
-    const accessToken = jwtService.signAccessToken({
-      userId: result.adminUser.id,
-      email: result.adminUser.email,
-      role: 'Admin',
-      roles: ['Admin'],
-      clientId: result.client.id,
-      databaseName: result.client.databaseName,
+      slug,
+      tenantKey,
+      contactEmail,
+      ...req.body,
     });
 
     res.status(201).json({
       status: 'success',
       data: {
-        client: {
-          id: result.client.id,
-          name: result.client.name,
-          databaseName: result.client.databaseName,
-          createdAt: result.client.createdAt,
-        },
-        adminUser: result.adminUser,
-        accessToken,
+        client: tenant,
       },
       message: 'Client created successfully',
     });
@@ -106,21 +81,19 @@ router.get('/', authenticateJWT, requireRole('admin'), async (req: Request, res:
     const limit = parseInt(req.query.limit as string) || 20;
     const includeInactive = req.query.includeInactive === 'true';
 
-    const skip = (page - 1) * limit;
-
-    const [clients, total] = await Promise.all([
-      clientService.list({ skip, take: limit, includeInactive }),
-      clientService.count(includeInactive),
-    ]);
+    const result = await tenantService.findAll(
+      { isActive: includeInactive ? undefined : true },
+      { page, limit }
+    );
 
     res.json({
       status: 'success',
-      data: clients,
+      data: result.tenants,
       meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / result.limit),
       },
     });
   } catch (error) {
@@ -141,7 +114,7 @@ router.get('/:id', authenticateJWT, requireRole('admin'), async (req: Request, r
   try {
     const { id } = req.params;
 
-    const client = await clientService.findById(id);
+    const client = await tenantService.findById(id);
 
     if (!client) {
       res.status(404).json({
@@ -151,15 +124,9 @@ router.get('/:id', authenticateJWT, requireRole('admin'), async (req: Request, r
       return;
     }
 
-    // Get client statistics
-    const stats = await clientService.getStats(id);
-
     res.json({
       status: 'success',
-      data: {
-        ...client,
-        stats,
-      },
+      data: client,
     });
   } catch (error) {
     console.error('Failed to get client:', error);
@@ -178,10 +145,9 @@ router.get('/:id', authenticateJWT, requireRole('admin'), async (req: Request, r
 router.patch('/:id', authenticateJWT, requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
 
     // Check if client exists
-    const existing = await clientService.findById(id);
+    const existing = await tenantService.findById(id);
     if (!existing) {
       res.status(404).json({
         status: 'error',
@@ -191,7 +157,7 @@ router.patch('/:id', authenticateJWT, requireRole('admin'), async (req: Request,
     }
 
     // Update client
-    const updated = await clientService.update(id, { name });
+    const updated = await tenantService.update(id, req.body);
 
     res.json({
       status: 'success',
@@ -222,7 +188,7 @@ router.delete(
       const permanent = req.query.permanent === 'true';
 
       // Check if client exists
-      const existing = await clientService.findById(id);
+      const existing = await tenantService.findById(id);
       if (!existing) {
         res.status(404).json({
           status: 'error',
@@ -233,7 +199,7 @@ router.delete(
 
       if (permanent) {
         // Permanent delete (including database)
-        await clientService.permanentDelete(id);
+        await tenantService.delete(id);
 
         res.json({
           status: 'success',
@@ -241,7 +207,7 @@ router.delete(
         });
       } else {
         // Deactivate
-        const deactivated = await clientService.deactivate(id);
+        const deactivated = await tenantService.setActive(id, false);
 
         res.json({
           status: 'success',
@@ -272,7 +238,7 @@ router.post(
     try {
       const { id } = req.params;
 
-      const reactivated = await clientService.reactivate(id);
+      const reactivated = await tenantService.setActive(id, true);
 
       res.json({
         status: 'success',

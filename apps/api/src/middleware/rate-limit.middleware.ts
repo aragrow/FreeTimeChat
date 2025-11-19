@@ -95,7 +95,7 @@ function defaultKeyGenerator(req: Request): string {
  * Key generator that uses authenticated user ID
  */
 export function userKeyGenerator(req: Request): string {
-  if (req.user?.userId) {
+  if (req.user?.sub) {
     return `user:${req.user.sub}`;
   }
   return defaultKeyGenerator(req);

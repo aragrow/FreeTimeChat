@@ -20,6 +20,7 @@ import {
   searchMessagesSchema,
   updateConversationSchema,
 } from '../validation/conversation.validation';
+import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -40,7 +41,7 @@ router.post('/', validate(createConversationSchema), async (req: Request, res: R
 
     const { title } = req.body;
 
-    const conversationService = new ConversationService(req.clientDb);
+    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
     const conversation = await conversationService.startConversation({
       userId: req.user.sub,
       title,
@@ -77,7 +78,7 @@ router.get('/', validate(listConversationsSchema), async (req: Request, res: Res
 
     const skip = (page - 1) * limit;
 
-    const conversationService = new ConversationService(req.clientDb);
+    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
     const [conversations, total] = await Promise.all([
       conversationService.listConversations({
         skip,
@@ -118,7 +119,7 @@ router.get('/active', async (req: Request, res: Response) => {
       return;
     }
 
-    const conversationService = new ConversationService(req.clientDb);
+    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
     const conversation = await conversationService.getActiveConversation(req.user.sub);
 
     res.json({
@@ -145,7 +146,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       return;
     }
 
-    const conversationService = new ConversationService(req.clientDb);
+    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
     const stats = await conversationService.getUserStats(req.user.sub);
 
     res.json({
@@ -174,7 +175,7 @@ router.get('/:id', validate(getConversationByIdSchema), async (req: Request, res
 
     const { id } = req.params;
 
-    const conversationService = new ConversationService(req.clientDb);
+    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
     const conversation = await conversationService.getConversation(id);
 
     if (!conversation) {
@@ -212,7 +213,7 @@ router.patch('/:id', validate(updateConversationSchema), async (req: Request, re
     const { id } = req.params;
     const { title, isActive } = req.body;
 
-    const conversationService = new ConversationService(req.clientDb);
+    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
     const conversation = await conversationService.updateConversation(id, {
       title,
       isActive,
@@ -245,7 +246,7 @@ router.delete('/:id', validate(deleteConversationSchema), async (req: Request, r
 
     const { id } = req.params;
 
-    const conversationService = new ConversationService(req.clientDb);
+    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
     await conversationService.deleteConversation(id);
 
     res.json({
@@ -274,7 +275,7 @@ router.post('/:id/archive', async (req: Request, res: Response) => {
 
     const { id } = req.params;
 
-    const conversationService = new ConversationService(req.clientDb);
+    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
     const conversation = await conversationService.archiveConversation(id);
 
     res.json({
@@ -304,7 +305,7 @@ router.post('/:id/restore', async (req: Request, res: Response) => {
 
     const { id } = req.params;
 
-    const conversationService = new ConversationService(req.clientDb);
+    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
     const conversation = await conversationService.restoreConversation(id);
 
     res.json({
@@ -335,7 +336,7 @@ router.post('/:id/messages', validate(addMessageSchema), async (req: Request, re
     const { id: conversationId } = req.params;
     const { content, role = 'USER', metadata } = req.body;
 
-    const messageService = new MessageService(req.clientDb);
+    const messageService = new MessageService(req.clientDb as ClientPrismaClient);
     const message = await messageService.addMessage({
       conversationId,
       content,
@@ -377,7 +378,7 @@ router.get('/:id/messages', validate(getMessagesSchema), async (req: Request, re
 
     const skip = (page - 1) * limit;
 
-    const messageService = new MessageService(req.clientDb);
+    const messageService = new MessageService(req.clientDb as ClientPrismaClient);
     const [messages, total] = await Promise.all([
       messageService.getMessages(conversationId, {
         skip,
@@ -429,7 +430,7 @@ router.get(
 
       const skip = (page - 1) * limit;
 
-      const messageService = new MessageService(req.clientDb);
+      const messageService = new MessageService(req.clientDb as ClientPrismaClient);
       const messages = await messageService.searchMessages(conversationId, query, {
         skip,
         take: limit,

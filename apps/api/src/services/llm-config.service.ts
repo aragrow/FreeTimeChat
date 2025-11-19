@@ -90,8 +90,9 @@ export class LLMConfigService {
 
   /**
    * Decrypt an API key from storage
+   * Note: Made public for use by EmbeddingsService which needs raw API key access
    */
-  private decryptApiKey(encryptedApiKey: string): string {
+  decryptApiKey(encryptedApiKey: string): string {
     // Split IV and encrypted data
     const parts = encryptedApiKey.split(':');
     const iv = Buffer.from(parts[0], 'hex');
@@ -267,6 +268,60 @@ export class LLMConfigService {
     }
 
     return config ? this.formatConfigResponse(config) : null;
+  }
+
+  /**
+   * Get the active LLM configuration with raw fields for internal services (e.g., EmbeddingsService)
+   * Returns the encrypted API key and embedding settings that are not in the public response
+   * @param tenantId - Tenant ID (null for system-wide)
+   */
+  async getActiveConfigRaw(tenantId: string | null): Promise<{
+    provider: LLMProvider;
+    apiKeyEncrypted: string;
+    embeddingModel: string | null;
+    embeddingEnabled: boolean;
+    organization: string | null;
+  } | null> {
+    if (tenantId) {
+      // Get tenant-specific active config
+      // Note: Client schema doesn't have embeddingModel and embeddingEnabled fields
+      const prismaClient = await databaseService.getTenantDatabase(tenantId);
+      const config = await prismaClient.lLMConfig.findFirst({
+        where: { isActive: true },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!config) {
+        return null;
+      }
+
+      return {
+        provider: config.provider,
+        apiKeyEncrypted: config.apiKeyEncrypted,
+        embeddingModel: null, // Not available in client schema
+        embeddingEnabled: true, // Default to enabled for tenant configs
+        organization: config.organization,
+      };
+    } else {
+      // Get system-wide active config
+      const prismaMain = databaseService.getMainDatabase();
+      const config = await prismaMain.lLMConfig.findFirst({
+        where: { tenantId: null, isActive: true },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!config) {
+        return null;
+      }
+
+      return {
+        provider: config.provider,
+        apiKeyEncrypted: config.apiKeyEncrypted,
+        embeddingModel: config.embeddingModel,
+        embeddingEnabled: config.embeddingEnabled,
+        organization: config.organization,
+      };
+    }
   }
 
   /**

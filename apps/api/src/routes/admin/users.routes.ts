@@ -311,7 +311,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     // Update user
-    const _user = await userService.update(id, updateData);
+    await userService.update(id, updateData);
 
     // Update roles if provided
     if (roleIds !== undefined && Array.isArray(roleIds)) {

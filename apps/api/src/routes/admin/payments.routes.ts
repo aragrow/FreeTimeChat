@@ -4,15 +4,16 @@
 
 import { Router } from 'express';
 import { PaymentService } from '../../services/payment.service';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
 import type { AuthenticatedRequest } from '../../types/express';
-import type { Response } from 'express';
+import type { Response, RequestHandler } from 'express';
 
 const router = Router();
 
 // GET /api/v1/admin/payments - List all payments
-router.get('/', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -47,17 +48,17 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
       }
     );
 
-    res.json({ status: 'success', data: result });
+    return res.json({ status: 'success', data: result });
   } catch (error) {
     console.error('Error fetching payments:', error);
-    res.status(500).json({ status: 'error', message: 'Failed to fetch payments' });
+    return res.status(500).json({ status: 'error', message: 'Failed to fetch payments' });
   }
-});
+}) as RequestHandler);
 
 // GET /api/v1/admin/payments/stats - Get payment statistics
-router.get('/stats', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/stats', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -71,17 +72,17 @@ router.get('/stats', async (req: AuthenticatedRequest, res: Response) => {
       clientId: clientId as string,
     });
 
-    res.json({ status: 'success', data: { statistics: stats } });
+    return res.json({ status: 'success', data: { statistics: stats } });
   } catch (error) {
     console.error('Error fetching payment stats:', error);
-    res.status(500).json({ status: 'error', message: 'Failed to fetch payment statistics' });
+    return res.status(500).json({ status: 'error', message: 'Failed to fetch payment statistics' });
   }
-});
+}) as RequestHandler);
 
 // GET /api/v1/admin/payments/:id - Get payment by ID
-router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -93,17 +94,17 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
       return res.status(404).json({ status: 'error', message: 'Payment not found' });
     }
 
-    res.json({ status: 'success', data: { payment } });
+    return res.json({ status: 'success', data: { payment } });
   } catch (error) {
     console.error('Error fetching payment:', error);
-    res.status(500).json({ status: 'error', message: 'Failed to fetch payment' });
+    return res.status(500).json({ status: 'error', message: 'Failed to fetch payment' });
   }
-});
+}) as RequestHandler);
 
 // POST /api/v1/admin/payments - Create payment
-router.post('/', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -139,20 +140,20 @@ router.post('/', async (req: AuthenticatedRequest, res: Response) => {
         referenceNumber,
         note,
       },
-      req.user!.id
+      req.user!.sub
     );
 
-    res.status(201).json({ status: 'success', data: { payment } });
+    return res.status(201).json({ status: 'success', data: { payment } });
   } catch (error) {
     console.error('Error creating payment:', error);
-    res.status(500).json({ status: 'error', message: 'Failed to create payment' });
+    return res.status(500).json({ status: 'error', message: 'Failed to create payment' });
   }
-});
+}) as RequestHandler);
 
 // POST /api/v1/admin/payments/:id/refund - Process refund
-router.post('/:id/refund', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/:id/refund', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -164,20 +165,20 @@ router.post('/:id/refund', async (req: AuthenticatedRequest, res: Response) => {
       return res.status(400).json({ status: 'error', message: 'Refund amount is required' });
     }
 
-    const refund = await service.refund(req.params.id, amount, req.user!.id, note);
+    const refund = await service.refund(req.params.id, amount, req.user!.sub, note);
 
-    res.json({ status: 'success', data: { refund } });
+    return res.json({ status: 'success', data: { refund } });
   } catch (error) {
     console.error('Error processing refund:', error);
     const message = error instanceof Error ? error.message : 'Failed to process refund';
-    res.status(500).json({ status: 'error', message });
+    return res.status(500).json({ status: 'error', message });
   }
-});
+}) as RequestHandler);
 
 // PUT /api/v1/admin/payments/:id - Update payment
-router.put('/:id', async (req: AuthenticatedRequest, res: Response) => {
+router.put('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -189,17 +190,17 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response) => {
 
     const payment = await service.update(req.params.id, updateData);
 
-    res.json({ status: 'success', data: { payment } });
+    return res.json({ status: 'success', data: { payment } });
   } catch (error) {
     console.error('Error updating payment:', error);
-    res.status(500).json({ status: 'error', message: 'Failed to update payment' });
+    return res.status(500).json({ status: 'error', message: 'Failed to update payment' });
   }
-});
+}) as RequestHandler);
 
 // DELETE /api/v1/admin/payments/:id - Delete payment
-router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
+router.delete('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -207,12 +208,12 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
     const service = new PaymentService(prisma);
     await service.delete(req.params.id);
 
-    res.json({ status: 'success', message: 'Payment deleted' });
+    return res.json({ status: 'success', message: 'Payment deleted' });
   } catch (error) {
     console.error('Error deleting payment:', error);
     const message = error instanceof Error ? error.message : 'Failed to delete payment';
-    res.status(500).json({ status: 'error', message });
+    return res.status(500).json({ status: 'error', message });
   }
-});
+}) as RequestHandler);
 
 export default router;

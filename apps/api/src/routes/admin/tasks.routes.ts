@@ -6,6 +6,7 @@
  */
 
 import { Router } from 'express';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -38,7 +39,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (assignedToUserId) where.assignedToUserId = assignedToUserId as string;
 
     const [tasks, total] = await Promise.all([
-      req.clientDb.task.findMany({
+      (req.clientDb as ClientPrismaClient).task.findMany({
         where,
         include: {
           project: {
@@ -59,7 +60,7 @@ router.get('/', async (req: Request, res: Response) => {
         skip,
         take,
       }),
-      req.clientDb.task.count({ where }),
+      (req.clientDb as ClientPrismaClient).task.count({ where }),
     ]);
 
     res.status(200).json({
@@ -99,7 +100,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     const { id } = req.params;
 
-    const task = await req.clientDb.task.findUnique({
+    const task = await (req.clientDb as ClientPrismaClient).task.findUnique({
       where: { id },
       include: {
         project: {
@@ -156,7 +157,7 @@ router.get('/project/:projectId', async (req: Request, res: Response) => {
 
     const { projectId } = req.params;
 
-    const tasks = await req.clientDb.task.findMany({
+    const tasks = await (req.clientDb as ClientPrismaClient).task.findMany({
       where: { projectId },
       orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }, { createdAt: 'desc' }],
     });
@@ -190,7 +191,7 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
 
     const { userId } = req.params;
 
-    const tasks = await req.clientDb.task.findMany({
+    const tasks = await (req.clientDb as ClientPrismaClient).task.findMany({
       where: { assignedToUserId: userId },
       include: {
         project: {
@@ -257,7 +258,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Verify project exists
-    const project = await req.clientDb.project.findUnique({
+    const project = await (req.clientDb as ClientPrismaClient).project.findUnique({
       where: { id: projectId },
     });
 
@@ -270,7 +271,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Create task
-    const task = await req.clientDb.task.create({
+    const task = await (req.clientDb as ClientPrismaClient).task.create({
       data: {
         projectId,
         title: title.trim(),
@@ -329,7 +330,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     const { title, description, status, priority, assignedToUserId, dueDate } = req.body;
 
     // Check if task exists
-    const existingTask = await req.clientDb.task.findUnique({
+    const existingTask = await (req.clientDb as ClientPrismaClient).task.findUnique({
       where: { id },
     });
 
@@ -359,7 +360,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     // Update task
-    const task = await req.clientDb.task.update({
+    const task = await (req.clientDb as ClientPrismaClient).task.update({
       where: { id },
       data: updateData,
       include: {
@@ -412,7 +413,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
     }
 
     // Check if task exists
-    const existingTask = await req.clientDb.task.findUnique({
+    const existingTask = await (req.clientDb as ClientPrismaClient).task.findUnique({
       where: { id },
     });
 
@@ -433,7 +434,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
       updateData.completedAt = null;
     }
 
-    const task = await req.clientDb.task.update({
+    const task = await (req.clientDb as ClientPrismaClient).task.update({
       where: { id },
       data: updateData,
     });
@@ -478,7 +479,7 @@ router.patch('/:id/priority', async (req: Request, res: Response) => {
     }
 
     // Check if task exists
-    const existingTask = await req.clientDb.task.findUnique({
+    const existingTask = await (req.clientDb as ClientPrismaClient).task.findUnique({
       where: { id },
     });
 
@@ -490,7 +491,7 @@ router.patch('/:id/priority', async (req: Request, res: Response) => {
       return;
     }
 
-    const task = await req.clientDb.task.update({
+    const task = await (req.clientDb as ClientPrismaClient).task.update({
       where: { id },
       data: { priority },
     });
@@ -527,7 +528,7 @@ router.patch('/:id/assign', async (req: Request, res: Response) => {
     const { userId } = req.body;
 
     // Check if task exists
-    const existingTask = await req.clientDb.task.findUnique({
+    const existingTask = await (req.clientDb as ClientPrismaClient).task.findUnique({
       where: { id },
     });
 
@@ -539,7 +540,7 @@ router.patch('/:id/assign', async (req: Request, res: Response) => {
       return;
     }
 
-    const task = await req.clientDb.task.update({
+    const task = await (req.clientDb as ClientPrismaClient).task.update({
       where: { id },
       data: { assignedToUserId: userId || null },
     });
@@ -575,7 +576,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
 
     // Check if task exists
-    const existingTask = await req.clientDb.task.findUnique({
+    const existingTask = await (req.clientDb as ClientPrismaClient).task.findUnique({
       where: { id },
     });
 
@@ -588,7 +589,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     // Hard delete task
-    await req.clientDb.task.delete({
+    await (req.clientDb as ClientPrismaClient).task.delete({
       where: { id },
     });
 
@@ -632,14 +633,16 @@ router.get('/stats/summary', async (req: Request, res: Response) => {
       highPriorityCount,
       overdueCount,
     ] = await Promise.all([
-      req.clientDb.task.count({ where }),
-      req.clientDb.task.count({ where: { ...where, status: 'TODO' } }),
-      req.clientDb.task.count({ where: { ...where, status: 'IN_PROGRESS' } }),
-      req.clientDb.task.count({ where: { ...where, status: 'REVIEW' } }),
-      req.clientDb.task.count({ where: { ...where, status: 'DONE' } }),
-      req.clientDb.task.count({ where: { ...where, status: 'CANCELLED' } }),
-      req.clientDb.task.count({ where: { ...where, priority: 'URGENT' } }),
-      req.clientDb.task.count({
+      (req.clientDb as ClientPrismaClient).task.count({ where }),
+      (req.clientDb as ClientPrismaClient).task.count({ where: { ...where, status: 'TODO' } }),
+      (req.clientDb as ClientPrismaClient).task.count({
+        where: { ...where, status: 'IN_PROGRESS' },
+      }),
+      (req.clientDb as ClientPrismaClient).task.count({ where: { ...where, status: 'REVIEW' } }),
+      (req.clientDb as ClientPrismaClient).task.count({ where: { ...where, status: 'DONE' } }),
+      (req.clientDb as ClientPrismaClient).task.count({ where: { ...where, status: 'CANCELLED' } }),
+      (req.clientDb as ClientPrismaClient).task.count({ where: { ...where, priority: 'URGENT' } }),
+      (req.clientDb as ClientPrismaClient).task.count({
         where: {
           ...where,
           dueDate: { lt: new Date() },

@@ -4,15 +4,16 @@
 
 import { Router } from 'express';
 import { CouponService } from '../../services/coupon.service';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
 import type { AuthenticatedRequest } from '../../types/express';
-import type { Response } from 'express';
+import type { Response, RequestHandler } from 'express';
 
 const router = Router();
 
 // GET /api/v1/admin/coupons - List all coupons
-router.get('/', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -26,17 +27,17 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
       validNow: validNow === 'true',
     });
 
-    res.json({ status: 'success', data: { coupons } });
+    return res.json({ status: 'success', data: { coupons } });
   } catch (error) {
     console.error('Error fetching coupons:', error);
-    res.status(500).json({ status: 'error', message: 'Failed to fetch coupons' });
+    return res.status(500).json({ status: 'error', message: 'Failed to fetch coupons' });
   }
-});
+}) as RequestHandler);
 
 // GET /api/v1/admin/coupons/:id - Get coupon by ID
-router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -48,17 +49,17 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
       return res.status(404).json({ status: 'error', message: 'Coupon not found' });
     }
 
-    res.json({ status: 'success', data: { coupon } });
+    return res.json({ status: 'success', data: { coupon } });
   } catch (error) {
     console.error('Error fetching coupon:', error);
-    res.status(500).json({ status: 'error', message: 'Failed to fetch coupon' });
+    return res.status(500).json({ status: 'error', message: 'Failed to fetch coupon' });
   }
-});
+}) as RequestHandler);
 
 // GET /api/v1/admin/coupons/:id/stats - Get coupon statistics
-router.get('/:id/stats', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id/stats', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -66,18 +67,18 @@ router.get('/:id/stats', async (req: AuthenticatedRequest, res: Response) => {
     const service = new CouponService(prisma);
     const stats = await service.getStatistics(req.params.id);
 
-    res.json({ status: 'success', data: { statistics: stats } });
+    return res.json({ status: 'success', data: { statistics: stats } });
   } catch (error) {
     console.error('Error fetching coupon stats:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch coupon statistics';
-    res.status(500).json({ status: 'error', message });
+    return res.status(500).json({ status: 'error', message });
   }
-});
+}) as RequestHandler);
 
 // POST /api/v1/admin/coupons - Create coupon
-router.post('/', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -131,21 +132,21 @@ router.post('/', async (req: AuthenticatedRequest, res: Response) => {
         isActive,
         isFirstPurchase,
       },
-      req.user!.id
+      req.user!.sub
     );
 
-    res.status(201).json({ status: 'success', data: { coupon } });
+    return res.status(201).json({ status: 'success', data: { coupon } });
   } catch (error) {
     console.error('Error creating coupon:', error);
     const message = error instanceof Error ? error.message : 'Failed to create coupon';
-    res.status(500).json({ status: 'error', message });
+    return res.status(500).json({ status: 'error', message });
   }
-});
+}) as RequestHandler);
 
 // POST /api/v1/admin/coupons/validate - Validate coupon code
-router.post('/validate', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/validate', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -159,19 +160,29 @@ router.post('/validate', async (req: AuthenticatedRequest, res: Response) => {
       return res.status(400).json({ status: 'error', message: result.error });
     }
 
-    const discountAmount = service.calculateDiscountAmount(result.coupon!, amount);
+    const couponForCalc = {
+      discountType: result.coupon!.discountType,
+      discountValue: Number(result.coupon!.discountValue),
+      maximumDiscount: result.coupon!.maximumDiscount
+        ? Number(result.coupon!.maximumDiscount)
+        : null,
+    };
+    const discountAmount = service.calculateDiscountAmount(couponForCalc, amount);
 
-    res.json({ status: 'success', data: { valid: true, discountAmount, coupon: result.coupon } });
+    return res.json({
+      status: 'success',
+      data: { valid: true, discountAmount, coupon: result.coupon },
+    });
   } catch (error) {
     console.error('Error validating coupon:', error);
-    res.status(500).json({ status: 'error', message: 'Failed to validate coupon' });
+    return res.status(500).json({ status: 'error', message: 'Failed to validate coupon' });
   }
-});
+}) as RequestHandler);
 
 // PUT /api/v1/admin/coupons/:id - Update coupon
-router.put('/:id', async (req: AuthenticatedRequest, res: Response) => {
+router.put('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -184,18 +195,18 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response) => {
 
     const coupon = await service.update(req.params.id, updateData);
 
-    res.json({ status: 'success', data: { coupon } });
+    return res.json({ status: 'success', data: { coupon } });
   } catch (error) {
     console.error('Error updating coupon:', error);
     const message = error instanceof Error ? error.message : 'Failed to update coupon';
-    res.status(500).json({ status: 'error', message });
+    return res.status(500).json({ status: 'error', message });
   }
-});
+}) as RequestHandler);
 
 // DELETE /api/v1/admin/coupons/:id - Delete coupon
-router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
+router.delete('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientPrisma;
+    const prisma = req.clientDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -203,11 +214,11 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
     const service = new CouponService(prisma);
     await service.delete(req.params.id);
 
-    res.json({ status: 'success', message: 'Coupon deleted' });
+    return res.json({ status: 'success', message: 'Coupon deleted' });
   } catch (error) {
     console.error('Error deleting coupon:', error);
-    res.status(500).json({ status: 'error', message: 'Failed to delete coupon' });
+    return res.status(500).json({ status: 'error', message: 'Failed to delete coupon' });
   }
-});
+}) as RequestHandler);
 
 export default router;

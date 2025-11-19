@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/Input';
 import { useAuth } from '@/hooks/useAuth';
 
 // Check if user is a tenant admin (has tenantId that's not 'system')
-const isTenantAdmin = (user: { tenantId?: string; roles?: string[] } | null): boolean => {
+const isTenantAdmin = (user: { tenantId?: string | null; roles?: string[] } | null): boolean => {
   if (!user) return false;
   // System admins don't have a tenantId or have 'system' as tenantId
   return user.tenantId !== undefined && user.tenantId !== 'system' && user.tenantId !== null;

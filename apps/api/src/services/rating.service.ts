@@ -7,7 +7,6 @@
 
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { ResponseRating, RatingType, RatingValue } from '../generated/prisma-client';
-import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
 export interface CreateRatingData {
   messageId: string;
@@ -36,7 +35,7 @@ export interface RatingAnalytics {
 }
 
 export class RatingService {
-  constructor(private prisma: ClientPrismaClient | MainPrismaClient) {}
+  constructor(private prisma: ClientPrismaClient) {}
 
   /**
    * Create a new rating
@@ -121,13 +120,16 @@ export class RatingService {
     });
 
     const totalRatings = ratings.length;
-    const badCount = ratings.filter((r) => r.rating === 'BAD').length;
-    const okCount = ratings.filter((r) => r.rating === 'OK').length;
-    const goodCount = ratings.filter((r) => r.rating === 'GOOD').length;
+    const badCount = ratings.filter((r: { rating: string }) => r.rating === 'BAD').length;
+    const okCount = ratings.filter((r: { rating: string }) => r.rating === 'OK').length;
+    const goodCount = ratings.filter((r: { rating: string }) => r.rating === 'GOOD').length;
 
     // Calculate average score (BAD=1, OK=2, GOOD=3)
-    const scoreMap = { BAD: 1, OK: 2, GOOD: 3 };
-    const totalScore = ratings.reduce((sum, r) => sum + scoreMap[r.rating], 0);
+    const scoreMap: Record<string, number> = { BAD: 1, OK: 2, GOOD: 3 };
+    const totalScore = ratings.reduce(
+      (sum: number, r: { rating: string }) => sum + scoreMap[r.rating],
+      0
+    );
     const averageScore = totalRatings > 0 ? totalScore / totalRatings : 0;
 
     return {

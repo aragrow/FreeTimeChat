@@ -73,11 +73,14 @@ export class ChatService {
     this.clientPrisma = clientPrisma;
     this.mainPrisma = mainPrisma;
     this.intentParser = new IntentParserService();
-    this.timeEntryHandler = new TimeEntryHandlerService(clientPrisma, mainPrisma);
-    this.queryHandler = new QueryHandlerService(clientPrisma, mainPrisma);
-    this.conversationService = new ConversationService(clientPrisma);
-    this.messageService = new MessageService(clientPrisma);
-    this.memoryService = new UserMemoryService(clientPrisma);
+    this.timeEntryHandler = new TimeEntryHandlerService(
+      clientPrisma as ClientPrismaClient,
+      mainPrisma
+    );
+    this.queryHandler = new QueryHandlerService(clientPrisma as ClientPrismaClient, mainPrisma);
+    this.conversationService = new ConversationService(clientPrisma as ClientPrismaClient);
+    this.messageService = new MessageService(clientPrisma as ClientPrismaClient);
+    this.memoryService = new UserMemoryService(clientPrisma as ClientPrismaClient);
     this.fieldCatalogService = new FieldCatalogService();
   }
 
@@ -553,7 +556,9 @@ export class ChatService {
 
       // Log ALL messages being sent to LLM for debugging
       llmMessages.forEach((msg, idx) => {
-        const preview = msg.content.substring(0, 200).replace(/\n/g, '\\n');
+        const contentStr =
+          typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+        const preview = contentStr.substring(0, 200).replace(/\n/g, '\\n');
         console.log(`[ChatService] Message ${idx} (${msg.role}):`, preview, '...');
       });
 

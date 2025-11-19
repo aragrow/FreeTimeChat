@@ -6,6 +6,7 @@
  */
 
 import { Router } from 'express';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -41,7 +42,7 @@ router.get('/time-summary', async (req: Request, res: Response) => {
     if (userId) where.userId = userId as string;
 
     // Fetch all matching time entries
-    const entries = await req.clientDb.timeEntry.findMany({
+    const entries = await (req.clientDb as ClientPrismaClient).timeEntry.findMany({
       where,
       include: {
         project: {
@@ -115,7 +116,7 @@ router.get('/time-summary', async (req: Request, res: Response) => {
       const hours = duration / 3600;
       const regular = entry.regularHours || 0;
       const overtime = entry.overtimeHours || 0;
-      const hourlyRate = entry.project?.hourlyRate || 0;
+      const hourlyRate = Number(entry.project?.hourlyRate) || 0;
 
       groupedData[groupKey].totalDuration += duration;
       groupedData[groupKey].totalHours += hours;
@@ -144,7 +145,26 @@ router.get('/time-summary', async (req: Request, res: Response) => {
 
     // Calculate totals
     const totals = summary.reduce(
-      (acc, curr) => ({
+      (
+        acc: {
+          totalHours: number;
+          regularHours: number;
+          overtimeHours: number;
+          billableHours: number;
+          nonBillableHours: number;
+          estimatedRevenue: number;
+          entryCount: number;
+        },
+        curr: {
+          totalHours: number;
+          regularHours: number;
+          overtimeHours: number;
+          billableHours: number;
+          nonBillableHours: number;
+          estimatedRevenue: number;
+          entryCount: number;
+        }
+      ) => ({
         totalHours: acc.totalHours + curr.totalHours,
         regularHours: acc.regularHours + curr.regularHours,
         overtimeHours: acc.overtimeHours + curr.overtimeHours,
@@ -223,7 +243,7 @@ router.get('/project-analytics', async (req: Request, res: Response) => {
     }
 
     // Fetch all projects with their time entries
-    const projects = await req.clientDb.project.findMany({
+    const projects = await (req.clientDb as ClientPrismaClient).project.findMany({
       where: {
         deletedAt: null,
       },
@@ -256,28 +276,39 @@ router.get('/project-analytics', async (req: Request, res: Response) => {
       const tasks = project.tasks || [];
       const members = project.members || [];
 
-      const totalDuration = timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0);
+      const totalDuration = timeEntries.reduce(
+        (sum: number, entry: { duration: number | null }) => sum + (entry.duration || 0),
+        0
+      );
       const totalHours = totalDuration / 3600;
 
       const billableEntries = timeEntries.filter(
-        (entry) => entry.isBillable && project.isBillableProject
+        (entry: { isBillable: boolean; duration: number | null }) =>
+          entry.isBillable && project.isBillableProject
       );
       const billableHours =
-        billableEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0) / 3600;
+        billableEntries.reduce(
+          (sum: number, entry: { duration: number | null }) => sum + (entry.duration || 0),
+          0
+        ) / 3600;
       const nonBillableHours = totalHours - billableHours;
 
-      const estimatedRevenue = billableHours * (project.hourlyRate || 0);
+      const estimatedRevenue = billableHours * (Number(project.hourlyRate) || 0);
 
       const taskStats = {
         total: tasks.length,
-        todo: tasks.filter((t) => t.status === 'TODO').length,
-        inProgress: tasks.filter((t) => t.status === 'IN_PROGRESS').length,
-        review: tasks.filter((t) => t.status === 'REVIEW').length,
-        done: tasks.filter((t) => t.status === 'DONE').length,
-        cancelled: tasks.filter((t) => t.status === 'CANCELLED').length,
+        todo: tasks.filter((t: { status: string }) => t.status === 'TODO').length,
+        inProgress: tasks.filter((t: { status: string }) => t.status === 'IN_PROGRESS').length,
+        review: tasks.filter((t: { status: string }) => t.status === 'REVIEW').length,
+        done: tasks.filter((t: { status: string }) => t.status === 'DONE').length,
+        cancelled: tasks.filter((t: { status: string }) => t.status === 'CANCELLED').length,
         completionRate:
           tasks.length > 0
-            ? ((tasks.filter((t) => t.status === 'DONE').length / tasks.length) * 100).toFixed(1)
+            ? (
+                (tasks.filter((t: { status: string }) => t.status === 'DONE').length /
+                  tasks.length) *
+                100
+              ).toFixed(1)
             : '0.0',
       };
 
@@ -299,15 +330,32 @@ router.get('/project-analytics', async (req: Request, res: Response) => {
         tasks: taskStats,
         members: {
           total: members.length,
-          billable: members.filter((m) => m.isBillable).length,
-          nonBillable: members.filter((m) => !m.isBillable).length,
+          billable: members.filter((m: any) => m.isBillable).length,
+          nonBillable: members.filter((m: any) => !m.isBillable).length,
         },
       };
     });
 
     // Calculate overall totals
     const totals = analytics.reduce(
-      (acc, curr) => ({
+      (
+        acc: {
+          totalProjects: number;
+          activeProjects: number;
+          billableProjects: number;
+          totalHours: number;
+          billableHours: number;
+          estimatedRevenue: number;
+          totalTasks: number;
+          completedTasks: number;
+        },
+        curr: {
+          isActive: boolean;
+          isBillableProject: boolean;
+          timeTracking: { totalHours: number; billableHours: number; estimatedRevenue: number };
+          tasks: { total: number; done: number };
+        }
+      ) => ({
         totalProjects: acc.totalProjects + 1,
         activeProjects: acc.activeProjects + (curr.isActive ? 1 : 0),
         billableProjects: acc.billableProjects + (curr.isBillableProject ? 1 : 0),
@@ -386,7 +434,7 @@ router.get('/user-productivity', async (req: Request, res: Response) => {
     }
 
     // Fetch all time entries
-    const timeEntries = await req.clientDb.timeEntry.findMany({
+    const timeEntries = await (req.clientDb as ClientPrismaClient).timeEntry.findMany({
       where,
       include: {
         project: {
@@ -421,7 +469,7 @@ router.get('/user-productivity', async (req: Request, res: Response) => {
 
       const duration = entry.duration || 0;
       const hours = duration / 3600;
-      const hourlyRate = entry.project?.hourlyRate || 0;
+      const hourlyRate = Number(entry.project?.hourlyRate) || 0;
 
       userStats[userId].totalDuration += duration;
       userStats[userId].totalHours += hours;
@@ -442,14 +490,17 @@ router.get('/user-productivity', async (req: Request, res: Response) => {
       taskWhere.createdAt = { gte: new Date(startDate as string) };
     }
 
-    const tasks = await req.clientDb.task.findMany({
+    const tasks = await (req.clientDb as ClientPrismaClient).task.findMany({
       where: taskWhere,
     });
 
     // Add task stats to user data
     const productivity = Object.values(userStats).map((user: any) => {
-      const userTasks = tasks.filter((t) => t.assignedToUserId === user.userId);
-      const completedTasks = userTasks.filter((t) => t.status === 'DONE');
+      const userTasks = tasks.filter(
+        (t: { assignedToUserId: string | null; status: string }) =>
+          t.assignedToUserId === user.userId
+      );
+      const completedTasks = userTasks.filter((t: { status: string }) => t.status === 'DONE');
 
       return {
         userId: user.userId,
@@ -466,8 +517,9 @@ router.get('/user-productivity', async (req: Request, res: Response) => {
         tasks: {
           total: userTasks.length,
           completed: completedTasks.length,
-          inProgress: userTasks.filter((t) => t.status === 'IN_PROGRESS').length,
-          todo: userTasks.filter((t) => t.status === 'TODO').length,
+          inProgress: userTasks.filter((t: { status: string }) => t.status === 'IN_PROGRESS')
+            .length,
+          todo: userTasks.filter((t: { status: string }) => t.status === 'TODO').length,
           completionRate:
             userTasks.length > 0
               ? ((completedTasks.length / userTasks.length) * 100).toFixed(1)
@@ -537,7 +589,7 @@ router.get('/revenue-forecast', async (req: Request, res: Response) => {
     if (projectId) where.projectId = projectId as string;
 
     // Fetch billable time entries
-    const entries = await req.clientDb.timeEntry.findMany({
+    const entries = await (req.clientDb as ClientPrismaClient).timeEntry.findMany({
       where,
       include: {
         project: {
@@ -578,7 +630,7 @@ router.get('/revenue-forecast', async (req: Request, res: Response) => {
       }
 
       const hours = (entry.duration || 0) / 3600;
-      const revenue = hours * (entry.project.hourlyRate || 0);
+      const revenue = hours * (Number(entry.project.hourlyRate) || 0);
 
       monthlyRevenue[monthKey].billableHours += hours;
       monthlyRevenue[monthKey].revenue += revenue;
@@ -603,7 +655,10 @@ router.get('/revenue-forecast', async (req: Request, res: Response) => {
 
     // Calculate totals
     const totals = forecast.reduce(
-      (acc, curr) => ({
+      (
+        acc: { billableHours: number; revenue: number; entryCount: number },
+        curr: { billableHours: number; revenue: number; entryCount: number }
+      ) => ({
         billableHours: acc.billableHours + curr.billableHours,
         revenue: acc.revenue + curr.revenue,
         entryCount: acc.entryCount + curr.entryCount,
@@ -673,7 +728,7 @@ router.post('/export/csv', async (req: Request, res: Response) => {
     if (userId) where.userId = userId;
 
     // Fetch time entries
-    const entries = await req.clientDb.timeEntry.findMany({
+    const entries = await (req.clientDb as ClientPrismaClient).timeEntry.findMany({
       where,
       include: {
         project: {
@@ -716,10 +771,7 @@ router.post('/export/csv', async (req: Request, res: Response) => {
 
     const csvRows = entries.map((entry) => {
       const hours = (entry.duration || 0) / 3600;
-      const revenue =
-        entry.isBillable && entry.project?.isBillableProject
-          ? hours * (entry.project.hourlyRate || 0)
-          : 0;
+      const revenue = entry.isBillable ? hours * (Number(entry.project?.hourlyRate) || 0) : 0;
 
       return [
         entry.id,

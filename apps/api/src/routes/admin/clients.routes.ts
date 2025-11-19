@@ -6,6 +6,7 @@
  */
 
 import { Router } from 'express';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -51,8 +52,9 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     // Get clients with pagination
+    const clientDb = req.clientDb as ClientPrismaClient;
     const [clients, total] = await Promise.all([
-      req.clientDb.client.findMany({
+      clientDb.client.findMany({
         where,
         skip,
         take: limit,
@@ -60,7 +62,7 @@ router.get('/', async (req: Request, res: Response) => {
           createdAt: 'desc',
         },
       }),
-      req.clientDb.client.count({ where }),
+      clientDb.client.count({ where }),
     ]);
 
     res.status(200).json({
@@ -99,8 +101,9 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
+    const clientDb = req.clientDb as ClientPrismaClient;
 
-    const client = await req.clientDb.client.findUnique({
+    const client = await clientDb.client.findUnique({
       where: { id },
     });
 
@@ -189,8 +192,9 @@ router.post('/', async (req: Request, res: Response) => {
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '');
 
+    const clientDb = req.clientDb as ClientPrismaClient;
     // Create client (map form fields to schema fields)
-    const client = await req.clientDb.client.create({
+    const client = await clientDb.client.create({
       data: {
         name: name.trim(),
         slug,
@@ -288,8 +292,9 @@ router.put('/:id', async (req: Request, res: Response) => {
       isActive,
     } = req.body;
 
+    const clientDb = req.clientDb as ClientPrismaClient;
     // Check if client exists
-    const existingClient = await req.clientDb.client.findUnique({
+    const existingClient = await clientDb.client.findUnique({
       where: { id },
     });
 
@@ -349,7 +354,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (isActive !== undefined) updateData.isActive = isActive;
 
     // Update client
-    const client = await req.clientDb.client.update({
+    const client = await clientDb.client.update({
       where: { id },
       data: updateData,
     });
@@ -383,9 +388,10 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
+    const clientDb = req.clientDb as ClientPrismaClient;
 
     // Check if client exists
-    const existingClient = await req.clientDb.client.findUnique({
+    const existingClient = await clientDb.client.findUnique({
       where: { id },
     });
 
@@ -406,7 +412,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     // Soft delete client
-    const client = await req.clientDb.client.update({
+    const client = await clientDb.client.update({
       where: { id },
       data: {
         deletedAt: new Date(),

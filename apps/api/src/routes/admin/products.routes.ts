@@ -6,6 +6,7 @@
  */
 
 import { Router } from 'express';
+import type { PrismaClient as ClientPrismaClient } from '../../generated/prisma-client';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -60,9 +61,10 @@ router.get('/', async (req: Request, res: Response) => {
       where.isActive = true;
     }
 
+    const clientDb = req.clientDb as ClientPrismaClient;
     // Get products with pagination
     const [products, total] = await Promise.all([
-      req.clientDb.product.findMany({
+      clientDb.product.findMany({
         where,
         skip,
         take: limit,
@@ -78,7 +80,7 @@ router.get('/', async (req: Request, res: Response) => {
           createdAt: 'desc',
         },
       }),
-      req.clientDb.product.count({ where }),
+      clientDb.product.count({ where }),
     ]);
 
     res.status(200).json({
@@ -117,8 +119,9 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
+    const clientDb = req.clientDb as ClientPrismaClient;
 
-    const product = await req.clientDb.product.findUnique({
+    const product = await clientDb.product.findUnique({
       where: { id },
       include: {
         client: {
@@ -165,7 +168,7 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const { name, description, sku, clientId, imageUrl, rate, unit } = req.body;
+    const { name, description, sku, clientId, rate, unit } = req.body;
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -176,9 +179,10 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    const clientDb = req.clientDb as ClientPrismaClient;
     // Check if client exists if clientId provided
     if (clientId) {
-      const client = await req.clientDb.client.findUnique({
+      const client = await clientDb.client.findUnique({
         where: { id: clientId },
       });
       if (!client) {
@@ -191,13 +195,12 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Create product
-    const product = await req.clientDb.product.create({
+    const product = await clientDb.product.create({
       data: {
         name: name.trim(),
         description: description?.trim() || null,
         sku: sku?.trim() || null,
         clientId: clientId || null,
-        imageUrl: imageUrl?.trim() || null,
         rate: rate ? parseFloat(rate) : null,
         unit: unit?.trim() || null,
         isActive: true,
@@ -250,8 +253,9 @@ router.put('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, description, sku, clientId, imageUrl, rate, unit, isActive } = req.body;
 
+    const clientDb = req.clientDb as ClientPrismaClient;
     // Check if product exists
-    const existingProduct = await req.clientDb.product.findUnique({
+    const existingProduct = await clientDb.product.findUnique({
       where: { id },
     });
 
@@ -265,7 +269,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
     // Check if client exists if clientId provided
     if (clientId) {
-      const client = await req.clientDb.client.findUnique({
+      const client = await clientDb.client.findUnique({
         where: { id: clientId },
       });
       if (!client) {
@@ -293,7 +297,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (isActive !== undefined) updateData.isActive = isActive;
 
     // Update product
-    const product = await req.clientDb.product.update({
+    const product = await clientDb.product.update({
       where: { id },
       data: updateData,
       include: {
@@ -335,9 +339,10 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
+    const clientDb = req.clientDb as ClientPrismaClient;
 
     // Check if product exists
-    const existingProduct = await req.clientDb.product.findUnique({
+    const existingProduct = await clientDb.product.findUnique({
       where: { id },
     });
 
@@ -358,7 +363,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     // Soft delete product
-    const product = await req.clientDb.product.update({
+    const product = await clientDb.product.update({
       where: { id },
       data: {
         deletedAt: new Date(),

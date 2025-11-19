@@ -5,7 +5,7 @@
  * Operates on the customer's database (not main database)
  */
 
-import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
+import type { PrismaClient as ClientPrismaClient, Prisma } from '../generated/prisma-client';
 import type {
   Expense,
   ExpenseCategory,
@@ -87,20 +87,85 @@ export interface CreateAttachmentRequest {
 
 // Default expense categories
 const DEFAULT_CATEGORIES = [
-  { name: 'Office Supplies', icon: 'office', color: '#3B82F6', description: 'Pens, paper, printer ink, etc.' },
-  { name: 'Travel', icon: 'plane', color: '#8B5CF6', description: 'Flights, hotels, transportation' },
-  { name: 'Meals & Entertainment', icon: 'utensils', color: '#F59E0B', description: 'Business meals and client entertainment' },
-  { name: 'Software & Subscriptions', icon: 'laptop', color: '#10B981', description: 'Software licenses and subscriptions' },
-  { name: 'Equipment', icon: 'computer', color: '#6366F1', description: 'Computers, phones, tools' },
-  { name: 'Professional Services', icon: 'briefcase', color: '#EC4899', description: 'Legal, accounting, consulting' },
-  { name: 'Utilities', icon: 'bolt', color: '#F97316', description: 'Electricity, internet, phone' },
-  { name: 'Marketing & Advertising', icon: 'megaphone', color: '#14B8A6', description: 'Ads, promotional materials' },
-  { name: 'Insurance', icon: 'shield', color: '#6B7280', description: 'Business insurance premiums' },
-  { name: 'Taxes & Licenses', icon: 'document', color: '#DC2626', description: 'Business taxes and license fees' },
+  {
+    name: 'Office Supplies',
+    icon: 'office',
+    color: '#3B82F6',
+    description: 'Pens, paper, printer ink, etc.',
+  },
+  {
+    name: 'Travel',
+    icon: 'plane',
+    color: '#8B5CF6',
+    description: 'Flights, hotels, transportation',
+  },
+  {
+    name: 'Meals & Entertainment',
+    icon: 'utensils',
+    color: '#F59E0B',
+    description: 'Business meals and client entertainment',
+  },
+  {
+    name: 'Software & Subscriptions',
+    icon: 'laptop',
+    color: '#10B981',
+    description: 'Software licenses and subscriptions',
+  },
+  {
+    name: 'Equipment',
+    icon: 'computer',
+    color: '#6366F1',
+    description: 'Computers, phones, tools',
+  },
+  {
+    name: 'Professional Services',
+    icon: 'briefcase',
+    color: '#EC4899',
+    description: 'Legal, accounting, consulting',
+  },
+  {
+    name: 'Utilities',
+    icon: 'bolt',
+    color: '#F97316',
+    description: 'Electricity, internet, phone',
+  },
+  {
+    name: 'Marketing & Advertising',
+    icon: 'megaphone',
+    color: '#14B8A6',
+    description: 'Ads, promotional materials',
+  },
+  {
+    name: 'Insurance',
+    icon: 'shield',
+    color: '#6B7280',
+    description: 'Business insurance premiums',
+  },
+  {
+    name: 'Taxes & Licenses',
+    icon: 'document',
+    color: '#DC2626',
+    description: 'Business taxes and license fees',
+  },
   { name: 'Rent', icon: 'building', color: '#7C3AED', description: 'Office or workspace rent' },
-  { name: 'Maintenance & Repairs', icon: 'wrench', color: '#0EA5E9', description: 'Equipment and facility repairs' },
-  { name: 'Shipping & Postage', icon: 'truck', color: '#84CC16', description: 'Shipping and mailing costs' },
-  { name: 'Training & Education', icon: 'academic', color: '#A855F7', description: 'Courses, conferences, books' },
+  {
+    name: 'Maintenance & Repairs',
+    icon: 'wrench',
+    color: '#0EA5E9',
+    description: 'Equipment and facility repairs',
+  },
+  {
+    name: 'Shipping & Postage',
+    icon: 'truck',
+    color: '#84CC16',
+    description: 'Shipping and mailing costs',
+  },
+  {
+    name: 'Training & Education',
+    icon: 'academic',
+    color: '#A855F7',
+    description: 'Courses, conferences, books',
+  },
   { name: 'Bank Fees', icon: 'bank', color: '#64748B', description: 'Bank charges and fees' },
   { name: 'Miscellaneous', icon: 'dots', color: '#9CA3AF', description: 'Other business expenses' },
 ];
@@ -124,7 +189,7 @@ export class ExpenseService {
     }
 
     await this.prisma.expenseCategory.createMany({
-      data: DEFAULT_CATEGORIES.map(cat => ({
+      data: DEFAULT_CATEGORIES.map((cat) => ({
         ...cat,
         isSystem: true,
       })),
@@ -159,10 +224,7 @@ export class ExpenseService {
   /**
    * Update expense category
    */
-  async updateCategory(
-    id: string,
-    data: Partial<CreateCategoryRequest>
-  ): Promise<ExpenseCategory> {
+  async updateCategory(id: string, data: Partial<CreateCategoryRequest>): Promise<ExpenseCategory> {
     return this.prisma.expenseCategory.update({
       where: { id },
       data,
@@ -222,7 +284,7 @@ export class ExpenseService {
         taxAmount: data.taxAmount,
         taxRate: data.taxRate,
         notes: data.notes,
-        ocrData: data.ocrData,
+        ocrData: data.ocrData as Prisma.InputJsonValue | undefined,
         aiConfidence: data.aiConfidence,
         createdBy: userId,
         status: 'PENDING',
@@ -286,8 +348,10 @@ export class ExpenseService {
 
       if (filter.minAmount !== undefined || filter.maxAmount !== undefined) {
         where.amount = {};
-        if (filter.minAmount !== undefined) (where.amount as Record<string, number>).gte = filter.minAmount;
-        if (filter.maxAmount !== undefined) (where.amount as Record<string, number>).lte = filter.maxAmount;
+        if (filter.minAmount !== undefined)
+          (where.amount as Record<string, number>).gte = filter.minAmount;
+        if (filter.maxAmount !== undefined)
+          (where.amount as Record<string, number>).lte = filter.maxAmount;
       }
 
       if (filter.search) {
@@ -519,8 +583,12 @@ export class ExpenseService {
 
     // Group by category
     const categoryMap = new Map<string, { name: string; count: number; total: number }>();
-    expenses.forEach(e => {
-      const existing = categoryMap.get(e.categoryId) || { name: e.category.name, count: 0, total: 0 };
+    expenses.forEach((e) => {
+      const existing = categoryMap.get(e.categoryId) || {
+        name: e.category.name,
+        count: 0,
+        total: 0,
+      };
       existing.count++;
       existing.total += Number(e.amount);
       categoryMap.set(e.categoryId, existing);
@@ -535,7 +603,7 @@ export class ExpenseService {
 
     // Group by status
     const statusMap = new Map<string, { count: number; total: number }>();
-    expenses.forEach(e => {
+    expenses.forEach((e) => {
       const existing = statusMap.get(e.status) || { count: 0, total: 0 };
       existing.count++;
       existing.total += Number(e.amount);
@@ -548,9 +616,9 @@ export class ExpenseService {
       total: data.total,
     }));
 
-    const pendingApproval = expenses.filter(e => e.status === 'PENDING').length;
+    const pendingApproval = expenses.filter((e) => e.status === 'PENDING').length;
     const pendingReimbursement = expenses.filter(
-      e => e.isReimbursable && !e.isReimbursed && e.status === 'APPROVED'
+      (e) => e.isReimbursable && !e.isReimbursed && e.status === 'APPROVED'
     ).length;
 
     return {

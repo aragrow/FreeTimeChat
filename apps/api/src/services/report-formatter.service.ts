@@ -443,8 +443,7 @@ Example:
    * This provides structured data + instructions to the LLM
    */
   formatResultsContext(
-    userQuery: __userQuery,
-    string,
+    userQuery: string,
     queryResults: any[],
     rowCount: number,
     formatResult: ReportFormatResult

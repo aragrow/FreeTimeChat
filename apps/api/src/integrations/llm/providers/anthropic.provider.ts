@@ -164,7 +164,9 @@ export class AnthropicProvider extends BaseLLMProvider {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
         throw new LLMError(
           errorData.error?.message || `API request failed: ${response.statusText}`,
           this.getProviderName(),
@@ -173,7 +175,7 @@ export class AnthropicProvider extends BaseLLMProvider {
         );
       }
 
-      const data: AnthropicResponse = await response.json();
+      const data = (await response.json()) as AnthropicResponse;
 
       return {
         content: data.content[0]?.text || '',
@@ -234,7 +236,9 @@ export class AnthropicProvider extends BaseLLMProvider {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
         throw new LLMError(
           errorData.error?.message || `API request failed: ${response.statusText}`,
           this.getProviderName(),
@@ -322,17 +326,32 @@ export class AnthropicProvider extends BaseLLMProvider {
     messages: AnthropicMessage[];
     system?: string;
   } {
+    // Import extractTextContent locally to avoid circular dependency issues
+    const extractText = (content: string | import('../types').LLMContentPart[]): string => {
+      if (typeof content === 'string') return content;
+      return content
+        .filter((part): part is import('../types').LLMTextContentPart => part.type === 'text')
+        .map((part) => part.text)
+        .join('\n');
+    };
+
     // Anthropic requires system messages to be passed separately
     let system: string | undefined;
     const converted: AnthropicMessage[] = [];
 
     for (const msg of messages) {
-      if (msg.role === LLMRole.SYSTEM) {
-        system = msg.content;
-      } else if (msg.role === LLMRole.USER || msg.role === LLMRole.ASSISTANT) {
+      const msgRole = String(msg.role);
+      if (msgRole === LLMRole.SYSTEM || msgRole === 'system') {
+        system = extractText(msg.content);
+      } else if (msgRole === LLMRole.USER || msgRole === 'user') {
         converted.push({
-          role: msg.role as 'user' | 'assistant',
-          content: msg.content,
+          role: 'user',
+          content: extractText(msg.content),
+        });
+      } else {
+        converted.push({
+          role: 'assistant',
+          content: extractText(msg.content),
         });
       }
     }

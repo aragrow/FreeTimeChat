@@ -14,11 +14,29 @@ export enum LLMRole {
 }
 
 /**
+ * LLM Message Content Part - for multi-modal messages
+ */
+export interface LLMTextContentPart {
+  type: 'text';
+  text: string;
+}
+
+export interface LLMImageContentPart {
+  type: 'image_url';
+  image_url: {
+    url: string;
+    detail?: 'auto' | 'low' | 'high';
+  };
+}
+
+export type LLMContentPart = LLMTextContentPart | LLMImageContentPart;
+
+/**
  * LLM Message
  */
 export interface LLMMessage {
-  role: LLMRole;
-  content: string;
+  role: LLMRole | 'user' | 'assistant' | 'system';
+  content: string | LLMContentPart[];
   name?: string;
 }
 
@@ -83,6 +101,7 @@ export interface LLMProviderCapabilities {
   supportsFunctionCalling: boolean;
   supportsVision: boolean;
   maxContextTokens: number;
+  vision?: boolean; // Alias for supportsVision
 }
 
 /**
@@ -109,4 +128,19 @@ export enum LLMProvider {
   GOOGLE_GEMINI = 'google-gemini',
   PERPLEXITY = 'perplexity',
   ABACUS_AI = 'abacus-ai',
+}
+
+/**
+ * Extract text content from LLMMessage content field
+ * Handles both string and array content types
+ */
+export function extractTextContent(content: string | LLMContentPart[]): string {
+  if (typeof content === 'string') {
+    return content;
+  }
+  // Extract text from content parts
+  return content
+    .filter((part): part is LLMTextContentPart => part.type === 'text')
+    .map((part) => part.text)
+    .join('\n');
 }

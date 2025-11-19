@@ -142,7 +142,9 @@ export class PerplexityProvider extends BaseLLMProvider {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
         throw new LLMError(
           errorData.error?.message || `API request failed: ${response.statusText}`,
           this.getProviderName(),
@@ -151,7 +153,7 @@ export class PerplexityProvider extends BaseLLMProvider {
         );
       }
 
-      const data: PerplexityResponse = await response.json();
+      const data = (await response.json()) as PerplexityResponse;
 
       return {
         content: data.choices[0]?.message.content || '',
@@ -203,7 +205,9 @@ export class PerplexityProvider extends BaseLLMProvider {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
         throw new LLMError(
           errorData.error?.message || `API request failed: ${response.statusText}`,
           this.getProviderName(),
@@ -274,10 +278,30 @@ export class PerplexityProvider extends BaseLLMProvider {
   }
 
   private convertMessages(messages: LLMMessage[]): PerplexityMessage[] {
-    return messages.map((msg) => ({
-      role: msg.role as 'system' | 'user' | 'assistant',
-      content: msg.content,
-    }));
+    // Import extractTextContent locally to avoid circular dependency issues
+    const extractText = (content: string | import('../types').LLMContentPart[]): string => {
+      if (typeof content === 'string') return content;
+      return content
+        .filter((part): part is import('../types').LLMTextContentPart => part.type === 'text')
+        .map((part) => part.text)
+        .join('\n');
+    };
+
+    return messages.map((msg) => {
+      let role: 'system' | 'user' | 'assistant';
+      const msgRole = String(msg.role);
+      if (msgRole === LLMRole.SYSTEM || msgRole === 'system') {
+        role = 'system';
+      } else if (msgRole === LLMRole.USER || msgRole === 'user') {
+        role = 'user';
+      } else {
+        role = 'assistant';
+      }
+      return {
+        role,
+        content: extractText(msg.content),
+      };
+    });
   }
 
   private mapFinishReason(

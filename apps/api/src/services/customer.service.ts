@@ -74,21 +74,22 @@ export class CustomerService {
   async createCustomer(data: CreateCustomerRequest): Promise<CreateCustomerResponse> {
     const {
       name,
-      hourlyRate,
-      discountPercentage,
+      // Note: These fields are not used in Tenant creation (hourlyRate is on User model)
+      hourlyRate: _hourlyRate,
+      discountPercentage: _discountPercentage,
       email,
       phone,
-      website,
+      website: _website,
       contactPerson,
       billingAddressLine1,
-      billingAddressLine2,
+      billingAddressLine2: _billingAddressLine2,
       billingCity,
       billingState,
       billingPostalCode,
       billingCountry,
-      invoicePrefix,
-      invoiceNextNumber,
-      invoiceNumberPadding,
+      invoicePrefix: _invoicePrefix,
+      invoiceNextNumber: _invoiceNextNumber,
+      invoiceNumberPadding: _invoiceNumberPadding,
     } = data;
 
     // Generate customer ID, slug, and unique tenant key
@@ -100,27 +101,22 @@ export class CustomerService {
     const tenantKey = await this.generateCustomerKey();
 
     // Create customer record in main database (without database provisioning)
+    // Note: hourlyRate is on User model, not Tenant model
+    // Tenant uses different field names (contactName vs contactPerson, billingStreet vs billingAddressLine1, etc.)
     const customer = await this.prisma.tenant.create({
       data: {
         id: tenantId,
         name,
         slug,
         tenantKey,
-        hourlyRate,
-        discountPercentage: discountPercentage ?? 0,
-        email,
-        phone,
-        website,
-        contactPerson,
-        billingAddressLine1,
-        billingAddressLine2,
+        contactName: contactPerson,
+        contactEmail: email,
+        contactPhone: phone,
+        billingStreet: billingAddressLine1,
         billingCity,
         billingState,
-        billingPostalCode,
+        billingZip: billingPostalCode,
         billingCountry,
-        invoicePrefix,
-        invoiceNextNumber: invoiceNextNumber ?? 1,
-        invoiceNumberPadding: invoiceNumberPadding ?? 5,
       },
     });
 

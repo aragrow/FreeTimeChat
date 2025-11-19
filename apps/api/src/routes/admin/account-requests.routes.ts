@@ -85,7 +85,7 @@ router.get('/', requireCapability('account-requests:read'), async (req: Request,
 router.get(
   '/stats',
   requireCapability('account-requests:read'),
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       const [pending, approved, rejected, spam, total] = await Promise.all([
         prisma.accountRequest.count({ where: { status: 'PENDING' } }),
