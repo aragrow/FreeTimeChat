@@ -78,6 +78,31 @@ AI, we make these powerful capabilities simple enough for anyone to use.
 - **OAuth Integration**: Google SSO for seamless onboarding
 - **Admin Impersonation**: Support users without sharing passwords
 - **Audit Logging**: Complete trail of system changes
+- **Admin-Only Access Controls**: Sensitive areas (tenants, roles, capabilities)
+  restricted to system administrators
+- **Role-Based Page Protection**: Granular access control at the UI level
+
+### Tenant Configuration
+
+- **Invoice Address Management**: Separate business and invoice addresses with
+  complete contact information
+- **Tax ID Support**: Store and display tax identification for compliance
+- **Payment Method Configuration**: Stripe and PayPal integration with sandbox
+  support
+- **Custom Invoice Numbering**: Configurable prefixes and auto-incrementing
+  invoice numbers
+- **Multi-Currency Settings**: Per-tenant currency configuration with 20+
+  supported currencies
+- **Logo & Branding**: Custom logo support for white-label invoicing
+
+### User Experience
+
+- **Collapsible Navigation**: Organized sections (Business, Account Receivables,
+  Account Payables, etc.) with persistent state
+- **Responsive Admin Dashboard**: Clean, organized interface for all
+  administrative functions
+- **Contextual Navigation**: Smart grouping of related features for intuitive
+  access
 
 ### AI-Powered Intelligence
 
@@ -142,8 +167,11 @@ AI, we make these powerful capabilities simple enough for anyone to use.
 
 - Core time tracking with AI chat
 - **Comprehensive accounting system** (invoices, payments, discounts, coupons)
-- Multi-tenant authentication
+- Multi-tenant authentication with RBAC
 - Products/services catalog with image support
+- **Tenant settings** (invoice address, tax ID, payment methods, branding)
+- **Admin dashboard** with collapsible navigation and role-based access
+- **User management** with account requests and approval workflow
 
 ### Q3 2026 - Integration
 
@@ -169,10 +197,12 @@ AI, we make these powerful capabilities simple enough for anyone to use.
 
 ### Current State
 
-- **Codebase**: 50,000+ lines of production TypeScript
-- **Architecture**: Fully functional multi-tenant system
-- **Features**: 36+ pages of functionality
-- **Models**: 20+ database models across main/tenant schemas
+- **Codebase**: 60,000+ lines of production TypeScript
+- **Architecture**: Fully functional multi-tenant system with
+  database-per-tenant isolation
+- **Features**: 40+ pages of functionality across admin and user interfaces
+- **Models**: 25+ database models across main/tenant schemas
+- **Navigation**: 8 organized sections with 30+ navigation items
 
 ### Technical Achievements
 
