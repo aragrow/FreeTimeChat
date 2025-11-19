@@ -40,9 +40,38 @@ export class UserService {
   }
 
   /**
-   * Find user by email
+   * Find user by email (excludes soft-deleted users)
    */
   async findByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findFirst({
+      where: {
+        email,
+        deletedAt: null,
+      },
+      include: {
+        tenant: true,
+        roles: {
+          include: {
+            role: {
+              include: {
+                capabilities: {
+                  include: {
+                    capability: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Find user by email including soft-deleted users
+   * Use this for admin operations that need to see all users
+   */
+  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({
       where: { email },
       include: {

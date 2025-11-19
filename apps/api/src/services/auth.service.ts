@@ -262,10 +262,21 @@ export class AuthService {
       throw new Error('Registration is currently disabled');
     }
 
-    // Check if user already exists
+    // Check if user already exists (excludes deleted users)
     const existingUser = await this.userService.findByEmail(data.email);
     if (existingUser) {
       throw new Error('User already exists');
+    }
+
+    // Check for deleted users with same email and clear their email
+    // This allows re-registration with the same email after deletion
+    const deletedUser = await this.userService.findByEmailIncludingDeleted(data.email);
+    if (deletedUser && deletedUser.deletedAt) {
+      // Modify the deleted user's email to free it up
+      await this.prisma.user.update({
+        where: { id: deletedUser.id },
+        data: { email: `deleted_${deletedUser.id}_${deletedUser.email}` },
+      });
     }
 
     // Validate password
