@@ -10,6 +10,7 @@
 
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Message } from '../generated/prisma-client';
+import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
 export interface ConversationSummary {
   conversationId: string;
@@ -41,7 +42,7 @@ export interface UserMemoryFact {
 }
 
 export class LongTermMemoryService {
-  constructor(private prisma: ClientPrismaClient) {}
+  constructor(private prisma: ClientPrismaClient | MainPrismaClient) {}
 
   /**
    * Generate and store conversation summary

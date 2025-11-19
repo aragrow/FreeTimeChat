@@ -14,6 +14,7 @@ export const sendMessageSchema = z.object({
     message: z.string().min(1, 'Message is required').max(2000, 'Message is too long'),
     conversationId: z.string().uuid('Invalid conversation ID').optional(),
     includeContext: z.boolean().optional(),
+    debugMode: z.boolean().optional(),
   }),
 });
 

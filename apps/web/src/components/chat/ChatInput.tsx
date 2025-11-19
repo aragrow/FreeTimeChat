@@ -23,6 +23,8 @@ export function ChatInput({
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const autoSubmitTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTranscriptRef = useRef('');
 
   // Voice input hook
   const {
@@ -33,9 +35,9 @@ export function ChatInput({
     stopListening,
     resetTranscript,
   } = useVoiceInput({
-    continuous: false,
+    continuous: true, // Changed to continuous for better silence detection
     onResult: (finalTranscript) => {
-      setMessage((prev) => (prev ? prev + ' ' + finalTranscript : finalTranscript));
+      setMessage((prev) => (prev ? `${prev} ${finalTranscript}` : finalTranscript));
       resetTranscript();
     },
     onError: (error) => {
@@ -71,6 +73,51 @@ export function ChatInput({
       }
     }
   }, [transcript, isListening, message]);
+
+  // Auto-submit after 1 second of silence when listening
+  useEffect(() => {
+    // Clear any existing timer
+    if (autoSubmitTimerRef.current) {
+      clearTimeout(autoSubmitTimerRef.current);
+      autoSubmitTimerRef.current = null;
+    }
+
+    if (isListening && message.trim()) {
+      // Check if transcript has changed (speech detected)
+      if (transcript !== lastTranscriptRef.current) {
+        lastTranscriptRef.current = transcript;
+
+        // Reset timer - user is still speaking
+        if (autoSubmitTimerRef.current) {
+          clearTimeout(autoSubmitTimerRef.current);
+        }
+      }
+
+      // If transcript hasn't changed for a bit, start the 1-second countdown
+      if (message.trim().length > 0) {
+        autoSubmitTimerRef.current = setTimeout(() => {
+          // After 1 second of silence, stop listening and submit
+          stopListening();
+          sendMessage();
+        }, 1000);
+      }
+    }
+
+    return () => {
+      if (autoSubmitTimerRef.current) {
+        clearTimeout(autoSubmitTimerRef.current);
+      }
+    };
+  }, [isListening, message, transcript]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSubmitTimerRef.current) {
+        clearTimeout(autoSubmitTimerRef.current);
+      }
+    };
+  }, []);
 
   const toggleVoiceInput = () => {
     if (isListening) {

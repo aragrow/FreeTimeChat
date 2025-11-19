@@ -12,8 +12,10 @@
  * - PostgreSQL pgvector extension
  */
 
+import { embeddingsService } from './embeddings.service';
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Message } from '../generated/prisma-client';
+import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
 export interface EmbeddingMetadata {
   messageId: string;
@@ -38,26 +40,23 @@ export interface SemanticSearchResult {
 }
 
 export class SemanticMemoryService {
-  private readonly EMBEDDING_DIMENSION = 1536; // OpenAI ada-002 dimension
-
-  constructor(private prisma: ClientPrismaClient) {}
+  constructor(private prisma: ClientPrismaClient | MainPrismaClient) {}
 
   /**
-   * Generate embedding for text
-   * NOTE: Placeholder - integrate with OpenAI embeddings API in production
+   * Generate embedding for text using tenant-specific or system-wide provider
    */
-  async generateEmbedding(text: string): Promise<number[]> {
-    // Placeholder implementation
-    // In production, call OpenAI embeddings API:
-    // const response = await openai.embeddings.create({
-    //   model: 'text-embedding-ada-002',
-    //   input: text,
-    // });
-    // return response.data[0].embedding;
+  async generateEmbedding(text: string, tenantId: string | null = null): Promise<number[]> {
+    // Use the embeddings service with tenant-specific configuration
+    return embeddingsService.generateEmbedding(text, tenantId, {
+      taskType: 'RETRIEVAL_DOCUMENT',
+    });
+  }
 
-    // For now, return a mock embedding
-    console.warn('Using mock embeddings - integrate with OpenAI in production');
-    return this.mockEmbedding(text);
+  /**
+   * Get embedding dimension for a tenant's configured provider
+   */
+  async getEmbeddingDimension(tenantId: string | null = null): Promise<number> {
+    return embeddingsService.getDimension(tenantId);
   }
 
   /**
@@ -345,38 +344,5 @@ export class SemanticMemoryService {
     }
 
     return dotProduct / (normA * normB);
-  }
-
-  /**
-   * Mock embedding generation (for development)
-   * Replace with actual OpenAI API call in production
-   */
-  private mockEmbedding(text: string): number[] {
-    // Generate a deterministic mock embedding based on text hash
-    const hash = this.simpleHash(text);
-    const embedding: number[] = [];
-
-    for (let i = 0; i < this.EMBEDDING_DIMENSION; i++) {
-      // Use hash to generate pseudo-random values
-      const value = Math.sin(hash + i) * 0.5;
-      embedding.push(value);
-    }
-
-    // Normalize
-    const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-    return embedding.map((val) => val / norm);
-  }
-
-  /**
-   * Simple string hash function
-   */
-  private simpleHash(text: string): number {
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-      const char = text.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return hash;
   }
 }

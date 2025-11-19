@@ -12,21 +12,32 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { useAuth } from '@/hooks/useAuth';
 
+// Check if user is a tenant admin (has tenantId that's not 'system')
+const isTenantAdmin = (user: { tenantId?: string; roles?: string[] } | null): boolean => {
+  if (!user) return false;
+  // System admins don't have a tenantId or have 'system' as tenantId
+  return user.tenantId !== undefined && user.tenantId !== 'system' && user.tenantId !== null;
+};
+
 interface Client {
   id: string;
   name: string;
   slug: string;
   tenantId: string;
   companyName: string | null;
-  contactName: string | null;
-  contactEmail: string | null;
-  contactPhone: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  zipCode: string | null;
-  country: string | null;
-  notes: string | null;
+  // Schema field names (what API returns)
+  email: string | null;
+  phone: string | null;
+  contactPerson: string | null;
+  billingAddressLine1: string | null;
+  billingAddressLine2: string | null;
+  billingCity: string | null;
+  billingState: string | null;
+  billingPostalCode: string | null;
+  billingCountry: string | null;
+  billingContactName: string | null;
+  billingContactEmail: string | null;
+  billingContactPhone: string | null;
   hourlyRate: number | null;
   isActive: boolean;
   createdAt: string;
@@ -42,13 +53,19 @@ interface Client {
 }
 
 export default function ClientsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [includeInactive, setIncludeInactive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Check if user is a tenant admin
+  const userIsTenantAdmin = isTenantAdmin(user);
+
+  // API endpoint - always 'clients' (the route handles both system admin and tenant admin)
+  const apiEndpoint = 'clients';
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -67,19 +84,25 @@ export default function ClientsPage() {
     state: '',
     zipCode: '',
     country: '',
+    billingContactName: '',
+    billingContactEmail: '',
+    billingContactPhone: '',
     hourlyRate: '',
   });
 
-  // Available tenants for dropdown
+  // Available tenants for dropdown (only for system admins)
   const [tenants, setTenants] = useState<Array<{ id: string; name: string; tenantKey: string }>>(
     []
   );
 
   useEffect(() => {
     fetchClients();
-    fetchTenants();
+    // Only fetch tenants for system admins
+    if (!userIsTenantAdmin) {
+      fetchTenants();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, searchTerm, includeInactive]);
+  }, [currentPage, searchTerm, includeInactive, userIsTenantAdmin]);
 
   const fetchClients = async () => {
     try {
@@ -92,10 +115,13 @@ export default function ClientsPage() {
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}?${params}`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -132,13 +158,19 @@ export default function ClientsPage() {
   };
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.tenantId) {
+    // For tenant admins, only name is required (tenant is automatic)
+    // For system admins, both name and tenantId are required
+    if (!formData.name) {
+      alert('Name is required');
+      return;
+    }
+    if (!userIsTenantAdmin && !formData.tenantId) {
       alert('Name and Tenant are required');
       return;
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}`, {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
@@ -161,6 +193,9 @@ export default function ClientsPage() {
           state: '',
           zipCode: '',
           country: '',
+          billingContactName: '',
+          billingContactEmail: '',
+          billingContactPhone: '',
           hourlyRate: '',
         });
         fetchClients();
@@ -179,7 +214,7 @@ export default function ClientsPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${editingClient.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}/${editingClient.id}`,
         {
           method: 'PUT',
           headers: {
@@ -204,6 +239,9 @@ export default function ClientsPage() {
           state: '',
           zipCode: '',
           country: '',
+          billingContactName: '',
+          billingContactEmail: '',
+          billingContactPhone: '',
           hourlyRate: '',
         });
         fetchClients();
@@ -219,14 +257,17 @@ export default function ClientsPage() {
 
   const handleToggleActive = async (clientId: string, isActive: boolean) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${clientId}`, {
-        method: 'PUT',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ isActive: !isActive }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}/${clientId}`,
+        {
+          method: 'PUT',
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ isActive: !isActive }),
+        }
+      );
 
       if (response.ok) {
         fetchClients();
@@ -247,10 +288,13 @@ export default function ClientsPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${clientId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}/${clientId}`,
+        {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (response.ok) {
         fetchClients();
@@ -297,18 +341,22 @@ export default function ClientsPage() {
 
   const openEditModal = (client: Client) => {
     setEditingClient(client);
+    // Map schema field names to form field names
     setFormData({
       name: client.name,
       tenantId: client.tenantId,
       companyName: client.companyName || '',
-      contactName: client.contactName || '',
-      contactEmail: client.contactEmail || '',
-      contactPhone: client.contactPhone || '',
-      address: client.address || '',
-      city: client.city || '',
-      state: client.state || '',
-      zipCode: client.zipCode || '',
-      country: client.country || '',
+      contactName: client.contactPerson || '',
+      contactEmail: client.email || '',
+      contactPhone: client.phone || '',
+      address: client.billingAddressLine1 || '',
+      city: client.billingCity || '',
+      state: client.billingState || '',
+      zipCode: client.billingPostalCode || '',
+      country: client.billingCountry || '',
+      billingContactName: client.billingContactName || '',
+      billingContactEmail: client.billingContactEmail || '',
+      billingContactPhone: client.billingContactPhone || '',
       hourlyRate: client.hourlyRate ? client.hourlyRate.toString() : '',
     });
   };
@@ -372,9 +420,11 @@ export default function ClientsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Client
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Tenant
-                </th>
+                {!userIsTenantAdmin && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tenant
+                  </th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Contact
                 </th>
@@ -399,16 +449,16 @@ export default function ClientsPage() {
                       <div className="text-sm text-gray-500">{client.companyName}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {client.tenant?.name || 'N/A'}
-                  </td>
+                  {!userIsTenantAdmin && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {client.tenant?.name || 'N/A'}
+                    </td>
+                  )}
                   <td className="px-6 py-4">
-                    {client.contactName && (
-                      <div className="text-sm text-gray-900">{client.contactName}</div>
+                    {client.contactPerson && (
+                      <div className="text-sm text-gray-900">{client.contactPerson}</div>
                     )}
-                    {client.contactEmail && (
-                      <div className="text-sm text-gray-500">{client.contactEmail}</div>
-                    )}
+                    {client.email && <div className="text-sm text-gray-500">{client.email}</div>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
@@ -492,7 +542,7 @@ export default function ClientsPage() {
               <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
                 Basic Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={userIsTenantAdmin ? '' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Client Name *
@@ -504,21 +554,23 @@ export default function ClientsPage() {
                     placeholder="Client name"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tenant *</label>
-                  <select
-                    value={formData.tenantId}
-                    onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a tenant</option>
-                    {tenants.map((tenant) => (
-                      <option key={tenant.id} value={tenant.id}>
-                        {tenant.tenantKey}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {!userIsTenantAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tenant *</label>
+                    <select
+                      value={formData.tenantId}
+                      onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select a tenant</option>
+                      {tenants.map((tenant) => (
+                        <option key={tenant.id} value={tenant.id}>
+                          {tenant.tenantKey}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
@@ -626,6 +678,55 @@ export default function ClientsPage() {
                     placeholder="Country"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Billing Contact */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Billing Contact</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Billing Contact Name
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.billingContactName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, billingContactName: e.target.value })
+                    }
+                    placeholder="Billing contact name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Billing Contact Phone
+                  </label>
+                  <Input
+                    type="tel"
+                    value={formData.billingContactPhone}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        billingContactPhone: formatPhoneNumber(e.target.value),
+                      })
+                    }
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Billing Contact Email
+                </label>
+                <Input
+                  type="email"
+                  value={formData.billingContactEmail}
+                  onChange={(e) =>
+                    setFormData({ ...formData, billingContactEmail: e.target.value })
+                  }
+                  placeholder="billing@example.com"
+                />
               </div>
             </div>
 
@@ -667,6 +768,9 @@ export default function ClientsPage() {
                     state: '',
                     zipCode: '',
                     country: '',
+                    billingContactName: '',
+                    billingContactEmail: '',
+                    billingContactPhone: '',
                     hourlyRate: '',
                   });
                 }}
@@ -690,7 +794,7 @@ export default function ClientsPage() {
               <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
                 Basic Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={userIsTenantAdmin ? '' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Client Name *
@@ -701,23 +805,25 @@ export default function ClientsPage() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tenant *</label>
-                  <select
-                    value={formData.tenantId}
-                    onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
-                    disabled
-                  >
-                    <option value="">Select a tenant</option>
-                    {tenants.map((tenant) => (
-                      <option key={tenant.id} value={tenant.id}>
-                        {tenant.tenantKey}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">Tenant cannot be changed</p>
-                </div>
+                {!userIsTenantAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tenant *</label>
+                    <select
+                      value={formData.tenantId}
+                      onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+                      disabled
+                    >
+                      <option value="">Select a tenant</option>
+                      {tenants.map((tenant) => (
+                        <option key={tenant.id} value={tenant.id}>
+                          {tenant.tenantKey}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Tenant cannot be changed</p>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
@@ -828,6 +934,55 @@ export default function ClientsPage() {
               </div>
             </div>
 
+            {/* Billing Contact */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Billing Contact</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Billing Contact Name
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.billingContactName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, billingContactName: e.target.value })
+                    }
+                    placeholder="Billing contact name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Billing Contact Phone
+                  </label>
+                  <Input
+                    type="tel"
+                    value={formData.billingContactPhone}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        billingContactPhone: formatPhoneNumber(e.target.value),
+                      })
+                    }
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Billing Contact Email
+                </label>
+                <Input
+                  type="email"
+                  value={formData.billingContactEmail}
+                  onChange={(e) =>
+                    setFormData({ ...formData, billingContactEmail: e.target.value })
+                  }
+                  placeholder="billing@example.com"
+                />
+              </div>
+            </div>
+
             {/* Billing Information */}
             <div className="space-y-4 mb-6">
               <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
@@ -866,6 +1021,9 @@ export default function ClientsPage() {
                     state: '',
                     zipCode: '',
                     country: '',
+                    billingContactName: '',
+                    billingContactEmail: '',
+                    billingContactPhone: '',
                     hourlyRate: '',
                   });
                 }}

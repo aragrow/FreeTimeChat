@@ -360,13 +360,14 @@ model Conversation {
 
 // Message - Chat messages (for admin users without tenants)
 model Message {
-  id             String       @id @default(uuid())
-  conversationId String       @map("conversation_id")
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  id             String           @id @default(uuid())
+  conversationId String           @map("conversation_id")
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   role           MessageRole
-  content        String       @db.Text
+  content        String           @db.Text
   metadata       Json?
-  createdAt      DateTime     @default(now()) @map("created_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  ratings        ResponseRating[] // Phase 6: User ratings for this message
 
   @@index([conversationId])
   @@map("messages")
@@ -394,8 +395,13 @@ model LLMConfig {
   isActive        Boolean     @default(true) @map("is_active")
   tenantId        String?     @map("tenant_id") // null = system-wide, UUID = tenant-specific
   createdBy       String      @map("created_by") // Admin user ID who created this config
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Embedding configuration (uses same provider and API key)
+  embeddingModel   String? @map("embedding_model") // Optional custom embedding model (defaults per provider)
+  embeddingEnabled Boolean @default(true) @map("embedding_enabled") // Enable/disable embeddings
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([isActive])
   @@index([tenantId])
@@ -411,4 +417,34 @@ enum LLMProvider {
   ABACUS_AI     @map("abacus-ai")
 
   @@map("llm_provider")
+}
+
+// Phase 6: Response ratings
+model ResponseRating {
+  id         String      @id @default(uuid())
+  messageId  String      @map("message_id")
+  message    Message     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId     String      @map("user_id") // References user in main DB
+  ratingType RatingType  @map("rating_type") // 'PREVIEW' or 'REPORT'
+  rating     RatingValue // BAD, OK, or GOOD
+  feedback   String?     @db.Text // Optional user feedback text
+  metadata   Json? // Additional context (query, format, etc.)
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  @@index([messageId])
+  @@index([userId])
+  @@index([ratingType])
+  @@index([rating])
+  @@map("response_ratings")
+}
+
+enum RatingType {
+  PREVIEW // Rating for Phase 3 preview data
+  REPORT // Rating for Phase 4 formatted report
+}
+
+enum RatingValue {
+  BAD
+  OK
+  GOOD
 }

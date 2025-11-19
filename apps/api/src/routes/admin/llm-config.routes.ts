@@ -103,6 +103,8 @@ router.post('/', async (req: Request, res: Response) => {
       baseUrl,
       organization,
       timeout,
+      embeddingModel,
+      embeddingEnabled,
     } = req.body;
 
     // Validate required fields
@@ -133,6 +135,15 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    // Validate embeddingEnabled if provided
+    if (embeddingEnabled !== undefined && typeof embeddingEnabled !== 'boolean') {
+      res.status(400).json({
+        status: 'error',
+        message: 'embeddingEnabled must be a boolean',
+      });
+      return;
+    }
+
     // Create configuration
     const config = await llmConfigService.createConfig(user.sub, tenantId, {
       provider: provider as LLMProvider,
@@ -143,6 +154,8 @@ router.post('/', async (req: Request, res: Response) => {
       baseUrl,
       organization,
       timeout,
+      embeddingModel,
+      embeddingEnabled,
     });
 
     res.status(201).json({

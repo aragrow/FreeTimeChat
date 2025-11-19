@@ -141,6 +141,17 @@ router.post('/', async (req: Request, res: Response) => {
 
     const {
       name,
+      companyName,
+      // Form field names (mapped to schema field names)
+      contactName,
+      contactEmail,
+      contactPhone,
+      address,
+      city,
+      state,
+      zipCode,
+      country,
+      // Schema field names (also accepted)
       email,
       phone,
       website,
@@ -153,6 +164,10 @@ router.post('/', async (req: Request, res: Response) => {
       billingState,
       billingPostalCode,
       billingCountry,
+      // Billing contact
+      billingContactName,
+      billingContactEmail,
+      billingContactPhone,
       invoicePrefix,
       invoiceNextNumber,
       invoiceNumberPadding,
@@ -174,23 +189,27 @@ router.post('/', async (req: Request, res: Response) => {
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '');
 
-    // Create client
+    // Create client (map form fields to schema fields)
     const client = await req.clientDb.client.create({
       data: {
         name: name.trim(),
         slug,
-        email: email?.trim() || null,
-        phone: phone?.trim() || null,
+        companyName: companyName?.trim() || null,
+        email: (contactEmail || email)?.trim() || null,
+        phone: (contactPhone || phone)?.trim() || null,
         website: website?.trim() || null,
-        contactPerson: contactPerson?.trim() || null,
+        contactPerson: (contactName || contactPerson)?.trim() || null,
         hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
         discountPercentage: discountPercentage ? parseFloat(discountPercentage) : 0,
-        billingAddressLine1: billingAddressLine1?.trim() || null,
+        billingAddressLine1: (address || billingAddressLine1)?.trim() || null,
         billingAddressLine2: billingAddressLine2?.trim() || null,
-        billingCity: billingCity?.trim() || null,
-        billingState: billingState?.trim() || null,
-        billingPostalCode: billingPostalCode?.trim() || null,
-        billingCountry: billingCountry?.trim() || null,
+        billingCity: (city || billingCity)?.trim() || null,
+        billingState: (state || billingState)?.trim() || null,
+        billingPostalCode: (zipCode || billingPostalCode)?.trim() || null,
+        billingCountry: (country || billingCountry)?.trim() || null,
+        billingContactName: billingContactName?.trim() || null,
+        billingContactEmail: billingContactEmail?.trim() || null,
+        billingContactPhone: billingContactPhone?.trim() || null,
         invoicePrefix: invoicePrefix?.trim() || null,
         invoiceNextNumber: invoiceNextNumber || 1,
         invoiceNumberPadding: invoiceNumberPadding || 5,
@@ -236,6 +255,17 @@ router.put('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
       name,
+      companyName,
+      // Form field names (mapped to schema field names)
+      contactName,
+      contactEmail,
+      contactPhone,
+      address,
+      city,
+      state,
+      zipCode,
+      country,
+      // Schema field names (also accepted)
       email,
       phone,
       website,
@@ -248,6 +278,10 @@ router.put('/:id', async (req: Request, res: Response) => {
       billingState,
       billingPostalCode,
       billingCountry,
+      // Billing contact
+      billingContactName,
+      billingContactEmail,
+      billingContactPhone,
       invoicePrefix,
       invoiceNextNumber,
       invoiceNumberPadding,
@@ -267,7 +301,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    // Build update data
+    // Build update data (map form fields to schema fields)
     const updateData: any = {};
 
     if (name !== undefined && name.trim()) {
@@ -279,23 +313,36 @@ router.put('/:id', async (req: Request, res: Response) => {
         .replace(/[^a-z0-9-]/g, '');
     }
 
-    if (email !== undefined) updateData.email = email?.trim() || null;
-    if (phone !== undefined) updateData.phone = phone?.trim() || null;
+    if (companyName !== undefined) updateData.companyName = companyName?.trim() || null;
+    if (contactEmail !== undefined || email !== undefined)
+      updateData.email = (contactEmail || email)?.trim() || null;
+    if (contactPhone !== undefined || phone !== undefined)
+      updateData.phone = (contactPhone || phone)?.trim() || null;
     if (website !== undefined) updateData.website = website?.trim() || null;
-    if (contactPerson !== undefined) updateData.contactPerson = contactPerson?.trim() || null;
+    if (contactName !== undefined || contactPerson !== undefined)
+      updateData.contactPerson = (contactName || contactPerson)?.trim() || null;
     if (hourlyRate !== undefined)
       updateData.hourlyRate = hourlyRate ? parseFloat(hourlyRate) : null;
     if (discountPercentage !== undefined)
       updateData.discountPercentage = discountPercentage ? parseFloat(discountPercentage) : 0;
-    if (billingAddressLine1 !== undefined)
-      updateData.billingAddressLine1 = billingAddressLine1?.trim() || null;
+    if (address !== undefined || billingAddressLine1 !== undefined)
+      updateData.billingAddressLine1 = (address || billingAddressLine1)?.trim() || null;
     if (billingAddressLine2 !== undefined)
       updateData.billingAddressLine2 = billingAddressLine2?.trim() || null;
-    if (billingCity !== undefined) updateData.billingCity = billingCity?.trim() || null;
-    if (billingState !== undefined) updateData.billingState = billingState?.trim() || null;
-    if (billingPostalCode !== undefined)
-      updateData.billingPostalCode = billingPostalCode?.trim() || null;
-    if (billingCountry !== undefined) updateData.billingCountry = billingCountry?.trim() || null;
+    if (city !== undefined || billingCity !== undefined)
+      updateData.billingCity = (city || billingCity)?.trim() || null;
+    if (state !== undefined || billingState !== undefined)
+      updateData.billingState = (state || billingState)?.trim() || null;
+    if (zipCode !== undefined || billingPostalCode !== undefined)
+      updateData.billingPostalCode = (zipCode || billingPostalCode)?.trim() || null;
+    if (country !== undefined || billingCountry !== undefined)
+      updateData.billingCountry = (country || billingCountry)?.trim() || null;
+    if (billingContactName !== undefined)
+      updateData.billingContactName = billingContactName?.trim() || null;
+    if (billingContactEmail !== undefined)
+      updateData.billingContactEmail = billingContactEmail?.trim() || null;
+    if (billingContactPhone !== undefined)
+      updateData.billingContactPhone = billingContactPhone?.trim() || null;
     if (invoicePrefix !== undefined) updateData.invoicePrefix = invoicePrefix?.trim() || null;
     if (invoiceNextNumber !== undefined) updateData.invoiceNextNumber = invoiceNextNumber;
     if (invoiceNumberPadding !== undefined) updateData.invoiceNumberPadding = invoiceNumberPadding;

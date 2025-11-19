@@ -152,6 +152,9 @@ export class AuthService {
       userAgent,
     });
 
+    // Clear failed login attempts on successful login (reset counter)
+    await this.loginTrackingService.clearFailedAttempts(user.id);
+
     // Check if password change is required
     if (user.requirePasswordChange) {
       return {

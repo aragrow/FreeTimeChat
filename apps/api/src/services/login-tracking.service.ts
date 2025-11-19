@@ -225,6 +225,20 @@ export class LoginTrackingService {
 
     return result.count;
   }
+
+  /**
+   * Clear failed login attempts for a user (reset counter on successful login)
+   */
+  async clearFailedAttempts(userId: string): Promise<number> {
+    const result = await this.prisma.loginAttempt.deleteMany({
+      where: {
+        userId,
+        success: false,
+      },
+    });
+
+    return result.count;
+  }
 }
 
 // Singleton instance

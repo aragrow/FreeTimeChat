@@ -8,6 +8,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { MessageRating } from './MessageRating';
+import type { Rating, RatingValue } from './MessageRating';
+import { useAuth } from '@/hooks/useAuth';
 import { useVoiceOutput } from '@/hooks/useVoiceOutput';
 
 export interface Message {
@@ -20,6 +23,7 @@ export interface Message {
     confidence?: number;
     entities?: Record<string, unknown>;
   };
+  rating?: Rating;
 }
 
 interface ChatMessagesProps {
@@ -30,6 +34,8 @@ interface ChatMessagesProps {
 export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+  const [messageRatings, setMessageRatings] = useState<Record<string, Rating>>({});
+  const { fetchWithAuth } = useAuth();
 
   // Voice output hook
   const { isSpeaking, isSupported: isVoiceSupported, speak, stop } = useVoiceOutput();
@@ -74,6 +80,44 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
       // Start speaking
       setSpeakingMessageId(messageId);
       speak(content);
+    }
+  };
+
+  const handleRatingSubmit = async (
+    messageId: string,
+    rating: RatingValue,
+    feedback?: string
+  ): Promise<void> => {
+    try {
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/chat/${messageId}/ratings`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ratingType: 'REPORT', // Default to REPORT for now
+            rating,
+            feedback,
+            metadata: {}, // Can be extended with more context later
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update local state with the new/updated rating
+        setMessageRatings((prev) => ({
+          ...prev,
+          [messageId]: data.data.rating,
+        }));
+      } else {
+        throw new Error('Failed to submit rating');
+      }
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      throw error; // Re-throw to let the component handle it
     }
   };
 
@@ -180,7 +224,12 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
                           <path d="M6 6h12v12H6z" />
                         </svg>
                       ) : (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -192,6 +241,20 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
                     </button>
                   )}
                 </div>
+
+                {/* Rating Component for Assistant Messages */}
+                {isAssistant && (
+                  <div className="mt-1">
+                    <MessageRating
+                      messageId={message.id}
+                      existingRating={message.rating || messageRatings[message.id]}
+                      onRatingSubmit={(rating, feedback) =>
+                        handleRatingSubmit(message.id, rating, feedback)
+                      }
+                      ratingType="REPORT"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

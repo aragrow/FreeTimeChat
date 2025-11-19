@@ -16,7 +16,7 @@ declare global {
     interface Request {
       user?: JWTPayload;
       clientDatabaseUrl?: string;
-      clientDb?: ClientPrismaClient;
+      clientDb?: ClientPrismaClient | MainPrismaClient; // Can be client DB or main DB (for admin users)
       mainDb?: MainPrismaClient;
       useTenantDb?: boolean; // Flag to indicate if tenant DB is being used (for chat)
     }

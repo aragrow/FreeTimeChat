@@ -113,7 +113,9 @@
       "Bash(node:*)",
       "Bash(CLIENT_DATABASE_URL=\"postgresql://david@localhost:5432/freetimechat_customer_22d1fe9f_b025_4ce1_ba7c_5d53aecc3762\" pnpm prisma db push:*)",
       "Bash(pnpm prisma:generate:client:*)",
-      "Bash(pnpm prisma:migrate:main:*)"
+      "Bash(pnpm prisma:migrate:main:*)",
+      "Bash(/opt/homebrew/Cellar/libpq/17.2/bin/psql:*)",
+      "Bash(CLIENT_DATABASE_URL=\"postgresql://david@localhost:5432/freetimechat_aragrow_llc\" npx prisma db push:*)"
     ],
     "deny": [],
     "ask": []

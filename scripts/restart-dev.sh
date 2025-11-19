@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default tenant database URL (ARAGROW-LLC)
-DEFAULT_TENANT_DB_URL="postgresql://david@localhost:5432/freetimechat_customer_22d1fe9f_b025_4ce1_ba7c_5d53aecc3762"
+DEFAULT_TENANT_DB_URL="postgresql://david@localhost:5432/freetimechat_aragrow_llc"
 
 echo -e "${BLUE}🔄 Restarting FreeTimeChat Development Environment${NC}\n"
 
@@ -65,7 +65,38 @@ check_port 1025 "Mailpit SMTP"
 
 echo ""
 
-# Step 3: Start development servers
+# Step 3: Ensure PostgreSQL is running
+echo -e "${BLUE}🐘 Checking PostgreSQL...${NC}"
+
+# Check if PostgreSQL is running on port 5432
+if lsof -ti:5432 >/dev/null 2>&1; then
+  echo -e "${GREEN}  ✓ PostgreSQL is running on port 5432${NC}"
+else
+  echo -e "${YELLOW}  Starting PostgreSQL...${NC}"
+  # Try to start PostgreSQL via Homebrew (try different versions)
+  if brew services start postgresql@16 2>/dev/null; then
+    echo -e "${GREEN}  ✓ Started PostgreSQL 16${NC}"
+  elif brew services start postgresql@15 2>/dev/null; then
+    echo -e "${GREEN}  ✓ Started PostgreSQL 15${NC}"
+  elif brew services start postgresql 2>/dev/null; then
+    echo -e "${GREEN}  ✓ Started PostgreSQL${NC}"
+  else
+    echo -e "${RED}  ⚠  Could not start PostgreSQL. Please start it manually.${NC}"
+  fi
+  # Wait for PostgreSQL to be ready
+  sleep 3
+fi
+
+# Verify PostgreSQL connection
+if /opt/homebrew/Cellar/libpq/17.2/bin/psql -h localhost -U david -d postgres -c "SELECT 1" >/dev/null 2>&1; then
+  echo -e "${GREEN}  ✓ PostgreSQL connection verified${NC}"
+else
+  echo -e "${RED}  ⚠  Could not connect to PostgreSQL (check if it's running)${NC}"
+fi
+
+echo ""
+
+# Step 4: Start development servers
 echo -e "${BLUE}🚀 Starting development servers...${NC}"
 
 # Get project root directory
@@ -93,7 +124,7 @@ echo -e "${GREEN}  ✓ Web server started (PID: $WEB_PID)${NC}"
 
 echo ""
 
-# Step 4: Wait for servers to start
+# Step 5: Wait for servers to start
 echo -e "${YELLOW}⏳ Waiting for servers to start...${NC}"
 sleep 5
 
@@ -113,19 +144,39 @@ fi
 
 echo ""
 
-# Step 5: Start Prisma Studio (both main and tenant databases)
+# Step 6: Start Prisma Studio (both main and tenant databases)
 echo -e "${BLUE}🔧 Starting Prisma Studio...${NC}"
 
 # Start Main database Prisma Studio
 echo -e "${YELLOW}  Starting Prisma Studio for Main database...${NC}"
 cd "$PROJECT_ROOT/apps/api"
-npx prisma studio --schema=prisma/schema-main.prisma --port 5555 > /tmp/prisma-studio-main.log 2>&1 &
+npx prisma studio --schema=prisma/schema-main.prisma --port 5555 --browser none > /tmp/prisma-studio-main.log 2>&1 &
 echo -e "${GREEN}  ✓ Main DB Prisma Studio: http://localhost:5555${NC}"
 
 # Start Tenant database Prisma Studio (ARAGROW-LLC)
 echo -e "${YELLOW}  Starting Prisma Studio for Tenant database (ARAGROW-LLC)...${NC}"
-CLIENT_DATABASE_URL="$DEFAULT_TENANT_DB_URL" npx prisma studio --schema=prisma/schema-client.prisma --port 5556 > /tmp/prisma-studio-tenant.log 2>&1 &
+CLIENT_DATABASE_URL="$DEFAULT_TENANT_DB_URL" npx prisma studio --schema=prisma/schema-client.prisma --port 5556 --browser none > /tmp/prisma-studio-tenant.log 2>&1 &
 echo -e "${GREEN}  ✓ Tenant DB Prisma Studio: http://localhost:5556${NC}"
+
+echo ""
+
+# Step 7: Run test suite (optional)
+echo ""
+read -p "Would you like to run the test suite? (y/N): " run_tests
+if [[ "$run_tests" =~ ^[Yy]$ ]]; then
+  echo -e "${BLUE}🧪 Running test suite...${NC}"
+  cd "$PROJECT_ROOT"
+  pnpm test > /tmp/freetimechat-tests.log 2>&1
+  TEST_EXIT_CODE=$?
+  if [ $TEST_EXIT_CODE -eq 0 ]; then
+    echo -e "${GREEN}  ✓ All tests passed!${NC}"
+  else
+    echo -e "${RED}  ⚠  Some tests failed (exit code: $TEST_EXIT_CODE)${NC}"
+    echo -e "${YELLOW}  Check logs: tail -f /tmp/freetimechat-tests.log${NC}"
+  fi
+else
+  echo -e "${YELLOW}  ℹ  Skipping test suite${NC}"
+fi
 
 echo ""
 echo -e "${GREEN}✅ Development environment restarted!${NC}\n"
@@ -136,6 +187,7 @@ printf "  ${GREEN}%-15s %-30s %-50s${NC}\n" "Service" "URL" "Purpose"
 printf "  ${YELLOW}%-15s %-30s %-50s${NC}\n" "───────────────" "──────────────────────────────" "──────────────────────────────────────────────────"
 
 # Print table rows
+printf "  %-15s ${BLUE}%-30s${NC} %-50s\n" "PostgreSQL" "localhost:5432" "Database server"
 printf "  %-15s ${BLUE}%-30s${NC} %-50s\n" "API" "http://localhost:3001" "Backend API"
 printf "  %-15s ${BLUE}%-30s${NC} %-50s\n" "Web" "http://localhost:3000" "Next.js Frontend"
 printf "  %-15s ${BLUE}%-30s${NC} %-50s\n" "Mailpit" "http://localhost:8025" "Email testing (SMTP: 1025)"
@@ -149,6 +201,7 @@ echo -e "  ${GREEN}•${NC} Web:     tail -f /tmp/freetimechat-web.log"
 echo -e "  ${GREEN}•${NC} Mailpit: tail -f /tmp/mailpit.log"
 echo -e "  ${GREEN}•${NC} Prisma:  tail -f /tmp/prisma-studio-main.log"
 echo -e "  ${GREEN}•${NC} Prisma:  tail -f /tmp/prisma-studio-tenant.log"
+echo -e "  ${GREEN}•${NC} Tests:   tail -f /tmp/freetimechat-tests.log"
 echo ""
 echo -e "${BLUE}💡 Tips:${NC}"
 echo -e "  ${GREEN}•${NC} Stop all: pkill -f 'next dev|nodemon|prisma studio|mailpit'"

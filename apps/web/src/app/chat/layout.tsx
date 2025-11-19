@@ -55,10 +55,10 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
         const conversationsList = data.data || [];
         setConversations(conversationsList);
 
-        // Auto-select first active conversation
-        const activeConv = conversationsList.find((c: Conversation) => c.isActive);
-        if (activeConv) {
-          setActiveConversationId(activeConv.id);
+        // Auto-select the first (most recent) conversation if we don't have one selected
+        // and if there are conversations available
+        if (!activeConversationId && conversationsList.length > 0) {
+          setActiveConversationId(conversationsList[0].id);
         }
       }
     } catch (error) {
@@ -165,7 +165,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                   Time Entries
                 </a>
                 <a
-                  href="/projects"
+                  href="/admin/projects"
                   className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

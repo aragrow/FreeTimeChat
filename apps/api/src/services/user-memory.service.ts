@@ -14,6 +14,7 @@ import { SemanticMemoryService } from './semantic-memory.service';
 import { ShortTermMemoryService } from './short-term-memory.service';
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Message } from '../generated/prisma-client';
+import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
 export interface MemoryContext {
   shortTerm?: {
@@ -57,7 +58,7 @@ export class UserMemoryService {
   private longTerm: LongTermMemoryService;
   private semantic: SemanticMemoryService;
 
-  constructor(private prisma: ClientPrismaClient) {
+  constructor(private prisma: ClientPrismaClient | MainPrismaClient) {
     this.shortTerm = new ShortTermMemoryService();
     this.longTerm = new LongTermMemoryService(prisma);
     this.semantic = new SemanticMemoryService(prisma);

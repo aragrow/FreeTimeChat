@@ -93,8 +93,9 @@ class LLMService {
         return provider;
       }
 
-      // Fall back to environment config for system-wide (tenantId = null)
-      if (tenantId === null && this.provider) {
+      // Fall back to environment config for both system-wide and tenant users
+      // This ensures tenant users can use the system LLM provider until they configure their own
+      if (this.provider) {
         return this.provider;
       }
 

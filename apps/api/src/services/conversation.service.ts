@@ -1,11 +1,12 @@
 /**
  * Conversation Service
  *
- * Handles conversation management operations for client databases
+ * Handles conversation management operations for client or main databases
  */
 
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Conversation } from '../generated/prisma-client';
+import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
 export interface CreateConversationData {
   userId: string;
@@ -25,7 +26,7 @@ export interface ListConversationsOptions {
 }
 
 export class ConversationService {
-  constructor(private prisma: ClientPrismaClient) {}
+  constructor(private prisma: ClientPrismaClient | MainPrismaClient) {}
 
   /**
    * Start a new conversation

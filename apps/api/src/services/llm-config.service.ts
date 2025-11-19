@@ -31,6 +31,8 @@ interface LLMConfigCreateInput {
   baseUrl?: string;
   organization?: string;
   timeout?: number;
+  embeddingModel?: string;
+  embeddingEnabled?: boolean;
 }
 
 interface LLMConfigUpdateInput {
@@ -42,6 +44,8 @@ interface LLMConfigUpdateInput {
   organization?: string;
   timeout?: number;
   isActive?: boolean;
+  embeddingModel?: string;
+  embeddingEnabled?: boolean;
 }
 
 interface LLMConfigResponse {
@@ -150,6 +154,8 @@ export class LLMConfigService {
       baseUrl: input.baseUrl || null,
       organization: input.organization || null,
       timeout: input.timeout || 30000,
+      embeddingModel: input.embeddingModel || null,
+      embeddingEnabled: input.embeddingEnabled !== undefined ? input.embeddingEnabled : true,
       isActive: true,
       createdBy: userId,
     };

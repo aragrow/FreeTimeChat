@@ -1,11 +1,12 @@
 /**
  * Message Service
  *
- * Handles message management operations for client databases
+ * Handles message management operations for client or main databases
  */
 
 import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-client';
 import type { Message, MessageRole } from '../generated/prisma-client';
+import type { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 
 export interface AddMessageData {
   conversationId: string;
@@ -29,7 +30,7 @@ export interface GetMessagesOptions {
 }
 
 export class MessageService {
-  constructor(private prisma: ClientPrismaClient) {}
+  constructor(private prisma: ClientPrismaClient | MainPrismaClient) {}
 
   /**
    * Add a message to a conversation

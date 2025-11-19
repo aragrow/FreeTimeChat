@@ -167,6 +167,7 @@ A time tracking application with two distinct interfaces:
 - RBAC with capability-based permissions
 - JWT authentication with RS256 encryption
 - PostgreSQL + Prisma ORM + Redis caching
+- **No Docker required** - Uses local PostgreSQL installation
 
 ## Key Principles
 
@@ -197,6 +198,40 @@ pnpm test             # Run tests
 pnpm lint             # Check code quality
 pnpm commit           # Automated commit workflow
 ```
+
+### Database Setup (No Docker)
+
+This project **does NOT use Docker**. It uses your local PostgreSQL
+installation:
+
+```bash
+# Database is running locally on macOS (Homebrew)
+# Connection: postgresql://david@localhost:5432/
+
+# Apply migrations
+cd apps/api
+pnpm prisma:push:main      # Push main DB schema
+pnpm prisma:push:client    # Push client DB schema
+
+# Seed the database
+pnpm prisma:seed:main      # Seed admin user and test data
+
+# Generate Prisma clients
+pnpm prisma:generate:main
+pnpm prisma:generate:client
+```
+
+### Development Users
+
+After seeding the database, these users are available for testing:
+
+| Email                         | Password    | Role        | Tenant                               |
+| ----------------------------- | ----------- | ----------- | ------------------------------------ |
+| `admin@freetimechat.local`    | `0pen@2025` | admin       | None (system admin)                  |
+| `testuser@freetimechat.local` | `Test@2025` | user        | Test Tenant (Key: `TEST-TENANT-KEY`) |
+| `000002@aragrow-llc.local`    | `Open@2025` | tenantadmin | ARAGROW LLC (Key: `ARAGROW-LLC`)     |
+
+Login at: http://localhost:3000/login
 
 ### Documentation Lookup
 

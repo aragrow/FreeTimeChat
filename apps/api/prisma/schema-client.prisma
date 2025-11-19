@@ -23,6 +23,7 @@ model Client {
   id                   String    @id @default(uuid())
   name                 String
   slug                 String    @unique
+  companyName          String?   @map("company_name")
   isActive             Boolean   @default(true) @map("is_active")
   hourlyRate           Decimal?  @map("hourly_rate") @db.Decimal(10, 2)
   discountPercentage   Decimal?  @default(0) @map("discount_percentage") @db.Decimal(5, 2)
@@ -38,6 +39,10 @@ model Client {
   billingState         String?   @map("billing_state")
   billingPostalCode    String?   @map("billing_postal_code")
   billingCountry       String?   @map("billing_country")
+  // Billing Contact
+  billingContactName   String?   @map("billing_contact_name")
+  billingContactEmail  String?   @map("billing_contact_email")
+  billingContactPhone  String?   @map("billing_contact_phone")
   // Invoice Numbering
   invoicePrefix        String?   @map("invoice_prefix") // e.g., "INV-", "ABC-"
   invoiceNextNumber    Int       @default(1) @map("invoice_next_number")
@@ -170,13 +175,14 @@ model Conversation {
 }
 
 model Message {
-  id             String       @id @default(uuid())
-  conversationId String       @map("conversation_id")
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  id             String           @id @default(uuid())
+  conversationId String           @map("conversation_id")
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   role           MessageRole
-  content        String       @db.Text
+  content        String           @db.Text
   metadata       Json?
-  createdAt      DateTime     @default(now()) @map("created_at")
+  ratings        ResponseRating[]
+  createdAt      DateTime         @default(now()) @map("created_at")
 
   @@index([conversationId])
   @@map("messages")
@@ -186,6 +192,37 @@ enum MessageRole {
   USER
   ASSISTANT
   SYSTEM
+}
+
+// Phase 5: Response Rating System
+// Tracks user feedback on preview data and final reports
+model ResponseRating {
+  id         String      @id @default(uuid())
+  messageId  String      @map("message_id")
+  message    Message     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId     String      @map("user_id") // References user in main DB
+  ratingType RatingType  @map("rating_type") // 'preview' or 'report'
+  rating     RatingValue // BAD, OK, or GOOD
+  feedback   String?     @db.Text // Optional user feedback text
+  metadata   Json? // Additional context (query, format, etc.)
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  @@index([messageId])
+  @@index([userId])
+  @@index([ratingType])
+  @@index([rating])
+  @@map("response_ratings")
+}
+
+enum RatingType {
+  PREVIEW // Rating for Phase 3 preview data
+  REPORT // Rating for Phase 4 formatted report
+}
+
+enum RatingValue {
+  BAD
+  OK
+  GOOD
 }
 
 model PayPalTenantConfig {
