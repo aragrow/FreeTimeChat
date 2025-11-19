@@ -17,6 +17,7 @@ import invoicesRoutes from './admin/invoices.routes';
 import llmConfigRoutes from './admin/llm-config.routes';
 import paypalConfigRoutes from './admin/paypal-config.routes';
 import paypalIntegrationRoutes from './admin/paypal-integration.routes';
+import productsRoutes from './admin/products.routes';
 import projectMembersRoutes from './admin/project-members.routes';
 import projectsRoutes from './admin/projects.routes';
 import reportsRoutes from './admin/reports.routes';
@@ -50,6 +51,7 @@ router.use('/system-settings', systemSettingsRoutes);
 router.use('/clients', attachClientDatabase, clientsRoutes);
 router.use('/invoices', attachClientDatabase, invoicesRoutes);
 router.use('/paypal-config', attachClientDatabase, paypalConfigRoutes);
+router.use('/products', attachClientDatabase, productsRoutes);
 router.use('/projects', attachClientDatabase, projectsRoutes);
 router.use('/project-members', attachClientDatabase, projectMembersRoutes);
 router.use('/reports', attachClientDatabase, reportsRoutes);
@@ -72,6 +74,7 @@ router.get('/', (_req, res) => {
       llmConfig: '/api/v1/admin/llm-config',
       paypalIntegration: '/api/v1/admin/paypal-integration',
       paypalConfig: '/api/v1/admin/paypal-config',
+      products: '/api/v1/admin/products',
       projects: '/api/v1/admin/projects',
       projectMembers: '/api/v1/admin/project-members',
       reports: '/api/v1/admin/reports',
