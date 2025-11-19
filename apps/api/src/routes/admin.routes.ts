@@ -12,10 +12,14 @@ import { requireAnyRole } from '../middleware/permission.middleware';
 import accountRequestsRoutes from './admin/account-requests.routes';
 import capabilitiesRoutes from './admin/capabilities.routes';
 import clientsRoutes from './admin/clients.routes';
+import couponsRoutes from './admin/coupons.routes';
+import discountsRoutes from './admin/discounts.routes';
 import expensesRoutes from './admin/expenses.routes';
 import integrationTemplatesRoutes from './admin/integration-templates.routes';
 import invoicesRoutes from './admin/invoices.routes';
 import llmConfigRoutes from './admin/llm-config.routes';
+import paymentTermsRoutes from './admin/payment-terms.routes';
+import paymentsRoutes from './admin/payments.routes';
 import paypalConfigRoutes from './admin/paypal-config.routes';
 import paypalIntegrationRoutes from './admin/paypal-integration.routes';
 import productsRoutes from './admin/products.routes';
@@ -60,6 +64,12 @@ router.use('/reports', attachClientDatabase, reportsRoutes);
 router.use('/tasks', attachClientDatabase, tasksRoutes);
 router.use('/time-entries', attachClientDatabase, timeEntriesRoutes);
 
+// Accounting routes (need tenant database)
+router.use('/coupons', attachClientDatabase, couponsRoutes);
+router.use('/discounts', attachClientDatabase, discountsRoutes);
+router.use('/payments', attachClientDatabase, paymentsRoutes);
+router.use('/payment-terms', attachClientDatabase, paymentTermsRoutes);
+
 // Admin dashboard root endpoint
 router.get('/', (_req, res) => {
   res.status(200).json({
@@ -85,6 +95,11 @@ router.get('/', (_req, res) => {
       tasks: '/api/v1/admin/tasks',
       tenants: '/api/v1/admin/tenants',
       timeEntries: '/api/v1/admin/time-entries',
+      // Accounting
+      coupons: '/api/v1/admin/coupons',
+      discounts: '/api/v1/admin/discounts',
+      payments: '/api/v1/admin/payments',
+      paymentTerms: '/api/v1/admin/payment-terms',
     },
   });
 });

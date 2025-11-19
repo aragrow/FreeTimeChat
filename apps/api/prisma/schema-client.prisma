@@ -488,3 +488,178 @@ enum ExpenseStatus {
 
 // Add relation to Client for expenses
 // Add relation to Product for expenses
+
+// =============================================================================
+// Accounting System - Additional Entities
+// =============================================================================
+
+// Payment Terms - Net 30, Net 60, etc.
+model PaymentTerm {
+  id              String    @id @default(uuid())
+  name            String // e.g., "Net 30", "Due on Receipt", "2/10 Net 30"
+  description     String?
+  daysUntilDue    Int       @map("days_until_due") // Number of days until payment is due
+  // Early payment discount
+  discountPercent Decimal?  @map("discount_percent") @db.Decimal(5, 2) // e.g., 2% for "2/10 Net 30"
+  discountDays    Int?      @map("discount_days") // Days to qualify for discount (e.g., 10 for "2/10 Net 30")
+  // Settings
+  isDefault       Boolean   @default(false) @map("is_default")
+  isActive        Boolean   @default(true) @map("is_active")
+  // Metadata
+  createdBy       String    @map("created_by") // User ID
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  @@index([isActive])
+  @@index([isDefault])
+  @@map("payment_terms")
+}
+
+// Discounts - Percentage or fixed amount discounts
+model Discount {
+  id              String       @id @default(uuid())
+  name            String // e.g., "Loyal Customer Discount", "Volume Discount"
+  description     String?
+  code            String?      @unique // Optional discount code
+  discountType    DiscountType @map("discount_type") // PERCENTAGE or FIXED_AMOUNT
+  discountValue   Decimal      @map("discount_value") @db.Decimal(10, 2) // Amount or percentage
+  // Applicability
+  appliesToAll    Boolean      @default(true) @map("applies_to_all") // Applies to all items
+  clientId        String?      @map("client_id") // Optional - specific client only
+  // Constraints
+  minimumAmount   Decimal?     @map("minimum_amount") @db.Decimal(10, 2) // Minimum invoice amount
+  maximumDiscount Decimal?     @map("maximum_discount") @db.Decimal(10, 2) // Max discount amount (for percentage)
+  // Validity
+  validFrom       DateTime?    @map("valid_from")
+  validUntil      DateTime?    @map("valid_until")
+  // Usage limits
+  usageLimit      Int?         @map("usage_limit") // Max number of times it can be used
+  usageCount      Int          @default(0) @map("usage_count") // Current usage count
+  // Settings
+  isActive        Boolean      @default(true) @map("is_active")
+  // Metadata
+  createdBy       String       @map("created_by") // User ID
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  deletedAt       DateTime?    @map("deleted_at")
+
+  @@index([code])
+  @@index([isActive])
+  @@index([clientId])
+  @@index([validFrom, validUntil])
+  @@map("discounts")
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+// Coupons - Promotional codes for customers
+model Coupon {
+  id                  String             @id @default(uuid())
+  code                String             @unique // e.g., "SAVE10", "WELCOME"
+  name                String // Display name
+  description         String?
+  discountType        DiscountType       @map("discount_type")
+  discountValue       Decimal            @map("discount_value") @db.Decimal(10, 2)
+  // Constraints
+  minimumAmount       Decimal?           @map("minimum_amount") @db.Decimal(10, 2)
+  maximumDiscount     Decimal?           @map("maximum_discount") @db.Decimal(10, 2)
+  // Validity
+  validFrom           DateTime           @map("valid_from")
+  validUntil          DateTime           @map("valid_until")
+  // Usage limits
+  usageLimit          Int?               @map("usage_limit") // Total uses allowed
+  usageLimitPerClient Int?               @map("usage_limit_per_client") // Uses per client
+  usageCount          Int                @default(0) @map("usage_count")
+  // Applicability
+  clientIds           String[]           @default([]) @map("client_ids") // Empty = all clients
+  // Settings
+  isActive            Boolean            @default(true) @map("is_active")
+  isFirstPurchase     Boolean            @default(false) @map("is_first_purchase") // Only for first-time customers
+  // Metadata
+  createdBy           String             @map("created_by") // User ID
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+  deletedAt           DateTime?          @map("deleted_at")
+  // Redemptions tracking
+  redemptions         CouponRedemption[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([validFrom, validUntil])
+  @@map("coupons")
+}
+
+// Coupon Redemption - Track when coupons are used
+model CouponRedemption {
+  id             String   @id @default(uuid())
+  couponId       String   @map("coupon_id")
+  coupon         Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  invoiceId      String   @map("invoice_id") // Reference to invoice
+  clientId       String?  @map("client_id") // Client who used the coupon
+  discountAmount Decimal  @map("discount_amount") @db.Decimal(10, 2) // Actual discount applied
+  redeemedBy     String   @map("redeemed_by") // User ID
+  redeemedAt     DateTime @default(now()) @map("redeemed_at")
+
+  @@index([couponId])
+  @@index([invoiceId])
+  @@index([clientId])
+  @@map("coupon_redemptions")
+}
+
+// Payment - Track all payments (extends InvoicePayment for standalone payments)
+model Payment {
+  id                String        @id @default(uuid())
+  invoiceId         String?       @map("invoice_id") // Optional - can be standalone payment
+  clientId          String?       @map("client_id") // Client making payment
+  // Payment details
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("USD")
+  paymentMethod     PaymentMethod @map("payment_method")
+  paymentDate       DateTime      @map("payment_date")
+  // External references
+  transactionId     String?       @map("transaction_id") // External payment system ID
+  referenceNumber   String?       @map("reference_number") // Check number, etc.
+  // Status
+  status            PaymentStatus @default(COMPLETED)
+  // Details
+  note              String?       @db.Text
+  // Refund tracking
+  isRefund          Boolean       @default(false) @map("is_refund")
+  refundedPaymentId String?       @map("refunded_payment_id") // Original payment ID if this is a refund
+  // Metadata
+  receivedBy        String        @map("received_by") // User ID who recorded payment
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  @@index([invoiceId])
+  @@index([clientId])
+  @@index([paymentDate])
+  @@index([status])
+  @@index([paymentMethod])
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  PAYPAL
+  STRIPE
+  WIRE
+  ACH
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
