@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useCapabilities } from '@/hooks/useCapabilities';
 
@@ -54,6 +55,7 @@ export default function UsersPage() {
   const { getAuthHeaders, user: currentUser } = useAuth();
   const router = useRouter();
   const { hasCapability } = useCapabilities();
+  const { t } = useTranslation();
 
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -405,7 +407,7 @@ export default function UsersPage() {
   const columns: TableColumn<User>[] = [
     {
       key: 'name',
-      header: 'Name',
+      header: t('users.name'),
       sortable: true,
       render: (user) => {
         const initials = user.email
@@ -429,7 +431,7 @@ export default function UsersPage() {
     },
     {
       key: 'roles',
-      header: 'Roles',
+      header: t('users.roles'),
       render: (user) => (
         <div className="flex flex-wrap gap-1">
           {user.roles.map((userRole, index) => (
@@ -441,14 +443,14 @@ export default function UsersPage() {
             </span>
           ))}
           {user.roles.length === 0 && (
-            <span className="text-sm text-gray-500">No roles assigned</span>
+            <span className="text-sm text-gray-500">{t('users.noRoles')}</span>
           )}
         </div>
       ),
     },
     {
       key: 'isActive',
-      header: 'Status',
+      header: t('users.status'),
       sortable: true,
       render: (user) => (
         <span
@@ -456,13 +458,13 @@ export default function UsersPage() {
             user.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
           }`}
         >
-          {user.isActive ? 'Active' : 'Inactive'}
+          {user.isActive ? t('users.active') : t('users.inactive')}
         </span>
       ),
     },
     {
       key: 'isTwoFactorEnabled',
-      header: '2FA',
+      header: t('users.twoFa'),
       render: (user) =>
         user.isTwoFactorEnabled ? (
           <svg
@@ -496,19 +498,19 @@ export default function UsersPage() {
     },
     {
       key: 'createdAt',
-      header: 'Joined',
+      header: t('users.joined'),
       sortable: true,
       render: (user) => new Date(user.createdAt).toLocaleDateString(),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t('common.actions'),
       render: (user) => (
         <div className="flex items-center gap-2">
           {canRead && (
             <Link href={`/admin/users/${user.id}`}>
               <Button size="sm" variant="outline">
-                View
+                {t('users.view')}
               </Button>
             </Link>
           )}
@@ -521,7 +523,7 @@ export default function UsersPage() {
                 handleImpersonate(user.id, user.email);
               }}
             >
-              Impersonate
+              {t('users.impersonate')}
             </Button>
           )}
           {canDelete && (
@@ -533,7 +535,7 @@ export default function UsersPage() {
                 handleDeleteUser(user.id, user.email);
               }}
             >
-              Deactivate
+              {t('users.deactivate')}
             </Button>
           )}
         </div>
@@ -546,10 +548,10 @@ export default function UsersPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <Card className="p-6 text-center">
-          <p className="text-red-600 font-semibold mb-2">Access Denied</p>
-          <p className="text-gray-600">You do not have permission to view users.</p>
+          <p className="text-red-600 font-semibold mb-2">{t('common.accessDenied')}</p>
+          <p className="text-gray-600">{t('errors.permissionDenied')}</p>
           <Link href="/admin/dashboard" className="mt-4 inline-block">
-            <Button variant="outline">Go to Dashboard</Button>
+            <Button variant="outline">{t('common.goToDashboard')}</Button>
           </Link>
         </Card>
       </div>
@@ -561,8 +563,8 @@ export default function UsersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-          <p className="text-gray-600 mt-1">Manage user accounts and permissions</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('users.title')}</h1>
+          <p className="text-gray-600 mt-1">{t('users.description')}</p>
         </div>
         {canCreate && (
           <Button onClick={() => setShowCreateModal(true)}>
@@ -574,7 +576,7 @@ export default function UsersPage() {
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Add User
+            {t('users.addUser')}
           </Button>
         )}
       </div>
@@ -585,7 +587,7 @@ export default function UsersPage() {
           <div className="flex-1">
             <Input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder={t('users.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -595,9 +597,9 @@ export default function UsersPage() {
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="all">{t('users.allStatus')}</option>
+            <option value="active">{t('users.active')}</option>
+            <option value="inactive">{t('users.inactive')}</option>
           </select>
         </div>
       </Card>
@@ -609,7 +611,7 @@ export default function UsersPage() {
         keyExtractor={(user) => user.id}
         onRowClick={(user) => router.push(`/admin/users/${user.id}`)}
         isLoading={isLoading}
-        emptyMessage="No users found"
+        emptyMessage={t('users.noUsers')}
         pagination={{
           currentPage,
           totalPages,
@@ -621,7 +623,7 @@ export default function UsersPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Add New User</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">{t('users.addNew')}</h2>
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">

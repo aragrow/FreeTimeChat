@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
 // Check if user is a tenant admin (has tenantId that's not 'system')
@@ -64,6 +65,7 @@ interface TenantSettings {
 
 export default function ClientsPage() {
   const { getAuthHeaders, user } = useAuth();
+  const { t } = useTranslation();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -480,7 +482,7 @@ export default function ClientsPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading clients...</p>
+          <p className="mt-4 text-gray-600">{t('clients.loading')}</p>
         </div>
       </div>
     );
@@ -491,14 +493,14 @@ export default function ClientsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-          <p className="text-gray-600 mt-1">Manage client accounts</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('clients.title')}</h1>
+          <p className="text-gray-600 mt-1">{t('clients.description')}</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Add Client
+          {t('clients.addClient')}
         </Button>
       </div>
 
@@ -520,7 +522,7 @@ export default function ClientsPage() {
               onChange={(e) => setIncludeInactive(e.target.checked)}
               className="rounded border-gray-300"
             />
-            <span className="text-sm text-gray-700">Include inactive</span>
+            <span className="text-sm text-gray-700">{t('clients.includeInactive')}</span>
           </label>
         </div>
       </Card>
@@ -532,21 +534,21 @@ export default function ClientsPage() {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Client
+                  {t('clients.client')}
                 </th>
                 {!userIsTenantAdmin && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Tenant
+                    {t('clients.tenant')}
                   </th>
                 )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Contact
+                  {t('clients.contact')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Status
+                  {t('clients.status')}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Actions
+                  {t('common.actions')}
                 </th>
               </tr>
             </thead>
@@ -582,7 +584,7 @@ export default function ClientsPage() {
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {client.isActive ? 'Active' : 'Inactive'}
+                      {client.isActive ? t('clients.active') : t('clients.inactive')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -594,7 +596,7 @@ export default function ClientsPage() {
                         }}
                         className="text-blue-600 hover:text-blue-900"
                       >
-                        Edit
+                        {t('common.edit')}
                       </button>
                       <button
                         onClick={(e) => {
@@ -603,7 +605,7 @@ export default function ClientsPage() {
                         }}
                         className="text-yellow-600 hover:text-yellow-900"
                       >
-                        {client.isActive ? 'Deactivate' : 'Activate'}
+                        {client.isActive ? t('projects.deactivate') : t('projects.activate')}
                       </button>
                       <button
                         onClick={(e) => {
@@ -613,7 +615,7 @@ export default function ClientsPage() {
                         className="text-red-600 hover:text-red-900"
                         disabled={client.isActive}
                       >
-                        Delete
+                        {t('common.delete')}
                       </button>
                     </div>
                   </td>
@@ -630,17 +632,17 @@ export default function ClientsPage() {
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
           >
-            Previous
+            {t('common.previous')}
           </Button>
           <span className="text-sm text-gray-700">
-            Page {currentPage} of {totalPages}
+            {t('common.pageOf', { current: currentPage, total: totalPages })}
           </span>
           <Button
             variant="outline"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
           >
-            Next
+            {t('common.next')}
           </Button>
         </div>
       </Card>
@@ -649,17 +651,17 @@ export default function ClientsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-6">Create New Client</h2>
+            <h2 className="text-xl font-bold mb-6">{t('clients.createNew')}</h2>
 
             {/* Basic Information */}
             <div className="space-y-4 mb-6">
               <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-                Basic Information
+                {t('clients.basicInfo')}
               </h3>
               <div className={userIsTenantAdmin ? '' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client Name *
+                    {t('clients.clientName')} *
                   </label>
                   <Input
                     type="text"
@@ -995,9 +997,9 @@ export default function ClientsPage() {
                   setPrefixValidation({ isValid: null, message: '', isValidating: false });
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
-              <Button onClick={handleCreate}>Create</Button>
+              <Button onClick={handleCreate}>{t('common.create')}</Button>
             </div>
           </Card>
         </div>
@@ -1007,17 +1009,17 @@ export default function ClientsPage() {
       {editingClient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-6">Edit Client</h2>
+            <h2 className="text-xl font-bold mb-6">{t('clients.editClient')}</h2>
 
             {/* Basic Information */}
             <div className="space-y-4 mb-6">
               <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-                Basic Information
+                {t('clients.basicInfo')}
               </h3>
               <div className={userIsTenantAdmin ? '' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client Name *
+                    {t('clients.clientName')} *
                   </label>
                   <Input
                     type="text"
@@ -1354,9 +1356,9 @@ export default function ClientsPage() {
                   setPrefixValidation({ isValid: null, message: '', isValidating: false });
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
-              <Button onClick={handleUpdate}>Update</Button>
+              <Button onClick={handleUpdate}>{t('common.update')}</Button>
             </div>
           </Card>
         </div>
