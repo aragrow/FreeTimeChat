@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
 import { useToast } from '@/components/ui/Toast';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
 interface TimeEntry extends Record<string, unknown> {
@@ -55,6 +56,7 @@ export default function TimeEntriesPage() {
   const { getAuthHeaders, user } = useAuth();
   const router = useRouter();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   // Determine user role
   const isAdmin = user?.roles?.includes('admin');
@@ -311,7 +313,7 @@ export default function TimeEntriesPage() {
     if (isAdmin || isTenantAdmin) {
       baseColumns.push({
         key: 'userName',
-        header: 'User',
+        header: t('timeEntries.user'),
         sortable: true,
         render: (entry) => (
           <div className="flex items-center gap-2">
@@ -332,16 +334,16 @@ export default function TimeEntriesPage() {
     // Project column
     baseColumns.push({
       key: 'projectName',
-      header: 'Project',
+      header: t('timeEntries.project'),
       sortable: true,
       render: (entry) => (
         <div>
           <span className="text-sm font-medium text-gray-900">
-            {entry.projectName || 'No Project'}
+            {entry.projectName || t('projects.noClient')}
           </span>
           {entry.isBillable && (
             <Badge variant="success" size="sm" className="ml-2">
-              Billable
+              {t('timeEntries.billable')}
             </Badge>
           )}
         </div>
@@ -351,7 +353,7 @@ export default function TimeEntriesPage() {
     // Description
     baseColumns.push({
       key: 'description',
-      header: 'Description',
+      header: t('timeEntries.description'),
       sortable: true,
       render: (entry) => (
         <p className="text-sm text-gray-900 max-w-md truncate">{entry.description}</p>
@@ -361,7 +363,7 @@ export default function TimeEntriesPage() {
     // Start Time
     baseColumns.push({
       key: 'startTime',
-      header: 'Start Time',
+      header: t('timeEntries.startTime'),
       sortable: true,
       render: (entry) => (
         <div>
@@ -374,7 +376,7 @@ export default function TimeEntriesPage() {
     // End Time
     baseColumns.push({
       key: 'endTime',
-      header: 'End Time',
+      header: t('timeEntries.endTime'),
       sortable: true,
       render: (entry) =>
         entry.endTime ? (
@@ -384,7 +386,7 @@ export default function TimeEntriesPage() {
           </div>
         ) : (
           <Badge variant="success" className="animate-pulse">
-            Running
+            {t('timeEntries.running')}
           </Badge>
         ),
     });
@@ -392,7 +394,7 @@ export default function TimeEntriesPage() {
     // Duration
     baseColumns.push({
       key: 'duration',
-      header: 'Duration',
+      header: t('timeEntries.duration'),
       sortable: true,
       render: (entry) => (
         <span className="text-sm font-medium text-gray-900">{formatDuration(entry.duration)}</span>
@@ -402,7 +404,7 @@ export default function TimeEntriesPage() {
     // Actions
     baseColumns.push({
       key: 'actions',
-      header: 'Actions',
+      header: t('common.actions'),
       render: (entry) => (
         <div className="flex items-center gap-2">
           {entry.isRunning && (
@@ -414,7 +416,7 @@ export default function TimeEntriesPage() {
                 handleStopTimer(entry.id);
               }}
             >
-              Stop
+              {t('timeEntries.stop')}
             </Button>
           )}
           <Button
@@ -425,7 +427,7 @@ export default function TimeEntriesPage() {
               router.push(`/time-entries/${entry.id}`);
             }}
           >
-            {isAdmin || isTenantAdmin ? 'Edit' : 'View'}
+            {isAdmin || isTenantAdmin ? t('common.edit') : t('common.view')}
           </Button>
         </div>
       ),
@@ -441,16 +443,16 @@ export default function TimeEntriesPage() {
 
   // Get page title based on role
   const getPageTitle = () => {
-    if (isAdmin) return 'Time Entries Management';
-    if (isTenantAdmin) return 'Team Time Entries';
-    return 'My Time Entries';
+    if (isAdmin) return t('timeEntries.management');
+    if (isTenantAdmin) return t('timeEntries.teamEntries');
+    return t('timeEntries.myEntries');
   };
 
   // Get page description based on role
   const getPageDescription = () => {
-    if (isAdmin) return 'Manage time entries across all tenants';
-    if (isTenantAdmin) return 'View and manage time entries for your team';
-    return 'Track and manage your time across projects';
+    if (isAdmin) return t('timeEntries.allTenantsDesc');
+    if (isTenantAdmin) return t('timeEntries.teamDesc');
+    return t('timeEntries.trackDesc');
   };
 
   return (
@@ -479,7 +481,7 @@ export default function TimeEntriesPage() {
                       d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
                     />
                   </svg>
-                  Back to Chat
+                  {t('nav.chat')}
                 </Button>
 
                 {/* Tracking Mode Based Buttons - Only show for regular users (not admins) */}
@@ -504,7 +506,7 @@ export default function TimeEntriesPage() {
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        {isClockedIn ? 'Clock Out' : 'Clock In'}
+                        {isClockedIn ? t('timeEntries.clockOut') : t('timeEntries.clockIn')}
                       </Button>
                     )}
 
@@ -530,7 +532,7 @@ export default function TimeEntriesPage() {
                             d="M12 8v4m0 4h.01"
                           />
                         </svg>
-                        Add Manual Entry
+                        {t('timeEntries.addManual')}
                       </Button>
                     )}
                   </>
@@ -552,7 +554,7 @@ export default function TimeEntriesPage() {
                         d="M12 4v16m8-8H4"
                       />
                     </svg>
-                    Add Time Entry
+                    {t('timeEntries.addEntry')}
                   </Button>
                 )}
               </div>
@@ -563,7 +565,7 @@ export default function TimeEntriesPage() {
               <Card className="p-4">
                 <div className="flex items-center gap-4">
                   <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                    Select Tenant:
+                    {t('timeEntries.selectTenant')}
                   </label>
                   <select
                     value={selectedTenant}
@@ -573,7 +575,7 @@ export default function TimeEntriesPage() {
                     }}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">-- Select a Tenant --</option>
+                    <option value="">{t('timeEntries.selectTenantDefault')}</option>
                     {tenants.map((tenant) => (
                       <option key={tenant.id} value={tenant.id}>
                         {tenant.name} ({tenant.tenantKey})
@@ -589,8 +591,8 @@ export default function TimeEntriesPage() {
               <Card className="p-8">
                 <EmptyState
                   icon="building"
-                  title="Select a tenant to view time entries"
-                  description="Please select a tenant from the dropdown above to view and manage time entries."
+                  title={t('timeEntries.selectTenantToView')}
+                  description={t('timeEntries.selectTenantHint')}
                 />
               </Card>
             ) : (
@@ -615,7 +617,7 @@ export default function TimeEntriesPage() {
                         </svg>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Total Hours</p>
+                        <p className="text-sm text-gray-600">{t('timeEntries.totalHours')}</p>
                         <p className="text-2xl font-bold text-gray-900">{totalHours.toFixed(1)}h</p>
                       </div>
                     </div>
@@ -639,7 +641,7 @@ export default function TimeEntriesPage() {
                         </svg>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Running Timers</p>
+                        <p className="text-sm text-gray-600">{t('timeEntries.runningTimers')}</p>
                         <p className="text-2xl font-bold text-gray-900">{runningEntries}</p>
                       </div>
                     </div>
@@ -663,7 +665,7 @@ export default function TimeEntriesPage() {
                         </svg>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Billable Hours</p>
+                        <p className="text-sm text-gray-600">{t('timeEntries.billableHours')}</p>
                         <p className="text-2xl font-bold text-gray-900">
                           {billableHours.toFixed(1)}h
                         </p>
@@ -690,7 +692,7 @@ export default function TimeEntriesPage() {
                           </svg>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">Total Entries</p>
+                          <p className="text-sm text-gray-600">{t('timeEntries.totalEntries')}</p>
                           <p className="text-2xl font-bold text-gray-900">{entries.length}</p>
                         </div>
                       </div>
@@ -705,7 +707,7 @@ export default function TimeEntriesPage() {
                       <div className="md:col-span-1">
                         <Input
                           type="text"
-                          placeholder="Search..."
+                          placeholder={t('timeEntries.searchPlaceholder')}
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -718,7 +720,7 @@ export default function TimeEntriesPage() {
                           onChange={(e) => setUserFilter(e.target.value)}
                           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                          <option value="all">All Users</option>
+                          <option value="all">{t('timeEntries.allUsers')}</option>
                           {users.map((u) => (
                             <option key={u.id} value={u.id}>
                               {u.firstName} {u.lastName}
@@ -732,9 +734,9 @@ export default function TimeEntriesPage() {
                         onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
                         className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
-                        <option value="all">All Status</option>
-                        <option value="running">Running</option>
-                        <option value="stopped">Stopped</option>
+                        <option value="all">{t('timeEntries.allStatus')}</option>
+                        <option value="running">{t('timeEntries.running')}</option>
+                        <option value="stopped">{t('timeEntries.stop')}</option>
                       </select>
 
                       <div className="flex gap-2">
@@ -773,7 +775,7 @@ export default function TimeEntriesPage() {
                             d="M12 4v16m8-8H4"
                           />
                         </svg>
-                        Add Time Entry
+                        {t('timeEntries.addEntry')}
                       </Button>
                     ) : null}
                   </div>
@@ -784,14 +786,14 @@ export default function TimeEntriesPage() {
                   <Card className="p-8">
                     <EmptyState
                       icon="clock"
-                      title="No time entries yet"
-                      description="Start tracking time by creating your first time entry or use the chat to log time naturally."
+                      title={t('timeEntries.noEntries')}
+                      description={t('timeEntries.noEntriesHint')}
                       action={{
-                        label: 'Add Time Entry',
+                        label: t('timeEntries.addEntry'),
                         onClick: () => router.push('/time-entries/new'),
                       }}
                       secondaryAction={{
-                        label: 'Go to Chat',
+                        label: t('nav.chat'),
                         onClick: () => router.push('/chat'),
                       }}
                     />

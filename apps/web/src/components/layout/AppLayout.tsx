@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { LanguageSelector } from '@/components/LanguageSelector';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
 interface NavigationConfig {
@@ -25,6 +27,7 @@ interface AppLayoutProps {
 export function AppLayout({ children, title, showHeader = true }: AppLayoutProps) {
   const router = useRouter();
   const { user, logout, fetchWithAuth } = useAuth();
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [navConfig, setNavConfig] = useState<NavigationConfig | null>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
@@ -132,6 +135,11 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
             </button>
           </div>
 
+          {/* Language Selector - Top of sidebar */}
+          <div className="px-4 py-3 border-b border-gray-200">
+            <LanguageSelector variant="dropdown" className="w-full" />
+          </div>
+
           {/* Navigation Links */}
           <div className="flex-1 overflow-y-auto py-4">
             <nav className="space-y-1 px-3">
@@ -144,7 +152,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                     onClick={() => toggleSectionCollapse('main')}
                     className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
                   >
-                    Main
+                    {t('nav.main')}
                     <svg
                       className={`w-4 h-4 transition-transform ${isSectionCollapsed('main') ? '' : 'rotate-180'}`}
                       fill="none"
@@ -177,7 +185,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
                         />
                       </svg>
-                      Chat
+                      {t('nav.chat')}
                     </a>
                   )}
                   {!isSectionCollapsed('main') && isNavItemEnabled('time-entries') && (
@@ -198,7 +206,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
-                      Time Entries
+                      {t('nav.timeEntries')}
                     </a>
                   )}
                   {/* Reports - Admin/TenantAdmin Only */}
@@ -220,7 +228,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      Reports
+                      {t('nav.reports')}
                     </a>
                   )}
                 </div>
@@ -232,7 +240,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                   {/* Overview */}
                   <div className="mb-4">
                     <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      Overview
+                      {t('nav.overview')}
                     </p>
                     <a
                       href="/admin/dashboard"
@@ -251,7 +259,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
                         />
                       </svg>
-                      Dashboard
+                      {t('nav.dashboard')}
                     </a>
                   </div>
 
@@ -262,7 +270,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                         onClick={() => toggleSectionCollapse('business')}
                         className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
                       >
-                        Business
+                        {t('nav.business')}
                         <svg
                           className={`w-4 h-4 transition-transform ${isSectionCollapsed('business') ? '' : 'rotate-180'}`}
                           fill="none"
@@ -295,7 +303,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                             />
                           </svg>
-                          Clients
+                          {t('nav.clients')}
                         </a>
                       )}
                       {!isSectionCollapsed('business') && isNavItemEnabled('projects') && (
@@ -316,7 +324,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
                             />
                           </svg>
-                          Projects
+                          {t('nav.projects')}
                         </a>
                       )}
                     </div>
@@ -334,7 +342,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                         onClick={() => toggleSectionCollapse('ar')}
                         className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
                       >
-                        Account Receivables
+                        {t('nav.accountReceivables')}
                         <svg
                           className={`w-4 h-4 transition-transform ${isSectionCollapsed('ar') ? '' : 'rotate-180'}`}
                           fill="none"
@@ -367,7 +375,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                             />
                           </svg>
-                          Invoices
+                          {t('nav.invoices')}
                         </a>
                       )}
                       {!isSectionCollapsed('ar') && isNavItemEnabled('payments') && (
@@ -388,7 +396,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
                             />
                           </svg>
-                          Payments
+                          {t('nav.payments')}
                         </a>
                       )}
                       {!isSectionCollapsed('ar') && isNavItemEnabled('discounts') && (
@@ -409,7 +417,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
                             />
                           </svg>
-                          Discounts
+                          {t('nav.discounts')}
                         </a>
                       )}
                       {!isSectionCollapsed('ar') && isNavItemEnabled('coupons') && (
@@ -430,7 +438,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
                             />
                           </svg>
-                          Coupons
+                          {t('nav.coupons')}
                         </a>
                       )}
                       {!isSectionCollapsed('ar') && isNavItemEnabled('products') && (
@@ -451,7 +459,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
                             />
                           </svg>
-                          Products
+                          {t('nav.products')}
                         </a>
                       )}
                       {!isSectionCollapsed('ar') && isNavItemEnabled('payment-terms') && (
@@ -472,7 +480,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
                             />
                           </svg>
-                          Payment Terms
+                          {t('nav.paymentTerms')}
                         </a>
                       )}
                     </div>
@@ -487,7 +495,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                         onClick={() => toggleSectionCollapse('ap')}
                         className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
                       >
-                        Account Payables
+                        {t('nav.accountPayables')}
                         <svg
                           className={`w-4 h-4 transition-transform ${isSectionCollapsed('ap') ? '' : 'rotate-180'}`}
                           fill="none"
@@ -520,7 +528,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                             />
                           </svg>
-                          Vendors
+                          {t('nav.vendors')}
                         </a>
                       )}
                       {!isSectionCollapsed('ap') && isNavItemEnabled('bills') && (
@@ -541,7 +549,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                             />
                           </svg>
-                          Bills
+                          {t('nav.bills')}
                         </a>
                       )}
                       {!isSectionCollapsed('ap') && isNavItemEnabled('expenses') && (
@@ -562,7 +570,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"
                             />
                           </svg>
-                          Expenses
+                          {t('nav.expenses')}
                         </a>
                       )}
                     </div>
@@ -577,7 +585,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                         onClick={() => toggleSectionCollapse('users')}
                         className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
                       >
-                        User Management
+                        {t('nav.userManagement')}
                         <svg
                           className={`w-4 h-4 transition-transform ${isSectionCollapsed('users') ? '' : 'rotate-180'}`}
                           fill="none"
@@ -610,7 +618,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
                             />
                           </svg>
-                          Users
+                          {t('nav.users')}
                         </a>
                       )}
                       {/* Account Requests - Admin Only */}
@@ -634,7 +642,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                                 d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
                               />
                             </svg>
-                            Account Requests
+                            {t('nav.accountRequests')}
                           </a>
                         )}
                       {/* Tenants - Admin Only */}
@@ -656,7 +664,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                             />
                           </svg>
-                          Tenants
+                          {t('nav.tenants')}
                         </a>
                       )}
                     </div>
@@ -669,7 +677,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                         onClick={() => toggleSectionCollapse('access')}
                         className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
                       >
-                        Access Control
+                        {t('nav.accessControl')}
                         <svg
                           className={`w-4 h-4 transition-transform ${isSectionCollapsed('access') ? '' : 'rotate-180'}`}
                           fill="none"
@@ -702,7 +710,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                             />
                           </svg>
-                          Roles
+                          {t('nav.roles')}
                         </a>
                       )}
                       {!isSectionCollapsed('access') && isNavItemEnabled('capabilities') && (
@@ -723,7 +731,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
                             />
                           </svg>
-                          Capabilities
+                          {t('nav.capabilities')}
                         </a>
                       )}
                     </div>
@@ -735,7 +743,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                       onClick={() => toggleSectionCollapse('config')}
                       className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
                     >
-                      Configuration
+                      {t('nav.configuration')}
                       <svg
                         className={`w-4 h-4 transition-transform ${isSectionCollapsed('config') ? '' : 'rotate-180'}`}
                         fill="none"
@@ -768,7 +776,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                             d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"
                           />
                         </svg>
-                        Integrations
+                        {t('nav.integrations')}
                       </a>
                     )}
                     {!isSectionCollapsed('config') && isNavItemEnabled('llm-settings') && (
@@ -789,7 +797,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                             d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
                           />
                         </svg>
-                        LLM Settings
+                        {t('nav.llmSettings')}
                       </a>
                     )}
                     {!isSectionCollapsed('config') && isNavItemEnabled('system-settings') && (
@@ -816,7 +824,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                           />
                         </svg>
-                        System Settings
+                        {t('nav.systemSettings')}
                       </a>
                     )}
                     {/* Tenant Settings always visible */}
@@ -838,7 +846,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                           />
                         </svg>
-                        Tenant Settings
+                        {t('nav.tenantSettings')}
                       </a>
                     )}
                   </div>
@@ -850,7 +858,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                         onClick={() => toggleSectionCollapse('monitoring')}
                         className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
                       >
-                        Monitoring
+                        {t('nav.monitoring')}
                         <svg
                           className={`w-4 h-4 transition-transform ${isSectionCollapsed('monitoring') ? '' : 'rotate-180'}`}
                           fill="none"
@@ -883,7 +891,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                             />
                           </svg>
-                          Audit Log
+                          {t('nav.auditLog')}
                         </a>
                       )}
                     </div>

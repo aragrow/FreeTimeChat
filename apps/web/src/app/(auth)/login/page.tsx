@@ -10,17 +10,20 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { GoogleLogo } from '@/components/icons/GoogleLogo';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, loginWithGoogle } = useAuth();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     tenantKey: '',
     email: '',
@@ -60,13 +63,13 @@ export default function LoginPage() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('auth.validation.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = t('auth.validation.emailInvalid');
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('auth.validation.passwordRequired');
     }
 
     setErrors(newErrors);
@@ -117,7 +120,7 @@ export default function LoginPage() {
       router.push('/chat');
     } catch (error) {
       console.error('Login error:', error);
-      setGeneralError('An unexpected error occurred. Please try again.');
+      setGeneralError(t('errors.unexpectedError'));
     } finally {
       setIsLoading(false);
     }
@@ -129,12 +132,12 @@ export default function LoginPage() {
 
     // Validate password change
     if (passwordChangeData.newPassword !== passwordChangeData.confirmPassword) {
-      setPasswordChangeError('New passwords do not match');
+      setPasswordChangeError(t('auth.validation.passwordsMustMatch'));
       return;
     }
 
     if (passwordChangeData.newPassword.length < 8) {
-      setPasswordChangeError('Password must be at least 8 characters long');
+      setPasswordChangeError(t('auth.validation.passwordMinLength'));
       return;
     }
 
@@ -166,7 +169,7 @@ export default function LoginPage() {
       // Password changed successfully, close modal and show success message
       setShowPasswordChangeModal(false);
       setGeneralError('');
-      showToast('success', 'Password changed successfully! Please login with your new password.');
+      showToast('success', t('auth.passwordChangeSuccess'));
 
       // Reset form
       setFormData({
@@ -181,7 +184,7 @@ export default function LoginPage() {
       });
     } catch (error) {
       console.error('Password change error:', error);
-      setPasswordChangeError('An unexpected error occurred. Please try again.');
+      setPasswordChangeError(t('errors.unexpectedError'));
     } finally {
       setIsLoading(false);
     }
@@ -194,14 +197,19 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {/* Language Selector */}
+        <div className="flex justify-end">
+          <LanguageSelector />
+        </div>
+
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">AfricAI Digital Books</h1>
-          <h2 className="text-2xl font-semibold text-gray-700">Sign in to your account</h2>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('auth.appTitle')}</h1>
+          <h2 className="text-2xl font-semibold text-gray-700">{t('auth.signInTitle')}</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Or{' '}
+            {t('auth.or')}{' '}
             <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              create a new account
+              {t('auth.createAccount')}
             </Link>
           </p>
         </div>
@@ -230,7 +238,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+              <span className="px-2 bg-white text-gray-500">{t('auth.orContinueWith')}</span>
             </div>
           </div>
 
@@ -238,8 +246,10 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="tenantKey" className="block text-sm font-medium text-gray-700 mb-1">
-                Tenant Key
-                <span className="text-gray-500 font-normal ml-1">(optional for admins)</span>
+                {t('auth.tenantKey')}
+                <span className="text-gray-500 font-normal ml-1">
+                  ({t('auth.optionalForAdmins')})
+                </span>
               </label>
               <Input
                 id="tenantKey"
@@ -256,7 +266,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email address
+                {t('auth.emailAddress')}
               </label>
               <Input
                 id="email"
@@ -274,7 +284,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <Input
@@ -348,7 +358,7 @@ export default function LoginPage() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                  Remember me
+                  {t('auth.rememberMe')}
                 </label>
               </div>
 
@@ -357,26 +367,26 @@ export default function LoginPage() {
                   href="/forgot-password"
                   className="font-medium text-blue-600 hover:text-blue-500"
                 >
-                  Forgot password?
+                  {t('auth.forgotPassword')}
                 </Link>
               </div>
             </div>
 
             <Button type="submit" isLoading={isLoading} className="w-full">
-              Sign in
+              {t('auth.signIn')}
             </Button>
           </form>
         </Card>
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-500">
-          By signing in, you agree to our{' '}
+          {t('auth.agreeToTerms')}{' '}
           <Link href="/terms" className="underline hover:text-gray-700">
-            Terms of Service
+            {t('auth.termsOfService')}
           </Link>{' '}
-          and{' '}
+          {t('common.and')}{' '}
           <Link href="/privacy" className="underline hover:text-gray-700">
-            Privacy Policy
+            {t('auth.privacyPolicy')}
           </Link>
         </p>
       </div>
@@ -385,10 +395,11 @@ export default function LoginPage() {
       {showPasswordChangeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Change Password Required</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              {t('auth.changePasswordRequired')}
+            </h2>
             <p className="text-sm text-gray-600 mb-6">
-              You must change your password before continuing. This is a one-time requirement for
-              security purposes.
+              {t('auth.changePasswordRequiredDescription')}
             </p>
 
             {passwordChangeError && (
@@ -400,7 +411,7 @@ export default function LoginPage() {
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Current Password
+                  {t('auth.currentPassword')}
                 </label>
                 <Input
                   type="password"
@@ -412,7 +423,9 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('auth.newPassword')}
+                </label>
                 <div className="relative">
                   <Input
                     type={showNewPassword ? 'text' : 'password'}
@@ -420,7 +433,7 @@ export default function LoginPage() {
                     onChange={(e) =>
                       setPasswordChangeData({ ...passwordChangeData, newPassword: e.target.value })
                     }
-                    placeholder="Enter new password"
+                    placeholder={t('auth.enterNewPassword')}
                     required
                     disabled={isLoading}
                     className="pr-10"
@@ -470,12 +483,12 @@ export default function LoginPage() {
                     )}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
+                <p className="text-xs text-gray-500 mt-1">{t('auth.passwordMinLengthHint')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm New Password
+                  {t('auth.confirmNewPassword')}
                 </label>
                 <div className="relative">
                   <Input
@@ -487,7 +500,7 @@ export default function LoginPage() {
                         confirmPassword: e.target.value,
                       })
                     }
-                    placeholder="Confirm new password"
+                    placeholder={t('auth.confirmNewPasswordPlaceholder')}
                     required
                     disabled={isLoading}
                     className="pr-10"
@@ -541,7 +554,7 @@ export default function LoginPage() {
 
               <div className="flex gap-3 pt-4">
                 <Button type="submit" isLoading={isLoading} className="flex-1">
-                  Change Password
+                  {t('auth.changePassword')}
                 </Button>
                 <Button
                   type="button"
@@ -550,7 +563,7 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="flex-1"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </div>
             </form>

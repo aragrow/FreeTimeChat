@@ -11,6 +11,8 @@ import type { Conversation } from '@/components/chat/ConversationList';
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { ConversationList } from '@/components/chat/ConversationList';
+import { LanguageSelector } from '@/components/LanguageSelector';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ChatContextType {
@@ -32,6 +34,7 @@ export function useChatContext() {
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, getAuthHeaders } = useAuth();
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -121,7 +124,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="md:hidden text-gray-500 hover:text-gray-700"
-                aria-label="Close sidebar"
+                aria-label={t('nav.closeSidebar')}
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -132,6 +135,11 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                   />
                 </svg>
               </button>
+            </div>
+
+            {/* Language Selector */}
+            <div className="px-4 py-3 border-b border-gray-200">
+              <LanguageSelector variant="dropdown" className="w-full" />
             </div>
 
             {/* Sidebar Content */}
@@ -162,7 +170,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  Time Entries
+                  {t('nav.timeEntries')}
                 </a>
                 <a
                   href="/admin/projects"
@@ -176,7 +184,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                       d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
                     />
                   </svg>
-                  Projects
+                  {t('nav.projects')}
                 </a>
                 <a
                   href="/admin/reports"
@@ -190,26 +198,19 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                       d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  Reports
+                  {t('nav.reports')}
                 </a>
               </div>
 
               {/* Admin Panel Link - Show for admin and tenantadmin users */}
-              {(() => {
-                console.log('Chat Layout - User object:', user);
-                console.log('Chat Layout - User roles:', user?.roles);
-                const hasAdminAccess =
-                  user?.roles?.some(
-                    (role) =>
-                      role &&
-                      typeof role === 'string' &&
-                      (role.toLowerCase() === 'admin' || role.toLowerCase() === 'tenantadmin')
-                  ) ||
-                  user?.role?.toLowerCase() === 'admin' ||
-                  user?.role?.toLowerCase() === 'tenantadmin';
-                console.log('Chat Layout - Has Admin Access:', hasAdminAccess);
-                return hasAdminAccess;
-              })() && (
+              {(user?.roles?.some(
+                (role) =>
+                  role &&
+                  typeof role === 'string' &&
+                  (role.toLowerCase() === 'admin' || role.toLowerCase() === 'tenantadmin')
+              ) ||
+                user?.role?.toLowerCase() === 'admin' ||
+                user?.role?.toLowerCase() === 'tenantadmin') && (
                 <div className="p-3 border-b border-gray-200">
                   <a
                     href="/admin/dashboard"
@@ -229,7 +230,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                         d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                       />
                     </svg>
-                    Admin Panel
+                    {t('nav.adminPanel')}
                   </a>
                 </div>
               )}
@@ -250,7 +251,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                       <p className="text-xs text-gray-500 truncate">
                         {user?.isImpersonating ? (
                           <span className="text-orange-600 font-medium">
-                            impersonating #{user?.email}
+                            {t('nav.impersonating')} {user?.email}
                           </span>
                         ) : (
                           user?.email
@@ -261,7 +262,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                   <button
                     onClick={() => logout()}
                     className="text-gray-400 hover:text-gray-600"
-                    aria-label="Logout"
+                    aria-label={t('nav.logout')}
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
@@ -284,7 +285,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="text-gray-500 hover:text-gray-700"
-                aria-label="Toggle sidebar"
+                aria-label={t('nav.toggleSidebar')}
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -295,7 +296,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                   />
                 </svg>
               </button>
-              <h2 className="text-lg font-semibold text-gray-900">Chat</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('nav.chat')}</h2>
             </header>
 
             {/* Chat Content */}

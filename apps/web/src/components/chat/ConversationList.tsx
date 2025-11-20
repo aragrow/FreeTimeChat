@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export interface Conversation {
   id: string;
@@ -36,6 +37,7 @@ export function ConversationList({
   onArchiveConversation,
   isLoading = false,
 }: ConversationListProps) {
+  const { t } = useTranslation();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const formatTimestamp = (timestamp: string) => {
@@ -44,15 +46,15 @@ export function ConversationList({
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1) return t('chat.justNow');
+    if (diffMins < 60) return t('chat.minutesAgo').replace('{minutes}', String(diffMins));
 
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24) return t('chat.hoursAgo').replace('{hours}', String(diffHours));
 
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays === 1) return t('chat.yesterday');
+    if (diffDays < 7) return t('chat.daysAgo').replace('{days}', String(diffDays));
 
     return date.toLocaleDateString();
   };
@@ -70,7 +72,7 @@ export function ConversationList({
           <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          New Conversation
+          {t('chat.newConversation')}
         </Button>
       </div>
 
@@ -95,8 +97,8 @@ export function ConversationList({
                 d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
               />
             </svg>
-            <p className="text-sm text-gray-500">No conversations yet</p>
-            <p className="text-xs text-gray-400 mt-1">Start a new conversation to get started</p>
+            <p className="text-sm text-gray-500">{t('chat.noConversationsYet')}</p>
+            <p className="text-xs text-gray-400 mt-1">{t('chat.startNewToGetStarted')}</p>
           </div>
         ) : (
           <div className="space-y-1 p-2">
@@ -126,7 +128,7 @@ export function ConversationList({
                             isActive ? 'text-blue-900' : 'text-gray-900'
                           }`}
                         >
-                          {truncateText(conversation.title || 'New Conversation', 30)}
+                          {truncateText(conversation.title || t('chat.newConversation'), 30)}
                         </h3>
                         {conversation.lastMessage && (
                           <p className="text-xs text-gray-500 truncate mt-1">
@@ -140,8 +142,10 @@ export function ConversationList({
                         </span>
                         {conversation.messageCount !== undefined && (
                           <span className="text-xs text-gray-400">
-                            {conversation.messageCount} msg
-                            {conversation.messageCount !== 1 ? 's' : ''}
+                            {conversation.messageCount}{' '}
+                            {conversation.messageCount !== 1
+                              ? t('chat.messagesPlural')
+                              : t('chat.messages')}
                           </span>
                         )}
                       </div>
@@ -156,7 +160,7 @@ export function ConversationList({
                         onArchiveConversation(conversation.id);
                       }}
                       className="absolute top-2 right-2 p-1 bg-white border border-gray-200 rounded hover:bg-red-50 hover:border-red-300 transition-colors"
-                      title="Archive conversation"
+                      title={t('chat.archiveConversation')}
                     >
                       <svg
                         className="w-4 h-4 text-gray-500 hover:text-red-600"
