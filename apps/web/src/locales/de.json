@@ -315,26 +315,77 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "overview": "Übersicht Ihres AfricAI-Systems",
-    "overviewFor": "Übersicht für {tenantName}",
+    "loading": "Dashboard wird geladen...",
+    "failedToLoad": "Dashboard-Daten konnten nicht geladen werden",
+    "overviewSystem": "Übersicht Ihres AfricAI-Systems",
+    "overviewFor": "Übersicht für {name}",
+    "allTenants": "Alle Mandanten",
     "customize": "Anpassen",
     "customizationMode": "Anpassungsmodus",
-    "customizeHint": "Ziehen Sie Karten zum Neuordnen, klicken Sie auf X zum Entfernen oder fügen Sie neue KPIs hinzu",
+    "customizationHint": "Ziehen Sie Karten zum Neuordnen, klicken Sie auf X zum Entfernen oder fügen Sie neue KPIs hinzu",
     "addKpi": "KPI Hinzufügen",
-    "resetDefaults": "Auf Standard Zurücksetzen",
+    "addKpis": "KPIs Hinzufügen",
+    "removeKpi": "KPI Entfernen",
+    "resetToDefaults": "Auf Standard Zurücksetzen",
     "allKpisAdded": "Alle verfügbaren KPIs sind bereits hinzugefügt",
-    "noKpis": "Keine KPIs konfiguriert",
-    "manageClients": "Kunden Verwalten",
-    "manageClientsDesc": "Geschäftskunden anzeigen und verwalten",
-    "invoices": "Rechnungen",
-    "invoicesDesc": "Rechnungen und Abrechnung verwalten",
-    "timeEntries": "Zeiteinträge",
-    "timeEntriesDesc": "Zeit verfolgen und verwalten",
-    "expenses": "Ausgaben",
-    "expensesDesc": "Geschäftsausgaben verfolgen",
-    "allTenants": "Alle Mandanten",
-    "selectTenant": "Mandant auswählen",
-    "failedToLoad": "Dashboard-Daten konnten nicht geladen werden"
+    "noKpisConfigured": "Keine KPIs konfiguriert",
+    "quickActions": {
+      "manageClients": "Kunden Verwalten",
+      "manageClientsDesc": "Geschäftskunden anzeigen und verwalten",
+      "invoices": "Rechnungen",
+      "invoicesDesc": "Rechnungen und Abrechnung verwalten",
+      "timeEntries": "Zeiteinträge",
+      "timeEntriesDesc": "Zeit verfolgen und verwalten",
+      "expenses": "Ausgaben",
+      "expensesDesc": "Geschäftsausgaben verfolgen"
+    },
+    "kpis": {
+      "totalUsers": { "title": "Gesamte Benutzer", "subtitle": "aktiv" },
+      "activeUsers": { "title": "Aktive Benutzer", "subtitle": "diesen Monat" },
+      "totalTenants": { "title": "Gesamte Mandanten", "subtitle": "aktiv" },
+      "totalProjects": { "title": "Gesamte Projekte", "subtitle": "aktiv" },
+      "activeProjects": {
+        "title": "Aktive Projekte",
+        "subtitle": "in Bearbeitung"
+      },
+      "totalHours": { "title": "Gesamte Stunden", "subtitle": "diesen Monat" },
+      "billableHours": {
+        "title": "Abrechenbare Stunden",
+        "subtitle": "diesen Monat"
+      },
+      "totalRevenue": { "title": "Gesamtumsatz", "subtitle": "diesen Monat" },
+      "pendingInvoices": {
+        "title": "Ausstehende Rechnungen",
+        "subtitle": "warten auf Zahlung"
+      },
+      "totalInvoices": {
+        "title": "Gesamte Rechnungen",
+        "subtitle": "insgesamt"
+      },
+      "totalExpenses": {
+        "title": "Gesamtausgaben",
+        "subtitle": "diesen Monat"
+      },
+      "pendingAccountRequests": {
+        "title": "Ausstehende Anfragen",
+        "subtitle": "warten auf Genehmigung"
+      },
+      "totalTasks": { "title": "Gesamte Aufgaben", "subtitle": "alle" },
+      "completedTasks": {
+        "title": "Abgeschlossene Aufgaben",
+        "subtitle": "diesen Monat"
+      },
+      "inProgressTasks": { "title": "In Bearbeitung", "subtitle": "Aufgaben" },
+      "totalClients": { "title": "Gesamte Kunden", "subtitle": "aktiv" },
+      "avgHoursPerProject": {
+        "title": "Durchschn. Std/Projekt",
+        "subtitle": "diesen Monat"
+      },
+      "utilizationRate": {
+        "title": "Auslastungsrate",
+        "subtitle": "diesen Monat"
+      }
+    }
   },
   "timeEntries": {
     "title": "Zeiteinträge",

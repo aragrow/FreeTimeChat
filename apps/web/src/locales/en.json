@@ -315,26 +315,104 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "overview": "Overview of your AfricAI system",
-    "overviewFor": "Overview for {tenantName}",
+    "loading": "Loading dashboard...",
+    "failedToLoad": "Failed to load dashboard data",
+    "overviewSystem": "Overview of your AfricAI system",
+    "overviewFor": "Overview for {name}",
+    "allTenants": "All Tenants",
     "customize": "Customize",
     "customizationMode": "Customization Mode",
-    "customizeHint": "Drag cards to reorder, click X to remove, or add new KPIs",
+    "customizationHint": "Drag cards to reorder, click X to remove, or add new KPIs",
     "addKpi": "Add KPI",
-    "resetDefaults": "Reset to Defaults",
+    "addKpis": "Add KPIs",
+    "removeKpi": "Remove KPI",
+    "resetToDefaults": "Reset to Defaults",
     "allKpisAdded": "All available KPIs are already added",
-    "noKpis": "No KPIs configured",
-    "manageClients": "Manage Clients",
-    "manageClientsDesc": "View and manage business clients",
-    "invoices": "Invoices",
-    "invoicesDesc": "Manage invoices and billing",
-    "timeEntries": "Time Entries",
-    "timeEntriesDesc": "Track and manage time",
-    "expenses": "Expenses",
-    "expensesDesc": "Track business expenses",
-    "allTenants": "All Tenants",
-    "selectTenant": "Select a tenant",
-    "failedToLoad": "Failed to load dashboard data"
+    "noKpisConfigured": "No KPIs configured",
+    "quickActions": {
+      "manageClients": "Manage Clients",
+      "manageClientsDesc": "View and manage business clients",
+      "invoices": "Invoices",
+      "invoicesDesc": "Manage invoices and billing",
+      "timeEntries": "Time Entries",
+      "timeEntriesDesc": "Track and manage time",
+      "expenses": "Expenses",
+      "expensesDesc": "Track business expenses"
+    },
+    "kpis": {
+      "totalUsers": {
+        "title": "Total Users",
+        "subtitle": "active"
+      },
+      "activeUsers": {
+        "title": "Active Users",
+        "subtitle": "this month"
+      },
+      "totalTenants": {
+        "title": "Total Tenants",
+        "subtitle": "active"
+      },
+      "totalProjects": {
+        "title": "Total Projects",
+        "subtitle": "active"
+      },
+      "activeProjects": {
+        "title": "Active Projects",
+        "subtitle": "in progress"
+      },
+      "totalHours": {
+        "title": "Total Hours",
+        "subtitle": "this month"
+      },
+      "billableHours": {
+        "title": "Billable Hours",
+        "subtitle": "this month"
+      },
+      "totalRevenue": {
+        "title": "Total Revenue",
+        "subtitle": "this month"
+      },
+      "pendingInvoices": {
+        "title": "Pending Invoices",
+        "subtitle": "awaiting payment"
+      },
+      "totalInvoices": {
+        "title": "Total Invoices",
+        "subtitle": "all time"
+      },
+      "totalExpenses": {
+        "title": "Total Expenses",
+        "subtitle": "this month"
+      },
+      "pendingAccountRequests": {
+        "title": "Pending Requests",
+        "subtitle": "awaiting approval"
+      },
+      "totalTasks": {
+        "title": "Total Tasks",
+        "subtitle": "all"
+      },
+      "completedTasks": {
+        "title": "Completed Tasks",
+        "subtitle": "this month"
+      },
+      "inProgressTasks": {
+        "title": "In Progress",
+        "subtitle": "tasks"
+      },
+      "totalClients": {
+        "title": "Total Clients",
+        "subtitle": "active"
+      },
+      "avgHoursPerProject": {
+        "title": "Avg Hours/Project",
+        "subtitle": "this month"
+      },
+      "utilizationRate": {
+        "title": "Utilization Rate",
+        "subtitle": "this month"
+      }
+    }
   },
   "timeEntries": {
     "title": "Time Entries",

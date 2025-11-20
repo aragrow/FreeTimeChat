@@ -9,6 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
 interface KpiDefinition {
@@ -37,6 +38,7 @@ interface Category {
 
 export default function AdminDashboard() {
   const { user, getAuthHeaders } = useAuth();
+  const { t } = useTranslation();
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [tenants, setTenants] = useState<Array<{ id: string; name: string }>>([]);
@@ -449,7 +451,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading dashboard...</p>
+          <p className="text-gray-600">{t('dashboard.loading')}</p>
         </div>
       </div>
     );
@@ -459,7 +461,7 @@ export default function AdminDashboard() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <p className="text-gray-600">Failed to load dashboard data</p>
+          <p className="text-gray-600">{t('dashboard.failedToLoad')}</p>
         </div>
       </div>
     );
@@ -474,11 +476,13 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
           <p className="text-gray-600 mt-1">
             {(stats as Record<string, Record<string, string>>)?.selectedTenant?.name
-              ? `Overview for ${(stats as Record<string, Record<string, string>>).selectedTenant.name}`
-              : 'Overview of your AfricAI system'}
+              ? t('dashboard.overviewFor', {
+                  name: (stats as Record<string, Record<string, string>>).selectedTenant.name,
+                })
+              : t('dashboard.overviewSystem')}
           </p>
         </div>
 
@@ -492,7 +496,7 @@ export default function AdminDashboard() {
                 onChange={(e) => setSelectedTenantId(e.target.value)}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                <option value="all">All Tenants</option>
+                <option value="all">{t('dashboard.allTenants')}</option>
                 {tenants.map((tenant) => (
                   <option key={tenant.id} value={tenant.id}>
                     {tenant.name}
@@ -516,7 +520,7 @@ export default function AdminDashboard() {
                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
               />
             </svg>
-            {isEditMode ? 'Done' : 'Customize'}
+            {isEditMode ? t('common.done') : t('dashboard.customize')}
           </Button>
         </div>
       </div>
@@ -526,14 +530,14 @@ export default function AdminDashboard() {
         <Card className="p-4 bg-blue-50 border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-blue-900">Customization Mode</p>
-              <p className="text-xs text-blue-700">
-                Drag cards to reorder, click X to remove, or add new KPIs
+              <p className="text-sm font-medium text-blue-900">
+                {t('dashboard.customizationMode')}
               </p>
+              <p className="text-xs text-blue-700">{t('dashboard.customizationHint')}</p>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)}>
-                Add KPI
+                {t('dashboard.addKpi')}
               </Button>
               <Button
                 variant="outline"
@@ -541,7 +545,7 @@ export default function AdminDashboard() {
                 onClick={resetDashboardConfig}
                 disabled={isSaving}
               >
-                Reset to Defaults
+                {t('dashboard.resetToDefaults')}
               </Button>
             </div>
           </div>
@@ -573,13 +577,24 @@ export default function AdminDashboard() {
               <Card className={`p-6 ${isEditMode ? 'ring-2 ring-blue-200' : ''}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600">{kpi.title}</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      {(() => {
+                        const key = `dashboard.kpis.${kpiId}.title`;
+                        const translated = t(key);
+                        return translated === key ? kpi.title : translated;
+                      })()}
+                    </p>
                     <p className="text-3xl font-bold text-gray-900 mt-2">
                       {formatValue(value, kpi.format)}
                     </p>
                     {subtitle !== null && kpi.subtitleLabel && (
                       <p className="text-sm text-gray-500 mt-1">
-                        {formatValue(subtitle, kpi.format)} {kpi.subtitleLabel}
+                        {formatValue(subtitle, kpi.format)}{' '}
+                        {(() => {
+                          const key = `dashboard.kpis.${kpiId}.subtitle`;
+                          const translated = t(key);
+                          return translated === key ? kpi.subtitleLabel : translated;
+                        })()}
                       </p>
                     )}
                   </div>
@@ -591,7 +606,7 @@ export default function AdminDashboard() {
                       <button
                         onClick={() => removeKpi(kpiId)}
                         className="text-red-500 hover:text-red-700 p-1"
-                        title="Remove KPI"
+                        title={t('dashboard.removeKpi')}
                       >
                         <svg
                           className="w-5 h-5"
@@ -618,8 +633,8 @@ export default function AdminDashboard() {
         {/* Empty state when no KPIs */}
         {dashboardConfig.kpis.length === 0 && (
           <div className="col-span-full text-center py-12">
-            <p className="text-gray-500 mb-4">No KPIs configured</p>
-            <Button onClick={() => setShowAddModal(true)}>Add KPIs</Button>
+            <p className="text-gray-500 mb-4">{t('dashboard.noKpisConfigured')}</p>
+            <Button onClick={() => setShowAddModal(true)}>{t('dashboard.addKpis')}</Button>
           </div>
         )}
       </div>
@@ -635,8 +650,12 @@ export default function AdminDashboard() {
                     {getKpiIcon('building')}
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">Manage Clients</h3>
-                    <p className="text-xs text-gray-500 mt-1">View and manage business clients</p>
+                    <h3 className="text-sm font-medium text-gray-900">
+                      {t('dashboard.quickActions.manageClients')}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {t('dashboard.quickActions.manageClientsDesc')}
+                    </p>
                   </div>
                 </div>
               </Card>
@@ -650,8 +669,12 @@ export default function AdminDashboard() {
                   {getKpiIcon('file-text')}
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">Invoices</h3>
-                  <p className="text-xs text-gray-500 mt-1">Manage invoices and billing</p>
+                  <h3 className="text-sm font-medium text-gray-900">
+                    {t('dashboard.quickActions.invoices')}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t('dashboard.quickActions.invoicesDesc')}
+                  </p>
                 </div>
               </div>
             </Card>
@@ -664,8 +687,12 @@ export default function AdminDashboard() {
                   {getKpiIcon('clock')}
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">Time Entries</h3>
-                  <p className="text-xs text-gray-500 mt-1">Track and manage time</p>
+                  <h3 className="text-sm font-medium text-gray-900">
+                    {t('dashboard.quickActions.timeEntries')}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t('dashboard.quickActions.timeEntriesDesc')}
+                  </p>
                 </div>
               </div>
             </Card>
@@ -678,8 +705,12 @@ export default function AdminDashboard() {
                   {getKpiIcon('minus-circle')}
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">Expenses</h3>
-                  <p className="text-xs text-gray-500 mt-1">Track business expenses</p>
+                  <h3 className="text-sm font-medium text-gray-900">
+                    {t('dashboard.quickActions.expenses')}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t('dashboard.quickActions.expensesDesc')}
+                  </p>
                 </div>
               </div>
             </Card>
@@ -693,7 +724,7 @@ export default function AdminDashboard() {
           <Card className="w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Add KPI</h2>
+                <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.addKpi')}</h2>
                 <button
                   onClick={() => setShowAddModal(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -711,9 +742,7 @@ export default function AdminDashboard() {
             </div>
             <div className="p-6 overflow-y-auto flex-1">
               {unusedKpis.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
-                  All available KPIs are already added
-                </p>
+                <p className="text-gray-500 text-center py-8">{t('dashboard.allKpisAdded')}</p>
               ) : (
                 <div className="space-y-6">
                   {categories.map((category) => {
@@ -761,7 +790,7 @@ export default function AdminDashboard() {
             </div>
             <div className="p-4 border-t bg-gray-50">
               <Button variant="outline" onClick={() => setShowAddModal(false)} className="w-full">
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
           </Card>

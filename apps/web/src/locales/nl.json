@@ -315,26 +315,74 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "overview": "Overzicht van uw AfricAI-systeem",
-    "overviewFor": "Overzicht voor {tenantName}",
+    "loading": "Dashboard laden...",
+    "failedToLoad": "Dashboard gegevens laden mislukt",
+    "overviewSystem": "Overzicht van uw AfricAI-systeem",
+    "overviewFor": "Overzicht voor {name}",
+    "allTenants": "Alle Tenants",
     "customize": "Aanpassen",
     "customizationMode": "Aanpassingsmodus",
-    "customizeHint": "Sleep kaarten om te herordenen, klik op X om te verwijderen, of voeg nieuwe KPI's toe",
+    "customizationHint": "Sleep kaarten om te herordenen, klik op X om te verwijderen, of voeg nieuwe KPI's toe",
     "addKpi": "KPI Toevoegen",
-    "resetDefaults": "Standaardinstellingen Herstellen",
+    "addKpis": "KPI's Toevoegen",
+    "removeKpi": "KPI Verwijderen",
+    "resetToDefaults": "Standaardinstellingen Herstellen",
     "allKpisAdded": "Alle beschikbare KPI's zijn al toegevoegd",
-    "noKpis": "Geen KPI's geconfigureerd",
-    "manageClients": "Klanten Beheren",
-    "manageClientsDesc": "Zakelijke klanten bekijken en beheren",
-    "invoices": "Facturen",
-    "invoicesDesc": "Facturen en facturering beheren",
-    "timeEntries": "Tijdregistraties",
-    "timeEntriesDesc": "Tijd volgen en beheren",
-    "expenses": "Onkosten",
-    "expensesDesc": "Bedrijfsonkosten volgen",
-    "allTenants": "Alle Tenants",
-    "selectTenant": "Selecteer een tenant",
-    "failedToLoad": "Dashboard gegevens laden mislukt"
+    "noKpisConfigured": "Geen KPI's geconfigureerd",
+    "quickActions": {
+      "manageClients": "Klanten Beheren",
+      "manageClientsDesc": "Zakelijke klanten bekijken en beheren",
+      "invoices": "Facturen",
+      "invoicesDesc": "Facturen en facturering beheren",
+      "timeEntries": "Tijdregistraties",
+      "timeEntriesDesc": "Tijd volgen en beheren",
+      "expenses": "Onkosten",
+      "expensesDesc": "Bedrijfsonkosten volgen"
+    },
+    "kpis": {
+      "totalUsers": { "title": "Totaal Gebruikers", "subtitle": "actief" },
+      "activeUsers": {
+        "title": "Actieve Gebruikers",
+        "subtitle": "deze maand"
+      },
+      "totalTenants": { "title": "Totaal Tenants", "subtitle": "actief" },
+      "totalProjects": { "title": "Totaal Projecten", "subtitle": "actief" },
+      "activeProjects": {
+        "title": "Actieve Projecten",
+        "subtitle": "in uitvoering"
+      },
+      "totalHours": { "title": "Totaal Uren", "subtitle": "deze maand" },
+      "billableHours": {
+        "title": "Factureerbare Uren",
+        "subtitle": "deze maand"
+      },
+      "totalRevenue": { "title": "Totale Omzet", "subtitle": "deze maand" },
+      "pendingInvoices": {
+        "title": "Openstaande Facturen",
+        "subtitle": "wachten op betaling"
+      },
+      "totalInvoices": { "title": "Totaal Facturen", "subtitle": "alle tijd" },
+      "totalExpenses": { "title": "Totale Onkosten", "subtitle": "deze maand" },
+      "pendingAccountRequests": {
+        "title": "Openstaande Aanvragen",
+        "subtitle": "wachten op goedkeuring"
+      },
+      "totalTasks": { "title": "Totaal Taken", "subtitle": "alle" },
+      "completedTasks": {
+        "title": "Voltooide Taken",
+        "subtitle": "deze maand"
+      },
+      "inProgressTasks": { "title": "In Uitvoering", "subtitle": "taken" },
+      "totalClients": { "title": "Totaal Klanten", "subtitle": "actief" },
+      "avgHoursPerProject": {
+        "title": "Gem. Uren/Project",
+        "subtitle": "deze maand"
+      },
+      "utilizationRate": {
+        "title": "Bezettingsgraad",
+        "subtitle": "deze maand"
+      }
+    }
   },
   "timeEntries": {
     "title": "Tijdregistraties",

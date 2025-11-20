@@ -315,26 +315,71 @@
   },
   "dashboard": {
     "title": "Panel",
-    "overview": "Resumen de su sistema AfricAI",
-    "overviewFor": "Resumen para {tenantName}",
+    "loading": "Cargando panel...",
+    "failedToLoad": "Error al cargar datos del panel",
+    "overviewSystem": "Resumen de su sistema AfricAI",
+    "overviewFor": "Resumen para {name}",
+    "allTenants": "Todos los Inquilinos",
     "customize": "Personalizar",
     "customizationMode": "Modo de Personalización",
-    "customizeHint": "Arrastre tarjetas para reordenar, haga clic en X para eliminar, o agregue nuevos KPIs",
+    "customizationHint": "Arrastre tarjetas para reordenar, haga clic en X para eliminar, o agregue nuevos KPIs",
     "addKpi": "Agregar KPI",
-    "resetDefaults": "Restablecer Predeterminados",
+    "addKpis": "Agregar KPIs",
+    "removeKpi": "Eliminar KPI",
+    "resetToDefaults": "Restablecer Predeterminados",
     "allKpisAdded": "Todos los KPIs disponibles ya están agregados",
-    "noKpis": "No hay KPIs configurados",
-    "manageClients": "Gestionar Clientes",
-    "manageClientsDesc": "Ver y gestionar clientes comerciales",
-    "invoices": "Facturas",
-    "invoicesDesc": "Gestionar facturas y facturación",
-    "timeEntries": "Entradas de Tiempo",
-    "timeEntriesDesc": "Rastrear y gestionar tiempo",
-    "expenses": "Gastos",
-    "expensesDesc": "Rastrear gastos comerciales",
-    "allTenants": "Todos los Inquilinos",
-    "selectTenant": "Seleccionar un inquilino",
-    "failedToLoad": "Error al cargar datos del panel"
+    "noKpisConfigured": "No hay KPIs configurados",
+    "quickActions": {
+      "manageClients": "Gestionar Clientes",
+      "manageClientsDesc": "Ver y gestionar clientes comerciales",
+      "invoices": "Facturas",
+      "invoicesDesc": "Gestionar facturas y facturación",
+      "timeEntries": "Entradas de Tiempo",
+      "timeEntriesDesc": "Rastrear y gestionar tiempo",
+      "expenses": "Gastos",
+      "expensesDesc": "Rastrear gastos comerciales"
+    },
+    "kpis": {
+      "totalUsers": { "title": "Total de Usuarios", "subtitle": "activos" },
+      "activeUsers": { "title": "Usuarios Activos", "subtitle": "este mes" },
+      "totalTenants": { "title": "Total de Inquilinos", "subtitle": "activos" },
+      "totalProjects": { "title": "Total de Proyectos", "subtitle": "activos" },
+      "activeProjects": {
+        "title": "Proyectos Activos",
+        "subtitle": "en progreso"
+      },
+      "totalHours": { "title": "Total de Horas", "subtitle": "este mes" },
+      "billableHours": { "title": "Horas Facturables", "subtitle": "este mes" },
+      "totalRevenue": { "title": "Ingresos Totales", "subtitle": "este mes" },
+      "pendingInvoices": {
+        "title": "Facturas Pendientes",
+        "subtitle": "esperando pago"
+      },
+      "totalInvoices": {
+        "title": "Total de Facturas",
+        "subtitle": "todo el tiempo"
+      },
+      "totalExpenses": { "title": "Gastos Totales", "subtitle": "este mes" },
+      "pendingAccountRequests": {
+        "title": "Solicitudes Pendientes",
+        "subtitle": "esperando aprobación"
+      },
+      "totalTasks": { "title": "Total de Tareas", "subtitle": "todas" },
+      "completedTasks": {
+        "title": "Tareas Completadas",
+        "subtitle": "este mes"
+      },
+      "inProgressTasks": { "title": "En Progreso", "subtitle": "tareas" },
+      "totalClients": { "title": "Total de Clientes", "subtitle": "activos" },
+      "avgHoursPerProject": {
+        "title": "Horas Prom/Proyecto",
+        "subtitle": "este mes"
+      },
+      "utilizationRate": {
+        "title": "Tasa de Utilización",
+        "subtitle": "este mes"
+      }
+    }
   },
   "timeEntries": {
     "title": "Entradas de Tiempo",

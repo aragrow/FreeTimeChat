@@ -315,26 +315,65 @@
   },
   "dashboard": {
     "title": "Tableau de Bord",
-    "overview": "Aperçu de votre système AfricAI",
-    "overviewFor": "Aperçu pour {tenantName}",
+    "loading": "Chargement du tableau de bord...",
+    "failedToLoad": "Échec du chargement des données du tableau de bord",
+    "overviewSystem": "Aperçu de votre système AfricAI",
+    "overviewFor": "Aperçu pour {name}",
+    "allTenants": "Tous les Locataires",
     "customize": "Personnaliser",
     "customizationMode": "Mode Personnalisation",
-    "customizeHint": "Glissez les cartes pour réordonner, cliquez sur X pour supprimer, ou ajoutez de nouveaux KPIs",
+    "customizationHint": "Glissez les cartes pour réordonner, cliquez sur X pour supprimer, ou ajoutez de nouveaux KPIs",
     "addKpi": "Ajouter KPI",
-    "resetDefaults": "Réinitialiser par Défaut",
+    "addKpis": "Ajouter KPIs",
+    "removeKpi": "Supprimer KPI",
+    "resetToDefaults": "Réinitialiser par Défaut",
     "allKpisAdded": "Tous les KPIs disponibles sont déjà ajoutés",
-    "noKpis": "Aucun KPI configuré",
-    "manageClients": "Gérer les Clients",
-    "manageClientsDesc": "Voir et gérer les clients commerciaux",
-    "invoices": "Factures",
-    "invoicesDesc": "Gérer les factures et la facturation",
-    "timeEntries": "Entrées de Temps",
-    "timeEntriesDesc": "Suivre et gérer le temps",
-    "expenses": "Dépenses",
-    "expensesDesc": "Suivre les dépenses d'entreprise",
-    "allTenants": "Tous les Locataires",
-    "selectTenant": "Sélectionner un locataire",
-    "failedToLoad": "Échec du chargement des données du tableau de bord"
+    "noKpisConfigured": "Aucun KPI configuré",
+    "quickActions": {
+      "manageClients": "Gérer les Clients",
+      "manageClientsDesc": "Voir et gérer les clients commerciaux",
+      "invoices": "Factures",
+      "invoicesDesc": "Gérer les factures et la facturation",
+      "timeEntries": "Entrées de Temps",
+      "timeEntriesDesc": "Suivre et gérer le temps",
+      "expenses": "Dépenses",
+      "expensesDesc": "Suivre les dépenses d'entreprise"
+    },
+    "kpis": {
+      "totalUsers": { "title": "Total Utilisateurs", "subtitle": "actifs" },
+      "activeUsers": { "title": "Utilisateurs Actifs", "subtitle": "ce mois" },
+      "totalTenants": { "title": "Total Locataires", "subtitle": "actifs" },
+      "totalProjects": { "title": "Total Projets", "subtitle": "actifs" },
+      "activeProjects": { "title": "Projets Actifs", "subtitle": "en cours" },
+      "totalHours": { "title": "Total Heures", "subtitle": "ce mois" },
+      "billableHours": { "title": "Heures Facturables", "subtitle": "ce mois" },
+      "totalRevenue": { "title": "Revenu Total", "subtitle": "ce mois" },
+      "pendingInvoices": {
+        "title": "Factures en Attente",
+        "subtitle": "en attente de paiement"
+      },
+      "totalInvoices": {
+        "title": "Total Factures",
+        "subtitle": "tout le temps"
+      },
+      "totalExpenses": { "title": "Dépenses Totales", "subtitle": "ce mois" },
+      "pendingAccountRequests": {
+        "title": "Demandes en Attente",
+        "subtitle": "en attente d'approbation"
+      },
+      "totalTasks": { "title": "Total Tâches", "subtitle": "toutes" },
+      "completedTasks": { "title": "Tâches Terminées", "subtitle": "ce mois" },
+      "inProgressTasks": { "title": "En Cours", "subtitle": "tâches" },
+      "totalClients": { "title": "Total Clients", "subtitle": "actifs" },
+      "avgHoursPerProject": {
+        "title": "Heures Moy/Projet",
+        "subtitle": "ce mois"
+      },
+      "utilizationRate": {
+        "title": "Taux d'Utilisation",
+        "subtitle": "ce mois"
+      }
+    }
   },
   "timeEntries": {
     "title": "Entrées de Temps",
