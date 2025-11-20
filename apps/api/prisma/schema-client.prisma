@@ -141,6 +141,9 @@ model TimeEntry {
   overtimeHours Decimal?  @map("overtime_hours") @db.Decimal(10, 2)
   weekStartDate DateTime? @map("week_start_date")
   isBillable    Boolean   @default(true) @map("is_billable")
+  // Invoice tracking
+  invoiceId     String?   @map("invoice_id") // Reference to invoice when billed
+  invoicedAt    DateTime? @map("invoiced_at") // When this entry was invoiced
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   deletedAt     DateTime? @map("deleted_at")
@@ -149,6 +152,7 @@ model TimeEntry {
   @@index([projectId])
   @@index([startTime])
   @@index([weekStartDate])
+  @@index([invoiceId])
   @@map("time_entries")
 }
 
@@ -276,7 +280,7 @@ model Invoice {
   invoiceNumber      String           @unique @map("invoice_number") // e.g., "INV-00001"
   clientId           String?          @map("client_id")
   client             Client?          @relation(fields: [clientId], references: [id])
-  status             InvoiceStatus    @default(DRAFT)
+  status             InvoiceStatus    @default(PROCESSING)
   paypalInvoiceId    String?          @unique @map("paypal_invoice_id") // PayPal's invoice ID
   paypalInvoiceUrl   String?          @map("paypal_invoice_url") // PayPal invoice URL for viewing/payment
   // Dates
@@ -346,14 +350,16 @@ model InvoicePayment {
 }
 
 enum InvoiceStatus {
-  DRAFT // Not yet sent
-  SENT // Sent to client via PayPal
-  VIEWED // Client viewed the invoice
-  PAID // Fully paid
-  PARTIAL_PAID // Partially paid
+  PROCESSING // Initial status, can be edited
+  SENT_TO_CLIENT // Sent directly to client
+  SENT_EMAIL // Sent via email
+  SENT_MAIL // Sent via physical mail
+  SENT_PAYPAL // Sent via PayPal
+  SENT_STRIPE // Sent via Stripe
+  INVALID // Invalid invoice
+  VOID // Voided invoice
   CANCELLED // Cancelled
-  REFUNDED // Refunded
-  OVERDUE // Past due date
+  COMPLETED // Payment completed
 }
 
 // LLM Configuration - Tenant-specific LLM settings (tenantadmin)

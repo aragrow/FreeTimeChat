@@ -245,6 +245,116 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/v1/admin/business-clients/validate-prefix
+ * Validate invoice prefix uniqueness and format
+ */
+router.post('/validate-prefix', async (req: Request, res: Response) => {
+  try {
+    if (!req.clientDb) {
+      res.status(500).json({
+        status: 'error',
+        message: 'Tenant database not available',
+      });
+      return;
+    }
+
+    const { prefix, excludeClientId } = req.body;
+
+    // Validate prefix is provided
+    if (!prefix || !prefix.trim()) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Prefix is required',
+        valid: false,
+      });
+      return;
+    }
+
+    const trimmedPrefix = prefix.trim().toUpperCase();
+
+    // Validate format: alphanumeric and dashes only
+    const formatRegex = /^[A-Z0-9-]+$/;
+    if (!formatRegex.test(trimmedPrefix)) {
+      res.status(200).json({
+        status: 'success',
+        valid: false,
+        message: 'Prefix must contain only letters, numbers, and dashes',
+      });
+      return;
+    }
+
+    // Check minimum length
+    if (trimmedPrefix.length < 2) {
+      res.status(200).json({
+        status: 'success',
+        valid: false,
+        message: 'Prefix must be at least 2 characters',
+      });
+      return;
+    }
+
+    // Check maximum length
+    if (trimmedPrefix.length > 10) {
+      res.status(200).json({
+        status: 'success',
+        valid: false,
+        message: 'Prefix must be at most 10 characters',
+      });
+      return;
+    }
+
+    const clientDb = req.clientDb as ClientPrismaClient;
+
+    // Build where clause for uniqueness check
+    const where: any = {
+      invoicePrefix: {
+        equals: trimmedPrefix,
+        mode: 'insensitive',
+      },
+      deletedAt: null,
+    };
+
+    // Exclude current client if updating
+    if (excludeClientId) {
+      where.id = { not: excludeClientId };
+    }
+
+    // Check for existing client with same prefix
+    const existingClient = await clientDb.client.findFirst({
+      where,
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (existingClient) {
+      res.status(200).json({
+        status: 'success',
+        valid: false,
+        message: `Prefix "${trimmedPrefix}" is already used by client "${existingClient.name}"`,
+        conflictingClient: existingClient.name,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      valid: true,
+      message: 'Prefix is available',
+      normalizedPrefix: trimmedPrefix,
+    });
+  } catch (error) {
+    console.error('Error validating prefix:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to validate prefix',
+      valid: false,
+    });
+  }
+});
+
+/**
  * PUT /api/v1/admin/business-clients/:id
  * Update business client
  */

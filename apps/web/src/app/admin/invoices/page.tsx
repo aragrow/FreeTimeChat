@@ -6,6 +6,7 @@
 
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -92,8 +93,32 @@ interface PaymentTerm {
   discountDays: number | null;
 }
 
+// Status transition rules
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  PROCESSING: [
+    'SENT_TO_CLIENT',
+    'SENT_EMAIL',
+    'SENT_MAIL',
+    'SENT_PAYPAL',
+    'SENT_STRIPE',
+    'INVALID',
+    'VOID',
+    'CANCELLED',
+  ],
+  SENT_TO_CLIENT: ['VOID', 'CANCELLED', 'COMPLETED'],
+  SENT_EMAIL: ['VOID', 'CANCELLED', 'COMPLETED'],
+  SENT_MAIL: ['VOID', 'CANCELLED', 'COMPLETED'],
+  SENT_PAYPAL: ['VOID', 'CANCELLED', 'COMPLETED'],
+  SENT_STRIPE: ['VOID', 'CANCELLED', 'COMPLETED'],
+  INVALID: ['VOID'],
+  VOID: [],
+  CANCELLED: [],
+  COMPLETED: [],
+};
+
 export default function InvoicesPage() {
   const { getAuthHeaders } = useAuth();
+  const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -109,9 +134,11 @@ export default function InvoicesPage() {
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [_editingInvoice, _setEditingInvoice] = useState<Invoice | null>(null);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const [recordingPayment, setRecordingPayment] = useState<Invoice | null>(null);
+  const [changingStatus, setChangingStatus] = useState<Invoice | null>(null);
+  const [newStatus, setNewStatus] = useState('');
 
   // Form states
   const [formData, setFormData] = useState({
@@ -549,25 +576,140 @@ export default function InvoicesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'DRAFT':
-        return 'bg-gray-100 text-gray-800';
-      case 'SENT':
+      case 'PROCESSING':
         return 'bg-blue-100 text-blue-800';
-      case 'VIEWED':
+      case 'SENT_TO_CLIENT':
         return 'bg-purple-100 text-purple-800';
-      case 'PAID':
+      case 'SENT_EMAIL':
+        return 'bg-indigo-100 text-indigo-800';
+      case 'SENT_MAIL':
+        return 'bg-cyan-100 text-cyan-800';
+      case 'SENT_PAYPAL':
+        return 'bg-sky-100 text-sky-800';
+      case 'SENT_STRIPE':
+        return 'bg-violet-100 text-violet-800';
+      case 'COMPLETED':
         return 'bg-green-100 text-green-800';
-      case 'PARTIAL_PAID':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
-      case 'REFUNDED':
+      case 'INVALID':
         return 'bg-orange-100 text-orange-800';
-      case 'OVERDUE':
+      case 'VOID':
+        return 'bg-gray-100 text-gray-800';
+      case 'CANCELLED':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Handle status change
+  const handleStatusChange = async () => {
+    if (!changingStatus || !newStatus) {
+      alert('Please select a new status');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/invoices/${changingStatus.id}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      if (response.ok) {
+        setChangingStatus(null);
+        setNewStatus('');
+        fetchInvoices();
+        alert('Status updated successfully');
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to update status: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update status');
+    }
+  };
+
+  // Handle invoice edit
+  const handleEdit = async () => {
+    if (!editingInvoice) return;
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/invoices/${editingInvoice.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            items: lineItems
+              .filter((item) => item.description)
+              .map((item) => ({
+                projectId: item.projectId || null,
+                description: item.description,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+              })),
+            issueDate: formData.issueDate,
+            dueDate: formData.dueDate || undefined,
+            taxRate: parseFloat(formData.taxRate) || 0,
+            discountAmount: calculateTotalDiscount(),
+            note: formData.note || null,
+            termsAndConditions: formData.termsAndConditions || null,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        setEditingInvoice(null);
+        resetForm();
+        fetchInvoices();
+        alert('Invoice updated successfully');
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to update invoice: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Error updating invoice:', error);
+      alert('Failed to update invoice');
+    }
+  };
+
+  // Open edit modal with invoice data
+  const openEditModal = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setFormData({
+      clientId: invoice.clientId || '',
+      issueDate: invoice.issueDate.split('T')[0],
+      dueDate: invoice.dueDate.split('T')[0],
+      paymentTermId: '',
+      taxRate: invoice.taxRate.toString(),
+      discountAmount: invoice.discountAmount.toString(),
+      note: invoice.note || '',
+      termsAndConditions: invoice.termsAndConditions || '',
+    });
+    setLineItems(
+      invoice.items.map((item) => ({
+        id: item.id,
+        projectId: item.projectId,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        amount: item.amount,
+      }))
+    );
+  };
+
+  const formatStatus = (status: string) => {
+    return status.replace(/_/g, ' ');
   };
 
   if (isLoading && invoices.length === 0) {
@@ -589,12 +731,30 @@ export default function InvoicesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
           <p className="text-sm text-gray-600">Create and manage invoices with line items</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Create Invoice
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => router.push('/admin/invoices/generate')}>
+            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Generate from Time
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Create Invoice
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -609,13 +769,16 @@ export default function InvoicesPage() {
             }}
           >
             <option value="">All Statuses</option>
-            <option value="DRAFT">Draft</option>
-            <option value="SENT">Sent</option>
-            <option value="VIEWED">Viewed</option>
-            <option value="PAID">Paid</option>
-            <option value="PARTIAL_PAID">Partially Paid</option>
+            <option value="PROCESSING">Processing</option>
+            <option value="SENT_TO_CLIENT">Sent to Client</option>
+            <option value="SENT_EMAIL">Sent via Email</option>
+            <option value="SENT_MAIL">Sent via Mail</option>
+            <option value="SENT_PAYPAL">Sent via PayPal</option>
+            <option value="SENT_STRIPE">Sent via Stripe</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="INVALID">Invalid</option>
+            <option value="VOID">Void</option>
             <option value="CANCELLED">Cancelled</option>
-            <option value="OVERDUE">Overdue</option>
           </select>
           <select
             className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -690,7 +853,7 @@ export default function InvoicesPage() {
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(invoice.status)}`}
                     >
-                      {invoice.status.replace('_', ' ')}
+                      {formatStatus(invoice.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -720,10 +883,55 @@ export default function InvoicesPage() {
                           />
                         </svg>
                       </button>
-                      {invoice.status === 'DRAFT' && (
+                      {invoice.status === 'PROCESSING' && (
+                        <button
+                          onClick={() => openEditModal(invoice)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Edit"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                      {STATUS_TRANSITIONS[invoice.status]?.length > 0 && (
+                        <button
+                          onClick={() => {
+                            setChangingStatus(invoice);
+                            setNewStatus('');
+                          }}
+                          className="text-purple-600 hover:text-purple-900"
+                          title="Change Status"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                      {invoice.status === 'PROCESSING' && (
                         <button
                           onClick={() => handleSendPayPal(invoice.id)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-sky-600 hover:text-sky-900"
                           title="Send via PayPal"
                         >
                           <svg
@@ -741,7 +949,7 @@ export default function InvoicesPage() {
                           </svg>
                         </button>
                       )}
-                      {(invoice.status === 'SENT' || invoice.status === 'PARTIAL_PAID') && (
+                      {invoice.status.startsWith('SENT_') && invoice.amountDue > 0 && (
                         <button
                           onClick={() => {
                             setRecordingPayment(invoice);
@@ -1308,6 +1516,256 @@ export default function InvoicesPage() {
                   Cancel
                 </Button>
                 <Button onClick={handleRecordPayment}>Record Payment</Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Invoice Modal */}
+      {editingInvoice && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold mb-4">
+                Edit Invoice - {editingInvoice.invoiceNumber}
+              </h2>
+
+              <div className="space-y-6">
+                {/* Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Issue Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={formData.issueDate}
+                      onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                    <Input
+                      type="date"
+                      value={formData.dueDate}
+                      onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Line Items */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-gray-700">Line Items *</label>
+                    <Button variant="outline" size="sm" onClick={addLineItem}>
+                      + Add Item
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {lineItems.map((item, index) => (
+                      <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                        <div className="col-span-5">
+                          {index === 0 && (
+                            <label className="block text-xs text-gray-500 mb-1">Description</label>
+                          )}
+                          <Input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => updateLineItem(index, 'description', e.target.value)}
+                            placeholder="Item description"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          {index === 0 && (
+                            <label className="block text-xs text-gray-500 mb-1">Qty</label>
+                          )}
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)
+                            }
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          {index === 0 && (
+                            <label className="block text-xs text-gray-500 mb-1">Unit Price</label>
+                          )}
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.unitPrice}
+                            onChange={(e) =>
+                              updateLineItem(index, 'unitPrice', parseFloat(e.target.value) || 0)
+                            }
+                          />
+                        </div>
+                        <div className="col-span-2 text-right">
+                          {index === 0 && (
+                            <label className="block text-xs text-gray-500 mb-1">Amount</label>
+                          )}
+                          <span className="text-sm font-medium">${item.amount.toFixed(2)}</span>
+                        </div>
+                        <div className="col-span-1">
+                          {lineItems.length > 1 && (
+                            <button
+                              onClick={() => removeLineItem(index)}
+                              className="text-red-600 hover:text-red-900 p-1"
+                            >
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tax and Discount */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tax Rate (%)
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={formData.taxRate}
+                      onChange={(e) => setFormData({ ...formData, taxRate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Discount ($)
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.discountAmount}
+                      onChange={(e) => setFormData({ ...formData, discountAmount: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Totals */}
+                <div className="border-t pt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium">{formatCurrency(calculateSubtotal())}</span>
+                  </div>
+                  {calculateTotalDiscount() > 0 && (
+                    <div className="flex justify-between text-sm text-red-600">
+                      <span>Discount:</span>
+                      <span>-{formatCurrency(calculateTotalDiscount())}</span>
+                    </div>
+                  )}
+                  {calculateTax() > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tax ({formData.taxRate}%):</span>
+                      <span className="font-medium">{formatCurrency(calculateTax())}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span>Total:</span>
+                    <span>{formatCurrency(calculateTotal())}</span>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={2}
+                    value={formData.note}
+                    onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                    placeholder="Additional notes for the client..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingInvoice(null);
+                    resetForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleEdit}>Save Changes</Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Change Status Modal */}
+      {changingStatus && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md m-4">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Change Invoice Status</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Invoice: {changingStatus.invoiceNumber}
+                <br />
+                Current Status:{' '}
+                <span
+                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(changingStatus.status)}`}
+                >
+                  {formatStatus(changingStatus.status)}
+                </span>
+              </p>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Status *</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                >
+                  <option value="">Select new status</option>
+                  {STATUS_TRANSITIONS[changingStatus.status]?.map((status) => (
+                    <option key={status} value={status}>
+                      {formatStatus(status)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setChangingStatus(null);
+                    setNewStatus('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleStatusChange} disabled={!newStatus}>
+                  Update Status
+                </Button>
               </div>
             </div>
           </Card>

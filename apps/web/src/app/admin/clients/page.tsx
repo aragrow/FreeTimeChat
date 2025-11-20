@@ -40,6 +40,9 @@ interface Client {
   billingContactPhone: string | null;
   hourlyRate: number | null;
   preferredPaymentMethod: string | null;
+  invoicePrefix: string | null;
+  invoiceNextNumber: number;
+  invoiceNumberPadding: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -96,6 +99,20 @@ export default function ClientsPage() {
     billingContactPhone: '',
     hourlyRate: '',
     preferredPaymentMethod: '',
+    invoicePrefix: '',
+    invoiceNextNumber: '1',
+    invoiceNumberPadding: '5',
+  });
+
+  // Invoice prefix validation
+  const [prefixValidation, setPrefixValidation] = useState<{
+    isValid: boolean | null;
+    message: string;
+    isValidating: boolean;
+  }>({
+    isValid: null,
+    message: '',
+    isValidating: false,
   });
 
   // Tenant settings for payment method options
@@ -189,6 +206,56 @@ export default function ClientsPage() {
     }
   };
 
+  // Validate invoice prefix
+  const validatePrefix = async (prefix: string, excludeClientId?: string) => {
+    if (!prefix.trim()) {
+      setPrefixValidation({ isValid: null, message: '', isValidating: false });
+      return;
+    }
+
+    setPrefixValidation({ isValid: null, message: 'Validating...', isValidating: true });
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/clients/validate-prefix`,
+        {
+          method: 'POST',
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prefix: prefix.trim(),
+            excludeClientId,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        setPrefixValidation({
+          isValid: result.valid,
+          message: result.message,
+          isValidating: false,
+        });
+      } else {
+        const errorData = await response.json();
+        setPrefixValidation({
+          isValid: false,
+          message: errorData.message || 'Validation failed',
+          isValidating: false,
+        });
+      }
+    } catch (error) {
+      console.error('Error validating prefix:', error);
+      setPrefixValidation({
+        isValid: false,
+        message: 'Failed to validate prefix',
+        isValidating: false,
+      });
+    }
+  };
+
   const handleCreate = async () => {
     // For tenant admins, only name is required (tenant is automatic)
     // For system admins, both name and tenantId are required
@@ -230,7 +297,11 @@ export default function ClientsPage() {
           billingContactPhone: '',
           hourlyRate: '',
           preferredPaymentMethod: '',
+          invoicePrefix: '',
+          invoiceNextNumber: '1',
+          invoiceNumberPadding: '5',
         });
+        setPrefixValidation({ isValid: null, message: '', isValidating: false });
         fetchClients();
       } else {
         const errorData = await response.json();
@@ -277,7 +348,11 @@ export default function ClientsPage() {
           billingContactPhone: '',
           hourlyRate: '',
           preferredPaymentMethod: '',
+          invoicePrefix: '',
+          invoiceNextNumber: '1',
+          invoiceNumberPadding: '5',
         });
+        setPrefixValidation({ isValid: null, message: '', isValidating: false });
         fetchClients();
       } else {
         const errorData = await response.json();
@@ -393,7 +468,11 @@ export default function ClientsPage() {
       billingContactPhone: client.billingContactPhone || '',
       hourlyRate: client.hourlyRate ? client.hourlyRate.toString() : '',
       preferredPaymentMethod: client.preferredPaymentMethod || '',
+      invoicePrefix: client.invoicePrefix || '',
+      invoiceNextNumber: client.invoiceNextNumber?.toString() || '1',
+      invoiceNumberPadding: client.invoiceNumberPadding?.toString() || '5',
     });
+    setPrefixValidation({ isValid: null, message: '', isValidating: false });
   };
 
   if (isLoading && clients.length === 0) {
@@ -809,6 +888,84 @@ export default function ClientsPage() {
               </div>
             </div>
 
+            {/* Invoice Settings */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                Invoice Settings
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Invoice Prefix
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.invoicePrefix}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase();
+                      setFormData({ ...formData, invoicePrefix: value });
+                      // Debounce validation
+                      if (value) {
+                        setTimeout(() => validatePrefix(value), 500);
+                      } else {
+                        setPrefixValidation({ isValid: null, message: '', isValidating: false });
+                      }
+                    }}
+                    placeholder="e.g., ACME"
+                    className={
+                      prefixValidation.isValid === false
+                        ? 'border-red-500'
+                        : prefixValidation.isValid === true
+                          ? 'border-green-500'
+                          : ''
+                    }
+                  />
+                  {prefixValidation.message && (
+                    <p
+                      className={`text-xs mt-1 ${
+                        prefixValidation.isValid === false
+                          ? 'text-red-600'
+                          : prefixValidation.isValid === true
+                            ? 'text-green-600'
+                            : 'text-gray-500'
+                      }`}
+                    >
+                      {prefixValidation.message}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">Leave empty to use tenant default</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Next Invoice Number
+                  </label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formData.invoiceNextNumber}
+                    onChange={(e) =>
+                      setFormData({ ...formData, invoiceNextNumber: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Number Padding
+                  </label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={formData.invoiceNumberPadding}
+                    onChange={(e) =>
+                      setFormData({ ...formData, invoiceNumberPadding: e.target.value })
+                    }
+                  />
+                  <p className="text-xs text-gray-500 mt-1">e.g., 5 = 00001</p>
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 variant="outline"
@@ -831,7 +988,11 @@ export default function ClientsPage() {
                     billingContactPhone: '',
                     hourlyRate: '',
                     preferredPaymentMethod: '',
+                    invoicePrefix: '',
+                    invoiceNextNumber: '1',
+                    invoiceNumberPadding: '5',
                   });
+                  setPrefixValidation({ isValid: null, message: '', isValidating: false });
                 }}
               >
                 Cancel
@@ -1086,6 +1247,84 @@ export default function ClientsPage() {
               </div>
             </div>
 
+            {/* Invoice Settings */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                Invoice Settings
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Invoice Prefix
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.invoicePrefix}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase();
+                      setFormData({ ...formData, invoicePrefix: value });
+                      // Debounce validation
+                      if (value) {
+                        setTimeout(() => validatePrefix(value, editingClient?.id), 500);
+                      } else {
+                        setPrefixValidation({ isValid: null, message: '', isValidating: false });
+                      }
+                    }}
+                    placeholder="e.g., ACME"
+                    className={
+                      prefixValidation.isValid === false
+                        ? 'border-red-500'
+                        : prefixValidation.isValid === true
+                          ? 'border-green-500'
+                          : ''
+                    }
+                  />
+                  {prefixValidation.message && (
+                    <p
+                      className={`text-xs mt-1 ${
+                        prefixValidation.isValid === false
+                          ? 'text-red-600'
+                          : prefixValidation.isValid === true
+                            ? 'text-green-600'
+                            : 'text-gray-500'
+                      }`}
+                    >
+                      {prefixValidation.message}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">Leave empty to use tenant default</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Next Invoice Number
+                  </label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formData.invoiceNextNumber}
+                    onChange={(e) =>
+                      setFormData({ ...formData, invoiceNextNumber: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Number Padding
+                  </label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={formData.invoiceNumberPadding}
+                    onChange={(e) =>
+                      setFormData({ ...formData, invoiceNumberPadding: e.target.value })
+                    }
+                  />
+                  <p className="text-xs text-gray-500 mt-1">e.g., 5 = 00001</p>
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 variant="outline"
@@ -1108,7 +1347,11 @@ export default function ClientsPage() {
                     billingContactPhone: '',
                     hourlyRate: '',
                     preferredPaymentMethod: '',
+                    invoicePrefix: '',
+                    invoiceNextNumber: '1',
+                    invoiceNumberPadding: '5',
                   });
+                  setPrefixValidation({ isValid: null, message: '', isValidating: false });
                 }}
               >
                 Cancel
