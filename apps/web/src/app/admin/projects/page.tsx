@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Project extends Record<string, unknown> {
@@ -52,6 +53,7 @@ interface ProjectMember {
 
 export default function ProjectsPage() {
   const { getAuthHeaders } = useAuth();
+  const { t } = useTranslation();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -408,7 +410,7 @@ export default function ProjectsPage() {
   const columns: TableColumn<Project>[] = [
     {
       key: 'name',
-      header: 'Project',
+      header: t('projects.project'),
       sortable: true,
       render: (project) => (
         <div>
@@ -421,15 +423,15 @@ export default function ProjectsPage() {
     },
     {
       key: 'client',
-      header: 'Client',
+      header: t('projects.client'),
       sortable: true,
       render: (project) => (
-        <span className="text-sm text-gray-900">{project.client?.name || 'N/A'}</span>
+        <span className="text-sm text-gray-900">{project.client?.name || t('common.na')}</span>
       ),
     },
     {
       key: 'teamMemberCount',
-      header: 'Team',
+      header: t('projects.team'),
       sortable: true,
       render: (project) => (
         <div className="flex items-center gap-2">
@@ -452,7 +454,7 @@ export default function ProjectsPage() {
     },
     {
       key: 'totalHours',
-      header: 'Total Hours',
+      header: t('projects.totalHours'),
       sortable: true,
       render: (project) => {
         const totalHours = project.totalHours || 0;
@@ -490,7 +492,7 @@ export default function ProjectsPage() {
     },
     {
       key: 'isActive',
-      header: 'Status',
+      header: t('projects.status'),
       sortable: true,
       render: (project) => (
         <span
@@ -498,19 +500,19 @@ export default function ProjectsPage() {
             project.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
           }`}
         >
-          {project.isActive ? 'Active' : 'Inactive'}
+          {project.isActive ? t('projects.active') : t('projects.inactive')}
         </span>
       ),
     },
     {
       key: 'createdAt',
-      header: 'Created',
+      header: t('projects.created'),
       sortable: true,
       render: (project) => new Date(project.createdAt).toLocaleDateString(),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t('common.actions'),
       render: (project) => (
         <div className="flex items-center gap-2">
           <button
@@ -520,7 +522,7 @@ export default function ProjectsPage() {
             }}
             className="text-blue-600 hover:text-blue-900 text-sm"
           >
-            Edit
+            {t('common.edit')}
           </button>
           <button
             onClick={(e) => {
@@ -529,7 +531,7 @@ export default function ProjectsPage() {
             }}
             className="text-yellow-600 hover:text-yellow-900 text-sm"
           >
-            {project.isActive ? 'Deactivate' : 'Activate'}
+            {project.isActive ? t('projects.deactivate') : t('projects.activate')}
           </button>
           <button
             onClick={(e) => {
@@ -539,7 +541,7 @@ export default function ProjectsPage() {
             className="text-red-600 hover:text-red-900 text-sm"
             disabled={project.isActive}
           >
-            Delete
+            {t('common.delete')}
           </button>
         </div>
       ),
@@ -554,14 +556,14 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
-          <p className="text-gray-600 mt-1">Manage projects across all clients</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('projects.title')}</h1>
+          <p className="text-gray-600 mt-1">{t('projects.description')}</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Create Project
+          {t('projects.createProject')}
         </Button>
       </div>
 
@@ -585,7 +587,7 @@ export default function ProjectsPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Projects</p>
+              <p className="text-sm text-gray-600">{t('projects.totalProjects')}</p>
               <p className="text-2xl font-bold text-gray-900">{projects.length}</p>
             </div>
           </div>
@@ -609,7 +611,7 @@ export default function ProjectsPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Active Projects</p>
+              <p className="text-sm text-gray-600">{t('projects.activeProjects')}</p>
               <p className="text-2xl font-bold text-gray-900">{activeProjects}</p>
             </div>
           </div>
@@ -633,7 +635,7 @@ export default function ProjectsPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Hours</p>
+              <p className="text-sm text-gray-600">{t('projects.totalHours')}</p>
               <p className="text-2xl font-bold text-gray-900">{totalHours.toFixed(1)}h</p>
             </div>
           </div>
@@ -657,7 +659,7 @@ export default function ProjectsPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Team Members</p>
+              <p className="text-sm text-gray-600">{t('projects.teamMembers')}</p>
               <p className="text-2xl font-bold text-gray-900">
                 {projects.reduce((sum, p) => sum + (p.teamMemberCount || 0), 0)}
               </p>
@@ -672,7 +674,7 @@ export default function ProjectsPage() {
           <div className="flex-1">
             <Input
               type="text"
-              placeholder="Search by name, description, or client..."
+              placeholder={t('projects.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -682,9 +684,9 @@ export default function ProjectsPage() {
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="all">{t('projects.allStatus')}</option>
+            <option value="active">{t('projects.active')}</option>
+            <option value="inactive">{t('projects.inactive')}</option>
           </select>
         </div>
       </Card>
@@ -696,7 +698,7 @@ export default function ProjectsPage() {
         keyExtractor={(project) => project.id}
         onRowClick={(project) => openEditModal(project)}
         isLoading={isLoading}
-        emptyMessage="No projects found"
+        emptyMessage={t('projects.noProjects')}
         pagination={{
           currentPage,
           totalPages,
@@ -708,35 +710,35 @@ export default function ProjectsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-6">Create New Project</h2>
+            <h2 className="text-xl font-bold mb-6">{t('projects.createNew')}</h2>
 
             {/* Project Information */}
             <div className="space-y-4 mb-6">
               <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-                Project Information
+                {t('projects.projectInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Project Name *
+                    {t('projects.projectName')} *
                   </label>
                   <Input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Project name"
+                    placeholder={t('projects.projectName')}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client (Optional)
+                    {t('projects.clientOptional')}
                   </label>
                   <select
                     value={formData.clientId}
                     onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">No client (Internal)</option>
+                    <option value="">{t('projects.noClient')}</option>
                     {clients.map((client) => (
                       <option key={client.id} value={client.id}>
                         {client.name}
@@ -746,11 +748,13 @@ export default function ProjectsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('projects.descriptionLabel')}
+                </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Project description"
+                  placeholder={t('projects.descriptionPlaceholder')}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -760,7 +764,7 @@ export default function ProjectsPage() {
             {/* Billing Information */}
             <div className="space-y-4 mb-6">
               <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-                Billing Information
+                {t('projects.billingInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -771,16 +775,16 @@ export default function ProjectsPage() {
                       onChange={(e) => setFormData({ ...formData, isBillable: e.target.checked })}
                       className="rounded border-gray-300"
                     />
-                    <span className="text-sm font-medium text-gray-700">Billable Project</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {t('projects.billableProject')}
+                    </span>
                   </label>
-                  <p className="text-xs text-gray-500 mt-1 ml-6">
-                    Check if this project should be billed to the client
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1 ml-6">{t('projects.billableHint')}</p>
                 </div>
                 {formData.isBillable && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Hourly Rate
+                      {t('projects.hourlyRate')}
                     </label>
                     <Input
                       type="number"
@@ -796,7 +800,9 @@ export default function ProjectsPage() {
 
             {/* Budget Tracking */}
             <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Budget Tracking</h3>
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                {t('projects.budgetTracking')}
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="flex items-center gap-2">
@@ -812,16 +818,16 @@ export default function ProjectsPage() {
                       }
                       className="rounded border-gray-300"
                     />
-                    <span className="text-sm font-medium text-gray-700">Fixed-hours project</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {t('projects.fixedHours')}
+                    </span>
                   </label>
-                  <p className="text-xs text-gray-500 mt-1 ml-6">
-                    Set a fixed number of allocated hours for this project
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1 ml-6">{t('projects.fixedHoursHint')}</p>
                 </div>
                 {formData.isFixedHours && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Allocated Hours
+                      {t('projects.allocatedHours')}
                     </label>
                     <Input
                       type="number"
@@ -830,9 +836,7 @@ export default function ProjectsPage() {
                       onChange={(e) => setFormData({ ...formData, allocatedHours: e.target.value })}
                       placeholder="0.0"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Original contracted hours (can add more later if scope changes)
-                    </p>
+                    <p className="text-xs text-gray-500 mt-1">{t('projects.allocatedHoursHint')}</p>
                   </div>
                 )}
               </div>
@@ -840,7 +844,9 @@ export default function ProjectsPage() {
 
             {/* Team Members */}
             <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Team Members</h3>
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                {t('projects.teamMembers')}
+              </h3>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {users.length > 0 ? (
                   users.map((user) => (
@@ -873,7 +879,7 @@ export default function ProjectsPage() {
                     </label>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-sm">No users available</p>
+                  <p className="text-gray-500 text-sm">{t('projects.noUsersAvailable')}</p>
                 )}
               </div>
             </div>
@@ -895,9 +901,9 @@ export default function ProjectsPage() {
                   });
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
-              <Button onClick={handleCreate}>Create</Button>
+              <Button onClick={handleCreate}>{t('common.create')}</Button>
             </div>
           </Card>
         </div>
@@ -907,17 +913,17 @@ export default function ProjectsPage() {
       {editingProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-6">Edit Project</h2>
+            <h2 className="text-xl font-bold mb-6">{t('projects.editProject')}</h2>
 
             {/* Project Information */}
             <div className="space-y-4 mb-6">
               <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-                Project Information
+                {t('projects.projectInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Project Name *
+                    {t('projects.projectName')} *
                   </label>
                   <Input
                     type="text"
@@ -927,14 +933,14 @@ export default function ProjectsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client (Optional)
+                    {t('projects.clientOptional')}
                   </label>
                   <select
                     value={formData.clientId}
                     onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">No client (Internal)</option>
+                    <option value="">{t('projects.noClient')}</option>
                     {clients.map((client) => (
                       <option key={client.id} value={client.id}>
                         {client.name}
@@ -944,11 +950,13 @@ export default function ProjectsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('projects.descriptionLabel')}
+                </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Project description"
+                  placeholder={t('projects.descriptionPlaceholder')}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -958,7 +966,7 @@ export default function ProjectsPage() {
             {/* Billing Information */}
             <div className="space-y-4 mb-6">
               <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-                Billing Information
+                {t('projects.billingInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -969,16 +977,16 @@ export default function ProjectsPage() {
                       onChange={(e) => setFormData({ ...formData, isBillable: e.target.checked })}
                       className="rounded border-gray-300"
                     />
-                    <span className="text-sm font-medium text-gray-700">Billable Project</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {t('projects.billableProject')}
+                    </span>
                   </label>
-                  <p className="text-xs text-gray-500 mt-1 ml-6">
-                    Check if this project should be billed to the client
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1 ml-6">{t('projects.billableHint')}</p>
                 </div>
                 {formData.isBillable && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Hourly Rate
+                      {t('projects.hourlyRate')}
                     </label>
                     <Input
                       type="number"
@@ -994,7 +1002,9 @@ export default function ProjectsPage() {
 
             {/* Budget Tracking */}
             <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Budget Tracking</h3>
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                {t('projects.budgetTracking')}
+              </h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -1011,16 +1021,18 @@ export default function ProjectsPage() {
                         }
                         className="rounded border-gray-300"
                       />
-                      <span className="text-sm font-medium text-gray-700">Fixed-hours project</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        {t('projects.fixedHours')}
+                      </span>
                     </label>
                     <p className="text-xs text-gray-500 mt-1 ml-6">
-                      Set a fixed number of allocated hours for this project
+                      {t('projects.fixedHoursHint')}
                     </p>
                   </div>
                   {formData.isFixedHours && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Allocated Hours
+                        {t('projects.allocatedHours')}
                       </label>
                       <Input
                         type="number"
@@ -1032,7 +1044,7 @@ export default function ProjectsPage() {
                         placeholder="0.0"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        Original contracted hours (can add more later if scope changes)
+                        {t('projects.allocatedHoursHint')}
                       </p>
                     </div>
                   )}
@@ -1043,19 +1055,19 @@ export default function ProjectsPage() {
                   <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                       <div>
-                        <p className="text-xs text-gray-500">Original Budget</p>
+                        <p className="text-xs text-gray-500">{t('projects.originalBudget')}</p>
                         <p className="text-lg font-semibold text-gray-900">
                           {editingProject.allocatedHours}h
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Additional Hours</p>
+                        <p className="text-xs text-gray-500">{t('projects.additionalHours')}</p>
                         <p className="text-lg font-semibold text-blue-600">
                           +{editingProject.additionalHoursAllocated || 0}h
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Total Budget</p>
+                        <p className="text-xs text-gray-500">{t('projects.totalBudget')}</p>
                         <p className="text-lg font-semibold text-gray-900">
                           {(Number(editingProject.allocatedHours) || 0) +
                             (Number(editingProject.additionalHoursAllocated) || 0)}
@@ -1063,7 +1075,7 @@ export default function ProjectsPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Hours Used</p>
+                        <p className="text-xs text-gray-500">{t('projects.hoursUsed')}</p>
                         <p className="text-lg font-semibold text-purple-600">
                           {editingProject.totalHours?.toFixed(1) || '0.0'}h
                         </p>
@@ -1073,7 +1085,7 @@ export default function ProjectsPage() {
                     {/* Progress Bar */}
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs text-gray-600">
-                        <span>Budget Progress</span>
+                        <span>{t('projects.budgetProgress')}</span>
                         <span>
                           {(
                             ((editingProject.totalHours || 0) /
@@ -1137,17 +1149,14 @@ export default function ProjectsPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            const additionalHours = prompt(
-                              'How many additional hours do you want to add to the budget?',
-                              '10'
-                            );
+                            const additionalHours = prompt(t('projects.addHoursPrompt'), '10');
                             if (additionalHours && parseFloat(additionalHours) > 0) {
                               // TODO: Add API call to update additionalHoursAllocated
-                              alert('Feature coming soon: Add hours via API');
+                              alert(t('projects.addHoursFeature'));
                             }
                           }}
                         >
-                          Add Hours
+                          {t('projects.addHours')}
                         </Button>
                       </div>
                     </div>
@@ -1158,7 +1167,9 @@ export default function ProjectsPage() {
 
             {/* Team Members */}
             <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Team Members</h3>
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                {t('projects.teamMembers')}
+              </h3>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {users.length > 0 ? (
                   users.map((user) => (
@@ -1191,7 +1202,7 @@ export default function ProjectsPage() {
                     </label>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-sm">No users available</p>
+                  <p className="text-gray-500 text-sm">{t('projects.noUsersAvailable')}</p>
                 )}
               </div>
             </div>
@@ -1213,9 +1224,9 @@ export default function ProjectsPage() {
                   });
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
-              <Button onClick={handleUpdate}>Update</Button>
+              <Button onClick={handleUpdate}>{t('common.update')}</Button>
             </div>
           </Card>
         </div>
