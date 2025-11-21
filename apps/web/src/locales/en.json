@@ -728,7 +728,9 @@
     "failedDeactivate": "Failed to deactivate user: {error}",
     "errorDeactivate": "An error occurred while deactivating the user.",
     "emailMismatch": "Email does not match. Please enter the exact email address to confirm deletion.",
-    "loading": "Loading users..."
+    "loading": "Loading users...",
+    "failedCreate": "Failed to create user: {error}",
+    "errorCreate": "An error occurred while creating the user."
   },
   "settings": {
     "profile": {

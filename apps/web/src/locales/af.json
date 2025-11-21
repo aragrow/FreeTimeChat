@@ -703,7 +703,9 @@
     "failedDeactivate": "Kon nie gebruiker deaktiveer nie: {error}",
     "errorDeactivate": "'n Fout het voorgekom terwyl die gebruiker gedeaktiveer word.",
     "emailMismatch": "E-pos stem nie ooreen nie. Voer asseblief die presiese e-posadres in om verwydering te bevestig.",
-    "loading": "Laai gebruikers..."
+    "loading": "Laai gebruikers...",
+    "failedCreate": "Kon nie gebruiker skep nie: {error}",
+    "errorCreate": "'n Fout het voorgekom tydens die skep van die gebruiker."
   },
   "settings": {
     "profile": {

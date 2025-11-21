@@ -697,7 +697,9 @@
     "failedDeactivate": "Gebruiker deactiveren mislukt: {error}",
     "errorDeactivate": "Er is een fout opgetreden bij het deactiveren van de gebruiker.",
     "emailMismatch": "E-mail komt niet overeen. Voer het exacte e-mailadres in ter bevestiging van verwijdering.",
-    "loading": "Gebruikers laden..."
+    "loading": "Gebruikers laden...",
+    "failedCreate": "Kan gebruiker niet aanmaken: {error}",
+    "errorCreate": "Er is een fout opgetreden bij het aanmaken van de gebruiker."
   },
   "settings": {
     "profile": {

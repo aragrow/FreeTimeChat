@@ -48,6 +48,10 @@ interface TenantSettings {
   invoiceZip: string | null;
   invoiceCountry: string | null;
   taxId: string | null;
+  // Localization settings
+  language: string;
+  dateFormat: string;
+  timeZone: string;
   // Payment methods
   enableStripe: boolean;
   enablePaypal: boolean;
@@ -150,6 +154,10 @@ export default function TenantSettingsPage() {
   const [invoicePrefix, setInvoicePrefix] = useState('');
   const [nextInvoiceNumber, setNextInvoiceNumber] = useState(1);
   const [logoUrl, setLogoUrl] = useState('');
+  // Localization settings state
+  const [language, setLanguage] = useState('en');
+  const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
+  const [timeZone, setTimeZone] = useState('America/New_York');
   // Invoice address state
   const [invoiceContact, setInvoiceContact] = useState('');
   const [invoiceEmail, setInvoiceEmail] = useState('');
@@ -205,6 +213,10 @@ export default function TenantSettingsPage() {
         setInvoicePrefix(data.data.invoicePrefix || '');
         setNextInvoiceNumber(data.data.nextInvoiceNumber || 1);
         setLogoUrl(data.data.logoUrl || '');
+        // Localization settings
+        setLanguage(data.data.language || 'en');
+        setDateFormat(data.data.dateFormat || 'MM/DD/YYYY');
+        setTimeZone(data.data.timeZone || 'America/New_York');
         // Invoice address
         setInvoiceContact(data.data.invoiceContact || '');
         setInvoiceEmail(data.data.invoiceEmail || '');
@@ -252,6 +264,10 @@ export default function TenantSettingsPage() {
             invoicePrefix: invoicePrefix || null,
             nextInvoiceNumber,
             logoUrl: logoUrl || null,
+            // Localization settings
+            language,
+            dateFormat,
+            timeZone,
             // Invoice address
             invoiceContact: invoiceContact || null,
             invoiceEmail: invoiceEmail || null,
@@ -499,6 +515,132 @@ export default function TenantSettingsPage() {
                   placeholder="United States"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 />
+              </div>
+            </div>
+          </Card>
+
+          {/* Localization Settings */}
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Localization Settings</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Configure language, date format, and timezone preferences for your organization.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Language */}
+              <div>
+                <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
+                  Language
+                </label>
+                <select
+                  id="language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="en">English</option>
+                  <option value="es">Español (Spanish)</option>
+                  <option value="fr">Français (French)</option>
+                  <option value="de">Deutsch (German)</option>
+                  <option value="nl">Nederlands (Dutch)</option>
+                  <option value="it">Italiano (Italian)</option>
+                  <option value="af">Afrikaans</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Interface language for all users in your organization
+                </p>
+              </div>
+
+              {/* Date Format */}
+              <div>
+                <label
+                  htmlFor="dateFormat"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Date Format
+                </label>
+                <select
+                  id="dateFormat"
+                  value={dateFormat}
+                  onChange={(e) => setDateFormat(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="MM/DD/YYYY">MM/DD/YYYY (12/31/2024)</option>
+                  <option value="DD/MM/YYYY">DD/MM/YYYY (31/12/2024)</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD (2024-12-31)</option>
+                  <option value="DD.MM.YYYY">DD.MM.YYYY (31.12.2024)</option>
+                  <option value="DD-MM-YYYY">DD-MM-YYYY (31-12-2024)</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">How dates will be displayed</p>
+              </div>
+
+              {/* Time Zone */}
+              <div>
+                <label htmlFor="timeZone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Time Zone
+                </label>
+                <select
+                  id="timeZone"
+                  value={timeZone}
+                  onChange={(e) => setTimeZone(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <optgroup label="US Time Zones">
+                    <option value="America/New_York">Eastern Time (UTC-5/-4)</option>
+                    <option value="America/Chicago">Central Time (UTC-6/-5)</option>
+                    <option value="America/Denver">Mountain Time (UTC-7/-6)</option>
+                    <option value="America/Phoenix">Arizona (UTC-7)</option>
+                    <option value="America/Los_Angeles">Pacific Time (UTC-8/-7)</option>
+                    <option value="America/Anchorage">Alaska (UTC-9/-8)</option>
+                    <option value="Pacific/Honolulu">Hawaii (UTC-10)</option>
+                  </optgroup>
+                  <optgroup label="Europe">
+                    <option value="Europe/London">London (UTC+0/+1)</option>
+                    <option value="Europe/Paris">Paris (UTC+1/+2)</option>
+                    <option value="Europe/Berlin">Berlin (UTC+1/+2)</option>
+                    <option value="Europe/Amsterdam">Amsterdam (UTC+1/+2)</option>
+                    <option value="Europe/Rome">Rome (UTC+1/+2)</option>
+                    <option value="Europe/Madrid">Madrid (UTC+1/+2)</option>
+                    <option value="Europe/Athens">Athens (UTC+2/+3)</option>
+                    <option value="Europe/Moscow">Moscow (UTC+3)</option>
+                  </optgroup>
+                  <optgroup label="Asia">
+                    <option value="Asia/Dubai">Dubai (UTC+4)</option>
+                    <option value="Asia/Karachi">Karachi (UTC+5)</option>
+                    <option value="Asia/Kolkata">Mumbai/Kolkata (UTC+5:30)</option>
+                    <option value="Asia/Dhaka">Dhaka (UTC+6)</option>
+                    <option value="Asia/Bangkok">Bangkok (UTC+7)</option>
+                    <option value="Asia/Singapore">Singapore (UTC+8)</option>
+                    <option value="Asia/Hong_Kong">Hong Kong (UTC+8)</option>
+                    <option value="Asia/Shanghai">Beijing/Shanghai (UTC+8)</option>
+                    <option value="Asia/Tokyo">Tokyo (UTC+9)</option>
+                    <option value="Asia/Seoul">Seoul (UTC+9)</option>
+                  </optgroup>
+                  <optgroup label="Australia">
+                    <option value="Australia/Perth">Perth (UTC+8)</option>
+                    <option value="Australia/Adelaide">Adelaide (UTC+9:30/+10:30)</option>
+                    <option value="Australia/Brisbane">Brisbane (UTC+10)</option>
+                    <option value="Australia/Sydney">Sydney (UTC+10/+11)</option>
+                    <option value="Australia/Melbourne">Melbourne (UTC+10/+11)</option>
+                  </optgroup>
+                  <optgroup label="Africa">
+                    <option value="Africa/Cairo">Cairo (UTC+2)</option>
+                    <option value="Africa/Johannesburg">Johannesburg (UTC+2)</option>
+                    <option value="Africa/Nairobi">Nairobi (UTC+3)</option>
+                    <option value="Africa/Lagos">Lagos (UTC+1)</option>
+                  </optgroup>
+                  <optgroup label="South America">
+                    <option value="America/Sao_Paulo">São Paulo (UTC-3/-2)</option>
+                    <option value="America/Buenos_Aires">Buenos Aires (UTC-3)</option>
+                    <option value="America/Santiago">Santiago (UTC-4/-3)</option>
+                    <option value="America/Lima">Lima (UTC-5)</option>
+                    <option value="America/Bogota">Bogotá (UTC-5)</option>
+                  </optgroup>
+                  <optgroup label="Other">
+                    <option value="UTC">UTC (UTC+0)</option>
+                  </optgroup>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">All timestamps will use this timezone</p>
               </div>
             </div>
           </Card>

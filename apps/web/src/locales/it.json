@@ -694,7 +694,9 @@
     "failedDeactivate": "Disattivazione utente fallita: {error}",
     "errorDeactivate": "Si è verificato un errore durante la disattivazione dell'utente.",
     "emailMismatch": "Email non corrisponde. Inserisci l'indirizzo email esatto per confermare l'eliminazione.",
-    "loading": "Caricamento utenti..."
+    "loading": "Caricamento utenti...",
+    "failedCreate": "Impossibile creare l'utente: {error}",
+    "errorCreate": "Si è verificato un errore durante la creazione dell'utente."
   },
   "settings": {
     "profile": {

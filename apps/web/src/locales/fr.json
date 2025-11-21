@@ -688,7 +688,9 @@
     "failedDeactivate": "Échec de la désactivation de l'utilisateur : {error}",
     "errorDeactivate": "Une erreur s'est produite lors de la désactivation de l'utilisateur.",
     "emailMismatch": "L'email ne correspond pas. Veuillez entrer l'adresse email exacte pour confirmer la suppression.",
-    "loading": "Chargement des utilisateurs..."
+    "loading": "Chargement des utilisateurs...",
+    "failedCreate": "Échec de la création de l'utilisateur : {error}",
+    "errorCreate": "Une erreur s'est produite lors de la création de l'utilisateur."
   },
   "settings": {
     "profile": {

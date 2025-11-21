@@ -700,7 +700,9 @@
     "failedDeactivate": "Benutzer konnte nicht deaktiviert werden: {error}",
     "errorDeactivate": "Bei der Deaktivierung des Benutzers ist ein Fehler aufgetreten.",
     "emailMismatch": "E-Mail stimmt nicht überein. Bitte geben Sie die genaue E-Mail-Adresse zur Bestätigung der Löschung ein.",
-    "loading": "Benutzer werden geladen..."
+    "loading": "Benutzer werden geladen...",
+    "failedCreate": "Fehler beim Erstellen des Benutzers: {error}",
+    "errorCreate": "Beim Erstellen des Benutzers ist ein Fehler aufgetreten."
   },
   "settings": {
     "profile": {

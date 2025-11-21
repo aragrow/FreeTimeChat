@@ -288,11 +288,11 @@ export default function UsersPage() {
         fetchUsers();
       } else {
         const errorData = await response.json();
-        alert(`Failed to create user: ${errorData.message}`);
+        alert(t('users.failedCreate', { error: errorData.message }));
       }
     } catch (error) {
       console.error('Create user error:', error);
-      alert('An error occurred while creating the user.');
+      alert(t('users.errorCreate'));
     }
   };
 
@@ -307,7 +307,7 @@ export default function UsersPage() {
 
     // Check if email matches
     if (deleteEmailConfirmation !== userToDelete.email) {
-      alert('Email does not match. Please enter the exact email address to confirm deletion.');
+      alert(t('users.emailMismatch'));
       return;
     }
 
@@ -325,23 +325,19 @@ export default function UsersPage() {
         setUserToDelete(null);
         setDeleteEmailConfirmation('');
         fetchUsers();
-        alert('User deactivated successfully.');
+        alert(t('users.deactivateSuccess'));
       } else {
         const errorData = await response.json();
-        alert(`Failed to deactivate user: ${errorData.message}`);
+        alert(t('users.failedDeactivate', { error: errorData.message }));
       }
     } catch (error) {
       console.error('Delete user error:', error);
-      alert('An error occurred while deactivating the user.');
+      alert(t('users.errorDeactivate'));
     }
   };
 
   const handleImpersonate = async (userId: string, userEmail: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to impersonate ${userEmail}? You will be logged in as this user.`
-      )
-    ) {
+    if (!confirm(t('users.confirmImpersonate', { email: userEmail }))) {
       return;
     }
 
@@ -362,11 +358,11 @@ export default function UsersPage() {
         router.push('/chat');
       } else {
         const errorData = await response.json();
-        alert(`Failed to impersonate user: ${errorData.message}`);
+        alert(t('users.failedImpersonate', { error: errorData.message }));
       }
     } catch (error) {
       console.error('Impersonation error:', error);
-      alert('An error occurred while trying to impersonate the user.');
+      alert(t('users.errorImpersonate'));
     }
   };
 
@@ -627,7 +623,7 @@ export default function UsersPage() {
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
+                  {t('users.email')} *
                 </label>
                 <input
                   id="email"
@@ -642,7 +638,7 @@ export default function UsersPage() {
 
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name *
+                  {t('users.fullName')} *
                 </label>
                 <input
                   id="name"
@@ -671,11 +667,8 @@ export default function UsersPage() {
                     />
                   </svg>
                   <div>
-                    <p className="text-sm font-medium text-blue-900">Auto-generated Password</p>
-                    <p className="text-xs text-blue-700 mt-1">
-                      A secure password will be automatically generated. The user will be required
-                      to change it on first login.
-                    </p>
+                    <p className="text-sm font-medium text-blue-900">{t('users.autoPassword')}</p>
+                    <p className="text-xs text-blue-700 mt-1">{t('users.autoPasswordHint')}</p>
                   </div>
                 </div>
               </div>
@@ -683,9 +676,8 @@ export default function UsersPage() {
               {/* Tenant Selection - Conditional based on user role */}
               <div>
                 <label htmlFor="tenantId" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tenant{' '}
-                  {currentUser?.roles?.includes('admin') &&
-                    '(Optional - leave empty for system admin)'}
+                  {t('users.tenantLabel')}{' '}
+                  {currentUser?.roles?.includes('admin') && t('users.tenantOptional')}
                 </label>
                 {currentUser?.roles?.includes('admin') ? (
                   // Admin users: Show dropdown with all tenants
@@ -697,7 +689,7 @@ export default function UsersPage() {
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">No Tenant (System Admin)</option>
+                    <option value="">{t('users.noTenant')}</option>
                     {tenants.map((tenant) => (
                       <option key={tenant.id} value={tenant.id}>
                         {tenant.name}
@@ -712,7 +704,7 @@ export default function UsersPage() {
                     value={
                       tenants.find((t) => t.id === currentUser.tenantId)?.name ||
                       currentUser.tenantId ||
-                      'Loading...'
+                      t('common.loading')
                     }
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
@@ -722,7 +714,7 @@ export default function UsersPage() {
                   <input
                     id="tenantId"
                     type="text"
-                    value="No tenant assigned"
+                    value={t('users.noTenant')}
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
@@ -731,7 +723,7 @@ export default function UsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Roles (Select multiple)
+                  {t('users.rolesSelect')}
                 </label>
                 <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3">
                   {availableRoles.length > 0 ? (
@@ -763,7 +755,7 @@ export default function UsersPage() {
                     ))
                   ) : (
                     <p className="text-sm text-gray-500 text-center py-2">
-                      No roles available to assign
+                      {t('users.noRolesAvailable')}
                     </p>
                   )}
                 </div>
@@ -771,7 +763,7 @@ export default function UsersPage() {
 
               <div className="flex gap-3 pt-4">
                 <Button type="submit" className="flex-1">
-                  Create User
+                  {t('users.createUser')}
                 </Button>
                 <Button
                   type="button"
@@ -788,7 +780,7 @@ export default function UsersPage() {
                   }}
                   className="flex-1"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </div>
             </form>
@@ -816,16 +808,17 @@ export default function UsersPage() {
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-gray-900 mt-3 text-center">Deactivate User</h2>
+              <h2 className="text-xl font-bold text-gray-900 mt-3 text-center">
+                {t('users.deactivateTitle')}
+              </h2>
               <p className="text-sm text-gray-600 mt-2 text-center">
-                This will deactivate the user account. The user will no longer be able to log in.
+                {t('users.deactivateWarning')}
               </p>
             </div>
 
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800">
-                <strong>Warning:</strong> To confirm, please type the user&apos;s email address:{' '}
-                <span className="font-mono font-semibold">{userToDelete.email}</span>
+                {t('users.confirmEmail', { email: userToDelete.email })}
               </p>
             </div>
 
@@ -834,7 +827,7 @@ export default function UsersPage() {
                 htmlFor="confirmEmail"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Enter email to confirm
+                {t('users.enterEmailConfirm')}
               </label>
               <input
                 id="confirmEmail"
@@ -855,7 +848,7 @@ export default function UsersPage() {
                 disabled={deleteEmailConfirmation !== userToDelete.email}
                 className="flex-1"
               >
-                Deactivate User
+                {t('users.deactivate')}
               </Button>
               <Button
                 type="button"
@@ -867,7 +860,7 @@ export default function UsersPage() {
                 }}
                 className="flex-1"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
           </div>
@@ -895,26 +888,23 @@ export default function UsersPage() {
                 </svg>
               </div>
               <h2 className="text-xl font-bold text-gray-900 mt-3 text-center">
-                User Created Successfully
+                {t('users.createdSuccess')}
               </h2>
               <p className="text-sm text-gray-600 mt-2 text-center">
-                A temporary password has been generated for <strong>{createdUserEmail}</strong>
+                {t('users.tempPasswordFor', { email: createdUserEmail })}
               </p>
             </div>
 
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800 font-semibold mb-2">
-                Important: Save this password now!
+                {t('users.savePasswordNow')}
               </p>
-              <p className="text-xs text-yellow-700">
-                This password will only be shown once. The user will be required to change it on
-                first login.
-              </p>
+              <p className="text-xs text-yellow-700">{t('users.passwordOnce')}</p>
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Temporary Password
+                {t('users.tempPassword')}
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -928,10 +918,10 @@ export default function UsersPage() {
                   variant="secondary"
                   onClick={() => {
                     navigator.clipboard.writeText(generatedPassword);
-                    alert('Password copied to clipboard!');
+                    alert(t('users.copiedToClipboard'));
                   }}
                 >
-                  Copy
+                  {t('common.copy')}
                 </Button>
               </div>
             </div>
@@ -945,7 +935,7 @@ export default function UsersPage() {
               }}
               className="w-full"
             >
-              Done
+              {t('common.done')}
             </Button>
           </div>
         </div>
