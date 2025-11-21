@@ -30,6 +30,7 @@
     "prisma:push:main": "prisma db push --schema=prisma/schema-main.prisma",
     "prisma:push:client": "prisma db push --schema=prisma/schema-client.prisma",
     "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
+    "seed:dev": "ts-node -r tsconfig-paths/register prisma/seed-dev-data.ts",
     "test:login": "API_URL=http://localhost:3001 npx tsx scripts/test-login.ts",
     "cleanup:test-data": "npx tsx scripts/cleanup-test-data.ts",
     "benchmark": "node benchmarks/run-all.js",
