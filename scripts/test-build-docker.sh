@@ -105,25 +105,53 @@ echo -e "${BLUE}${TEST} Step 2: Running Test Suite...${NC}"
 kill_port 3000 || true
 kill_port 3001 || true
 
-# Run tests
+# Track test results
+API_TEST_RESULT=0
+WEB_TEST_RESULT=0
+
+# Run API tests
 echo -e "${CYAN}Running API tests...${NC}"
 if pnpm --filter @freetimechat/api test; then
   echo -e "${GREEN}${CHECK_MARK} API tests passed${NC}"
 else
   echo -e "${RED}${CROSS_MARK} API tests failed${NC}"
-  exit 1
+  API_TEST_RESULT=1
 fi
 
 echo ""
+
+# Run Web tests (always run, even if API tests failed)
 echo -e "${CYAN}Running Web tests...${NC}"
 if pnpm --filter @freetimechat/web test; then
   echo -e "${GREEN}${CHECK_MARK} Web tests passed${NC}"
 else
   echo -e "${RED}${CROSS_MARK} Web tests failed${NC}"
-  exit 1
+  WEB_TEST_RESULT=1
 fi
 
 echo ""
+
+# Check if any tests failed
+if [ $API_TEST_RESULT -ne 0 ] || [ $WEB_TEST_RESULT -ne 0 ]; then
+  echo -e "${RED}${CROSS_MARK} Test suite failed!${NC}"
+  echo ""
+  echo -e "${YELLOW}Test Results Summary:${NC}"
+  if [ $API_TEST_RESULT -ne 0 ]; then
+    echo -e "  ${RED}${CROSS_MARK} API tests: FAILED${NC}"
+  else
+    echo -e "  ${GREEN}${CHECK_MARK} API tests: PASSED${NC}"
+  fi
+  if [ $WEB_TEST_RESULT -ne 0 ]; then
+    echo -e "  ${RED}${CROSS_MARK} Web tests: FAILED${NC}"
+  else
+    echo -e "  ${GREEN}${CHECK_MARK} Web tests: PASSED${NC}"
+  fi
+  echo ""
+  echo -e "${RED}Aborting build and Docker image creation.${NC}"
+  echo -e "${YELLOW}Fix the failing tests and try again.${NC}"
+  exit 1
+fi
+
 echo -e "${GREEN}${CHECK_MARK} All tests passed!${NC}"
 echo ""
 
