@@ -428,6 +428,30 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
     }
     const capabilities = Array.from(capabilitiesSet);
 
+    // Fetch tenant localization settings if user belongs to a tenant
+    let tenantSettings = null;
+    if (user.tenantId) {
+      const tenant = await prismaMain.tenant.findUnique({
+        where: { id: user.tenantId },
+        select: {
+          id: true,
+          name: true,
+          language: true,
+          dateFormat: true,
+          timeZone: true,
+        },
+      });
+      if (tenant) {
+        tenantSettings = {
+          id: tenant.id,
+          name: tenant.name,
+          language: tenant.language,
+          dateFormat: tenant.dateFormat,
+          timeZone: tenant.timeZone,
+        };
+      }
+    }
+
     // Split name into firstName and lastName for frontend
     const nameParts = user.name.split(' ');
     const firstName = nameParts[0] || '';
@@ -440,6 +464,7 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
       firstName,
       lastName,
       tenantId: user.tenantId, // Add tenantId for tenant scoping
+      tenant: tenantSettings, // Add tenant localization settings
       role: req.user.role, // Use role from JWT
       roles: req.user.roles, // Use roles from JWT
       capabilities, // Add capabilities array

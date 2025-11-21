@@ -15,6 +15,13 @@ export interface User {
   firstName: string;
   lastName: string;
   tenantId?: string | null; // Tenant this user belongs to (null for system admins)
+  tenant?: {
+    id: string;
+    name: string;
+    language: string;
+    dateFormat: string;
+    timeZone: string;
+  } | null; // Tenant localization settings
   role: string;
   roles?: string[]; // Array of role names: ["Admin", "User"]
   isTwoFactorEnabled: boolean;

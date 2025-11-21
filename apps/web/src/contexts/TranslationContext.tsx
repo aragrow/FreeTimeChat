@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { AuthContext } from './AuthContext';
 import type { ReactNode } from 'react';
 // Import all language files
 import af from '@/locales/af.json';
@@ -41,6 +42,9 @@ interface TranslationContextType {
   setLanguage: (lang: LanguageCode) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
   languages: typeof SUPPORTED_LANGUAGES;
+  dateFormat: string;
+  timeZone: string;
+  formatDate: (date: Date | string, format?: string) => string;
 }
 
 // Create the context
@@ -74,6 +78,31 @@ function replaceParams(str: string, params?: Record<string, string | number>): s
   });
 }
 
+// Helper to format date according to format string
+function formatDateString(date: Date, format: string, timeZone: string): string {
+  // Create formatter with timezone
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  };
+
+  const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value || '';
+  const month = parts.find((p) => p.type === 'month')?.value || '';
+  const day = parts.find((p) => p.type === 'day')?.value || '';
+
+  // Apply format pattern
+  return format
+    .replace('YYYY', year)
+    .replace('MM', month)
+    .replace('DD', day)
+    .replace('yyyy', year)
+    .replace('mm', month)
+    .replace('dd', day);
+}
+
 // Provider component
 interface TranslationProviderProps {
   children: ReactNode;
@@ -84,23 +113,39 @@ export function TranslationProvider({
   children,
   defaultLanguage = 'en',
 }: TranslationProviderProps) {
+  const authContext = useContext(AuthContext);
   const [language, setLanguageState] = useState<LanguageCode>(defaultLanguage);
+  const [dateFormat, setDateFormat] = useState<string>('MM/DD/YYYY');
+  const [timeZone, setTimeZone] = useState<string>('America/New_York');
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load saved language preference on mount
+  // Load tenant settings or saved language preference on mount
   useEffect(() => {
+    // Priority 1: Use tenant settings if authenticated
+    if (authContext?.user?.tenant) {
+      const tenantLang = authContext.user.tenant.language as LanguageCode;
+      if (tenantLang in SUPPORTED_LANGUAGES) {
+        setLanguageState(tenantLang);
+        setDateFormat(authContext.user.tenant.dateFormat);
+        setTimeZone(authContext.user.tenant.timeZone);
+        setIsInitialized(true);
+        return;
+      }
+    }
+
+    // Priority 2: Use saved preference from localStorage
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode | null;
     if (savedLanguage && savedLanguage in SUPPORTED_LANGUAGES) {
       setLanguageState(savedLanguage);
     } else {
-      // Try to detect browser language
+      // Priority 3: Try to detect browser language
       const browserLang = navigator.language.split('-')[0] as LanguageCode;
       if (browserLang in SUPPORTED_LANGUAGES) {
         setLanguageState(browserLang);
       }
     }
     setIsInitialized(true);
-  }, []);
+  }, [authContext?.user]);
 
   // Save language preference when it changes
   const setLanguage = (lang: LanguageCode) => {
@@ -132,6 +177,13 @@ export function TranslationProvider({
     return replaceParams(translation, params);
   };
 
+  // Date formatting function
+  const formatDate = (date: Date | string, format?: string): string => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const formatToUse = format || dateFormat;
+    return formatDateString(dateObj, formatToUse, timeZone);
+  };
+
   // Don't render children until language is initialized to prevent hydration mismatch
   if (!isInitialized) {
     return null;
@@ -144,6 +196,9 @@ export function TranslationProvider({
         setLanguage,
         t,
         languages: SUPPORTED_LANGUAGES,
+        dateFormat,
+        timeZone,
+        formatDate,
       }}
     >
       {children}
