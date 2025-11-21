@@ -94,21 +94,21 @@ done
 
 if [ "$ACTION" == "down" ]; then
   echo -e "${BLUE}Stopping production stack...${NC}"
-  docker-compose -f docker-compose.prod.yml down
+  docker compose -f docker-compose.prod.yml down
   echo -e "${GREEN}${CHECK_MARK} Production stack stopped${NC}"
   exit 0
 fi
 
 if [ "$ACTION" == "restart" ]; then
   echo -e "${BLUE}Restarting production stack...${NC}"
-  docker-compose -f docker-compose.prod.yml restart
+  docker compose -f docker-compose.prod.yml restart
   echo -e "${GREEN}${CHECK_MARK} Production stack restarted${NC}"
   exit 0
 fi
 
 if [ "$ACTION" == "logs" ]; then
   echo -e "${BLUE}Showing logs (Ctrl+C to exit)...${NC}"
-  docker-compose -f docker-compose.prod.yml logs -f
+  docker compose -f docker-compose.prod.yml logs -f
   exit 0
 fi
 
@@ -119,7 +119,7 @@ if [ -z "$DETACH" ]; then
   echo -e "${YELLOW}Running in foreground mode (Ctrl+C to stop)${NC}"
 fi
 
-docker-compose -f docker-compose.prod.yml up $DETACH
+docker compose -f docker-compose.prod.yml up $DETACH
 
 if [ -n "$DETACH" ]; then
   echo ""
@@ -134,14 +134,14 @@ if [ -n "$DETACH" ]; then
   echo -e "${CYAN}Service Status:${NC}"
 
   # Check PostgreSQL
-  if docker-compose -f docker-compose.prod.yml exec -T postgres pg_isready -U freetimechat > /dev/null 2>&1; then
+  if docker compose -f docker-compose.prod.yml exec -T postgres pg_isready -U freetimechat > /dev/null 2>&1; then
     echo -e "  ${GREEN}${CHECK_MARK} PostgreSQL: Healthy${NC}"
   else
     echo -e "  ${RED}${CROSS_MARK} PostgreSQL: Unhealthy${NC}"
   fi
 
   # Check Redis
-  if docker-compose -f docker-compose.prod.yml exec -T redis redis-cli --raw incr ping > /dev/null 2>&1; then
+  if docker compose -f docker-compose.prod.yml exec -T redis redis-cli --raw incr ping > /dev/null 2>&1; then
     echo -e "  ${GREEN}${CHECK_MARK} Redis: Healthy${NC}"
   else
     echo -e "  ${RED}${CROSS_MARK} Redis: Unhealthy${NC}"
@@ -175,7 +175,7 @@ if [ -n "$DETACH" ]; then
   echo ""
   echo -e "${YELLOW}Useful commands:${NC}"
   echo -e "  • View logs: ${BLUE}./scripts/docker-prod.sh --logs${NC}"
-  echo -e "  • View logs (compose): ${BLUE}docker-compose -f docker-compose.prod.yml logs -f${NC}"
+  echo -e "  • View logs (compose): ${BLUE}docker compose -f docker-compose.prod.yml logs -f${NC}"
   echo -e "  • Stop stack: ${BLUE}./scripts/docker-prod.sh --down${NC}"
   echo -e "  • Restart stack: ${BLUE}./scripts/docker-prod.sh --restart${NC}"
   echo -e "  • View containers: ${BLUE}docker ps${NC}"

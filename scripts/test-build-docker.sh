@@ -53,7 +53,7 @@ kill_port() {
 # Check PostgreSQL (port 5432)
 if ! check_port 5432; then
   echo -e "${YELLOW}PostgreSQL not running. Starting Docker Compose...${NC}"
-  docker-compose up -d postgres redis
+  docker compose up -d postgres redis
   echo -e "${GREEN}Waiting for PostgreSQL to be ready...${NC}"
   sleep 5
 else
@@ -63,7 +63,7 @@ fi
 # Check Redis (port 6379)
 if ! check_port 6379; then
   echo -e "${YELLOW}Redis not running. Starting Docker Compose...${NC}"
-  docker-compose up -d redis
+  docker compose up -d redis
   echo -e "${GREEN}Waiting for Redis to be ready...${NC}"
   sleep 3
 else
@@ -74,7 +74,7 @@ fi
 echo -e "${YELLOW}Verifying PostgreSQL health...${NC}"
 max_attempts=30
 attempt=0
-while ! docker-compose exec -T postgres pg_isready -U freetimechat > /dev/null 2>&1; do
+while ! docker compose exec -T postgres pg_isready -U freetimechat > /dev/null 2>&1; do
   attempt=$((attempt + 1))
   if [ $attempt -ge $max_attempts ]; then
     echo -e "${RED}${CROSS_MARK} PostgreSQL failed to start after 30 seconds${NC}"
@@ -87,7 +87,7 @@ done
 echo -e "${GREEN}${CHECK_MARK} PostgreSQL is healthy${NC}"
 
 # Verify Redis
-if docker-compose exec -T redis redis-cli --raw incr ping > /dev/null 2>&1; then
+if docker compose exec -T redis redis-cli --raw incr ping > /dev/null 2>&1; then
   echo -e "${GREEN}${CHECK_MARK} Redis is healthy${NC}"
 else
   echo -e "${RED}${CROSS_MARK} Redis is not responding${NC}"

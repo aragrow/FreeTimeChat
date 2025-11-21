@@ -56,13 +56,13 @@ echo -e "${GREEN}${CHECK_MARK} Ports cleared${NC}\n"
 echo -e "${BLUE}${GEAR} Step 2: Starting database services (Docker)...${NC}"
 
 # Start PostgreSQL and Redis via Docker Compose
-docker-compose up -d postgres redis
+docker compose up -d postgres redis
 
 # Wait for PostgreSQL
 echo -e "${YELLOW}Waiting for PostgreSQL...${NC}"
 max_attempts=30
 attempt=0
-while ! docker-compose exec -T postgres pg_isready -U freetimechat > /dev/null 2>&1; do
+while ! docker compose exec -T postgres pg_isready -U freetimechat > /dev/null 2>&1; do
   attempt=$((attempt + 1))
   if [ $attempt -ge $max_attempts ]; then
     echo -e "${RED}${CROSS_MARK} PostgreSQL failed to start${NC}"
@@ -73,7 +73,7 @@ done
 echo -e "${GREEN}${CHECK_MARK} PostgreSQL is ready${NC}"
 
 # Verify Redis
-if docker-compose exec -T redis redis-cli --raw incr ping > /dev/null 2>&1; then
+if docker compose exec -T redis redis-cli --raw incr ping > /dev/null 2>&1; then
   echo -e "${GREEN}${CHECK_MARK} Redis is ready${NC}"
 else
   echo -e "${RED}${CROSS_MARK} Redis failed to start${NC}"
@@ -229,9 +229,9 @@ else
   echo -e "${YELLOW}Development servers are running in separate terminal windows${NC}"
   echo ""
   echo -e "${CYAN}Useful commands:${NC}"
-  echo -e "  • Stop databases: ${BLUE}docker-compose stop${NC}"
-  echo -e "  • View DB logs: ${BLUE}docker-compose logs -f postgres${NC}"
-  echo -e "  • Database shell: ${BLUE}docker-compose exec postgres psql -U freetimechat${NC}"
+  echo -e "  • Stop databases: ${BLUE}docker compose stop${NC}"
+  echo -e "  • View DB logs: ${BLUE}docker compose logs -f postgres${NC}"
+  echo -e "  • Database shell: ${BLUE}docker compose exec postgres psql -U freetimechat${NC}"
   echo -e "  • Restart API: Kill terminal and run: ${BLUE}cd apps/api && pnpm dev${NC}"
   echo -e "  • Restart Web: Kill terminal and run: ${BLUE}cd apps/web && pnpm dev${NC}"
   echo ""

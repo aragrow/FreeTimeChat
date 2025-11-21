@@ -104,16 +104,16 @@ fi
 echo -e "${BLUE}Stopping containers...${NC}"
 
 # Stop dev containers
-if docker-compose ps -q > /dev/null 2>&1; then
-  docker-compose down
+if docker compose ps -q > /dev/null 2>&1; then
+  docker compose down
   echo -e "${GREEN}${CHECK_MARK} Dev containers stopped${NC}"
 else
   echo -e "${YELLOW}No dev containers running${NC}"
 fi
 
 # Stop production containers
-if docker-compose -f docker-compose.prod.yml ps -q > /dev/null 2>&1; then
-  docker-compose -f docker-compose.prod.yml down
+if docker compose -f docker-compose.prod.yml ps -q > /dev/null 2>&1; then
+  docker compose -f docker-compose.prod.yml down
   echo -e "${GREEN}${CHECK_MARK} Production containers stopped${NC}"
 else
   echo -e "${YELLOW}No production containers running${NC}"
@@ -132,10 +132,10 @@ if [ "$REMOVE_VOLUMES" = true ]; then
     echo -e "${BLUE}Removing volumes...${NC}"
 
     # Remove dev volumes
-    docker-compose down -v 2>/dev/null
+    docker compose down -v 2>/dev/null
 
     # Remove production volumes
-    docker-compose -f docker-compose.prod.yml down -v 2>/dev/null
+    docker compose -f docker-compose.prod.yml down -v 2>/dev/null
 
     # Remove named volumes
     docker volume rm freetimechat_postgres_data 2>/dev/null || true
