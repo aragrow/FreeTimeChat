@@ -12,10 +12,18 @@
  *   - 10-20 Time Entries per Project
  *
  * Data is deterministic for consistent testing
+ *
+ * SAFETY FEATURES:
+ * - Only touches users with @dev.local emails
+ * - Only manages dev tenant slugs (acme-corp, global-tech, etc.)
+ * - NEVER touches ARAGROW-LLC or any existing production data
+ * - Automatically creates tenant databases if they don't exist
+ * - Automatically pushes schemas to tenant databases
  */
 
 import { PrismaClient as PrismaClientClient } from '../src/generated/prisma-client';
 import { PrismaClient as PrismaMainClient } from '../src/generated/prisma-main';
+import { execSync } from 'child_process';
 import bcrypt from 'bcrypt';
 
 const prismaMain = new PrismaMainClient();
@@ -253,6 +261,52 @@ const TENANTS_CONFIG = [
   },
 ];
 
+/**
+ * Create a PostgreSQL database if it doesn't exist
+ */
+async function createDatabaseIfNotExists(dbName: string): Promise<void> {
+  try {
+    // Use Prisma's raw query to check if database exists
+    const result = await prismaMain.$queryRawUnsafe<{ exists: boolean }[]>(
+      `SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '${dbName}') as exists`
+    );
+
+    if (!result[0].exists) {
+      console.log(`  📦 Creating database: ${dbName}`);
+      await prismaMain.$queryRawUnsafe(`CREATE DATABASE ${dbName}`);
+      console.log(`  ✓ Database created: ${dbName}`);
+    } else {
+      console.log(`  ✓ Database already exists: ${dbName}`);
+    }
+  } catch (error) {
+    console.error(`  ❌ Error creating database ${dbName}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Push Prisma client schema to a tenant database
+ */
+async function pushSchemaToDatabase(dbUrl: string, tenantSlug: string): Promise<void> {
+  try {
+    console.log(`  🔧 Pushing schema to ${tenantSlug}...`);
+
+    // Use execSync to run Prisma push
+    execSync(
+      `CLIENT_DATABASE_URL="${dbUrl}" npx prisma db push --schema=prisma/schema-client.prisma --accept-data-loss --skip-generate`,
+      {
+        stdio: 'ignore', // Suppress output
+        cwd: process.cwd(),
+      }
+    );
+
+    console.log(`  ✓ Schema pushed to ${tenantSlug}`);
+  } catch (error) {
+    console.error(`  ❌ Error pushing schema to ${tenantSlug}:`, error);
+    throw error;
+  }
+}
+
 async function main() {
   console.log('🌱 Starting development data seeding...\n');
   console.log('⚠️  This will create comprehensive test data for development');
@@ -443,6 +497,32 @@ async function main() {
   console.log('✅ All tenants and users created!\n');
 
   // ============================================================================
+  // Step 3.5: Create Tenant Databases and Push Schemas
+  // ============================================================================
+  console.log('💽 Setting up tenant databases...\n');
+
+  // Get PostgreSQL credentials from environment or use defaults
+  const pgUser = process.env.POSTGRES_USER || 'freetimechat';
+  const pgPassword = process.env.POSTGRES_PASSWORD || 'freetimechat_dev_password';
+  const pgHost = process.env.POSTGRES_HOST || 'localhost';
+  const pgPort = process.env.POSTGRES_PORT || '5432';
+
+  for (const tenantConfig of TENANTS_CONFIG) {
+    const dbName = `freetimechat_${tenantConfig.slug.replace(/-/g, '_')}`;
+
+    console.log(`\n🗄️  Setting up database for: ${tenantConfig.name}`);
+
+    // Create database if it doesn't exist
+    await createDatabaseIfNotExists(dbName);
+
+    // Push schema to the database
+    const dbUrl = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${dbName}`;
+    await pushSchemaToDatabase(dbUrl, tenantConfig.slug);
+  }
+
+  console.log('\n✅ All tenant databases ready!\n');
+
+  // ============================================================================
   // Step 4: Seed Client Databases
   // ============================================================================
   console.log('💾 Seeding client databases...\n');
@@ -462,10 +542,13 @@ async function main() {
     console.log(`📊 Seeding data for: ${tenant.name}`);
 
     // Connect to tenant's client database
+    const dbName = `freetimechat_${tenant.slug.replace(/-/g, '_')}`;
+    const dbUrl = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${dbName}`;
+
     const clientDb = new PrismaClientClient({
       datasources: {
         db: {
-          url: `postgresql://david@localhost:5432/freetimechat_${tenant.slug.replace(/-/g, '_')}`,
+          url: dbUrl,
         },
       },
     });
