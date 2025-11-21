@@ -35,6 +35,7 @@
     "share": "Teilen",
     "viewAll": "Alle Anzeigen",
     "noResults": "Keine Ergebnisse gefunden",
+    "na": "N/A",
     "areYouSure": "Sind Sie sicher?",
     "accessDenied": "Zugriff Verweigert",
     "backToDashboard": "Zurück zum Dashboard",
@@ -456,6 +457,9 @@
     "projectName": "Projektname",
     "clientOptional": "Kunde (Optional)",
     "noClient": "Kein Kunde (Intern)",
+    "descriptionLabel": "Beschreibung",
+    "descriptionPlaceholder": "Projektbeschreibung",
+    "noProjects": "Keine Projekte gefunden",
     "billingInfo": "Abrechnungsinformationen",
     "billableProject": "Abrechenbares Projekt",
     "billableHint": "Aktivieren, wenn dieses Projekt dem Kunden in Rechnung gestellt werden soll",
@@ -476,6 +480,7 @@
     "overBudgetBy": "Budget überschritten um {hours}h",
     "remaining": "{hours}h verbleibend",
     "addHours": "Stunden Hinzufügen",
+    "addHoursPrompt": "Wie viele zusätzliche Stunden möchten Sie dem Budget hinzufügen?",
     "addHoursFeature": "Funktion kommt bald: Stunden über API hinzufügen"
   },
   "clients": {
@@ -531,6 +536,7 @@
   "invoices": {
     "title": "Rechnungen",
     "description": "Rechnungen mit Positionen erstellen und verwalten",
+    "loading": "Rechnungen werden geladen...",
     "generateFromTime": "Aus Zeit Generieren",
     "createInvoice": "Rechnung Erstellen",
     "invoice": "Rechnung",
@@ -808,5 +814,71 @@
     "messages": "Msg",
     "messagesPlural": "Msgs",
     "archiveConversation": "Konversation archivieren"
+  },
+  "landing": {
+    "title": "AfricAI Digital Books",
+    "tagline": "Intelligente Unternehmensverwaltung powered by KI",
+    "loginButton": "Anmelden um zu Starten",
+    "requestAccountButton": "Konto Anfordern",
+    "whatIsTitle": "Was ist AfricAI Digital Books?",
+    "features": {
+      "expenseTracking": {
+        "title": "Ausgabenverfolgung",
+        "description": "Scannen Sie Belege mit KI, um Ausgaben automatisch zu extrahieren und zu kategorisieren. Keine manuelle Dateneingabe."
+      },
+      "timeManagement": {
+        "title": "Zeit- & Projektmanagement",
+        "description": "Erfassen Sie abrechenbare Stunden, verwalten Sie Projekte und erstellen Sie Rechnungen mit intelligenter Automatisierung."
+      },
+      "accounting": {
+        "title": "Buchhaltung",
+        "description": "Verwalten Sie Rechnungen, verfolgen Sie Zahlungen und halten Sie Ihre Bücher mit einfachen Finanztools organisiert."
+      },
+      "aiInsights": {
+        "title": "KI-gestützte Einblicke",
+        "description": "Chatten Sie mit KI, um Ihre Geschäftsdaten abzufragen, Berichte zu erstellen und umsetzbare Einblicke zu erhalten."
+      }
+    },
+    "freeTier": {
+      "title": "Immer Kostenlos für Kleine Teams",
+      "criteria1": "✓ Unternehmen mit weniger als 5 Mitarbeitern",
+      "criteria2": "✓ Umsatz unter 25.000 $ pro Jahr",
+      "description": "Keine Kreditkarte erforderlich. Keine versteckten Gebühren. Nur kostenlose Zeiterfassung und Buchhaltung für kleine Teams, für immer."
+    },
+    "mission": {
+      "title": "Unsere Mission",
+      "paragraph1": "AfricAI Digital Books basiert auf einem einfachen Prinzip:",
+      "principle": "großartige Tools sollten für jeden zugänglich sein",
+      "paragraph2": "Alle Einnahmen von größeren Unternehmen werden direkt in Entwicklung, Hosting, Wartung und Verbesserungen reinvestiert. Unser Ziel ist es, jedes Jahr mit einem",
+      "zeroBalance": "Saldo von 0 $",
+      "paragraph2End": "zu enden und sicherzustellen, dass jeder Dollar zurück in die Verbesserung von AfricAI Digital Books für alle fließt.",
+      "paragraph3": "Keine Investoren. Keine Exit-Strategie. Nur nachhaltige Software für die Langzeit."
+    },
+    "support": {
+      "title": "Unterstützen Sie Unsere Mission",
+      "sponsor": {
+        "title": "Sponsor",
+        "description": "Finanzielle Unterstützung, um die Lichter am Laufen zu halten und Features zu bringen. Ihr Logo auf unserer Website und ewige Dankbarkeit.",
+        "button": "Sponsor Werden"
+      },
+      "angel": {
+        "title": "Angel-Unterstützer",
+        "description": "Einmalige oder wiederkehrende Spenden zur Unterstützung der Entwicklung. Jeder Beitrag hilft uns, unabhängig zu bleiben.",
+        "button": "Als Angel Unterstützen"
+      },
+      "volunteer": {
+        "title": "Freiwilliger",
+        "description": "Tragen Sie Code, Design, Dokumentation oder Feedback bei. Helfen Sie uns, gemeinsam etwas Großartiges aufzubauen.",
+        "button": "Als Freiwilliger Beitreten"
+      }
+    },
+    "cta": {
+      "title": "Bereit, Ihr Geschäft zu optimieren?",
+      "description": "Treten Sie Unternehmen bei, die KI verwenden, um Ausgaben zu verwalten, Zeit zu erfassen und Einblicke zu gewinnen.",
+      "button": "Kostenlos Starten"
+    },
+    "footer": {
+      "copyright": "© 2025 AfricAI Digital Books. Mit ❤️ für kleine Teams überall gebaut."
+    }
   }
 }

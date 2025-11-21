@@ -35,6 +35,7 @@
     "share": "Delen",
     "viewAll": "Alles Bekijken",
     "noResults": "Geen resultaten gevonden",
+    "na": "N/A",
     "areYouSure": "Weet u het zeker?",
     "accessDenied": "Toegang Geweigerd",
     "backToDashboard": "Terug naar Dashboard",
@@ -453,6 +454,9 @@
     "projectName": "Projectnaam",
     "clientOptional": "Klant (Optioneel)",
     "noClient": "Geen klant (Intern)",
+    "descriptionLabel": "Beschrijving",
+    "descriptionPlaceholder": "Projectbeschrijving",
+    "noProjects": "Geen projecten gevonden",
     "billingInfo": "Factureringsinformatie",
     "billableProject": "Factureerbaar Project",
     "billableHint": "Vink aan als dit project gefactureerd moet worden aan de klant",
@@ -473,6 +477,7 @@
     "overBudgetBy": "Over budget met {hours}u",
     "remaining": "{hours}u resterend",
     "addHours": "Uren Toevoegen",
+    "addHoursPrompt": "Hoeveel extra uren wilt u toevoegen aan het budget?",
     "addHoursFeature": "Functie binnenkort beschikbaar: Uren toevoegen via API"
   },
   "clients": {
@@ -528,6 +533,7 @@
   "invoices": {
     "title": "Facturen",
     "description": "Facturen met regelitems aanmaken en beheren",
+    "loading": "Facturen laden...",
     "generateFromTime": "Genereren vanuit Tijd",
     "createInvoice": "Factuur Aanmaken",
     "invoice": "Factuur",
@@ -805,5 +811,71 @@
     "messages": "ber",
     "messagesPlural": "ber",
     "archiveConversation": "Gesprek archiveren"
+  },
+  "landing": {
+    "title": "AfricAI Digital Books",
+    "tagline": "Slim bedrijfsbeheer aangedreven door AI",
+    "loginButton": "Inloggen om te Beginnen",
+    "requestAccountButton": "Account Aanvragen",
+    "whatIsTitle": "Wat is AfricAI Digital Books?",
+    "features": {
+      "expenseTracking": {
+        "title": "Uitgaven Bijhouden",
+        "description": "Scan bonnetjes met AI om uitgaven automatisch te extraheren en categoriseren. Geen handmatige gegevensinvoer."
+      },
+      "timeManagement": {
+        "title": "Tijd- & Projectbeheer",
+        "description": "Houd factureerbare uren bij, beheer projecten en genereer facturen met intelligente automatisering."
+      },
+      "accounting": {
+        "title": "Boekhouding",
+        "description": "Beheer facturen, volg betalingen en houd uw boeken georganiseerd met eenvoudige financiële tools."
+      },
+      "aiInsights": {
+        "title": "AI-aangedreven Inzichten",
+        "description": "Chat met AI om uw bedrijfsgegevens op te vragen, rapporten te genereren en bruikbare inzichten te verkrijgen."
+      }
+    },
+    "freeTier": {
+      "title": "Altijd Gratis voor Kleine Teams",
+      "criteria1": "✓ Bedrijven met minder dan 5 werknemers",
+      "criteria2": "✓ Omzet onder $ 25.000 per jaar",
+      "description": "Geen creditcard vereist. Geen verborgen kosten. Gewoon gratis tijdregistratie en boekhouding voor kleine teams, voor altijd."
+    },
+    "mission": {
+      "title": "Onze Missie",
+      "paragraph1": "AfricAI Digital Books is gebouwd op een eenvoudig principe:",
+      "principle": "geweldige tools moeten voor iedereen toegankelijk zijn",
+      "paragraph2": "Alle inkomsten van grotere bedrijven worden direct geherinvesteerd in ontwikkeling, hosting, onderhoud en verbeteringen. Ons doel is om elk jaar te eindigen met een",
+      "zeroBalance": "saldo van $ 0",
+      "paragraph2End": "waarbij elke dollar teruggaat naar het verbeteren van AfricAI Digital Books voor iedereen.",
+      "paragraph3": "Geen investeerders. Geen exitstrategie. Gewoon duurzame software voor de lange termijn."
+    },
+    "support": {
+      "title": "Ondersteun Onze Missie",
+      "sponsor": {
+        "title": "Sponsor",
+        "description": "Financiële ondersteuning om de lichten aan te houden en functies te blijven toevoegen. Uw logo op onze website en eeuwige dankbaarheid.",
+        "button": "Word Sponsor"
+      },
+      "angel": {
+        "title": "Angel Supporter",
+        "description": "Eenmalige of terugkerende donaties om ontwikkeling te ondersteunen. Elke bijdrage helpt ons onafhankelijk te blijven.",
+        "button": "Steun als Angel"
+      },
+      "volunteer": {
+        "title": "Vrijwilliger",
+        "description": "Draag code, ontwerp, documentatie of feedback bij. Help ons samen iets geweldigs te bouwen.",
+        "button": "Word Vrijwilliger"
+      }
+    },
+    "cta": {
+      "title": "Klaar om uw bedrijf te stroomlijnen?",
+      "description": "Sluit u aan bij bedrijven die AI gebruiken om uitgaven te beheren, tijd bij te houden en inzichten te verkrijgen.",
+      "button": "Begin Gratis"
+    },
+    "footer": {
+      "copyright": "© 2025 AfricAI Digital Books. Gemaakt met ❤️ voor kleine teams overal."
+    }
   }
 }

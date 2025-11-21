@@ -35,6 +35,7 @@
     "share": "Deel",
     "viewAll": "Bekyk Alles",
     "noResults": "Geen resultate gevind nie",
+    "na": "N/A",
     "areYouSure": "Is jy seker?",
     "accessDenied": "Toegang Geweier",
     "backToDashboard": "Terug na Kontroleskerm",
@@ -459,6 +460,9 @@
     "projectName": "Projeknaam",
     "clientOptional": "Kliënt (Opsioneel)",
     "noClient": "Geen kliënt (Intern)",
+    "descriptionLabel": "Beskrywing",
+    "descriptionPlaceholder": "Projekbeskrywing",
+    "noProjects": "Geen projekte gevind nie",
     "billingInfo": "Faktureringsinligting",
     "billableProject": "Faktureerbare Projek",
     "billableHint": "Merk as hierdie projek aan die kliënt gefaktureer moet word",
@@ -479,6 +483,7 @@
     "overBudgetBy": "Oor begroting met {hours}u",
     "remaining": "{hours}u oorblywend",
     "addHours": "Voeg Ure By",
+    "addHoursPrompt": "Hoeveel bykomende ure wil jy byvoeg?",
     "addHoursFeature": "Funksie binnekort beskikbaar: Voeg ure by via API"
   },
   "clients": {
@@ -534,6 +539,7 @@
   "invoices": {
     "title": "Fakture",
     "description": "Skep en bestuur fakture met lynonderdele",
+    "loading": "Laai fakture...",
     "generateFromTime": "Genereer vanaf Tyd",
     "createInvoice": "Skep Faktuur",
     "invoice": "Faktuur",
@@ -811,5 +817,71 @@
     "messages": "bood",
     "messagesPlural": "boodskappe",
     "archiveConversation": "Argiveer gesprek"
+  },
+  "landing": {
+    "title": "AfricAI Digital Books",
+    "tagline": "Slim besigheidsbestuur aangedryf deur KI",
+    "loginButton": "Meld Aan om te Begin",
+    "requestAccountButton": "Versoek 'n Rekening",
+    "whatIsTitle": "Wat is AfricAI Digital Books?",
+    "features": {
+      "expenseTracking": {
+        "title": "Uitgawe Opsporing",
+        "description": "Skandeer kwitansies met KI om uitgawes outomaties te onttrek en te kategoriseer. Geen handmatige data-invoer nie."
+      },
+      "timeManagement": {
+        "title": "Tyd & Projekbestuur",
+        "description": "Volg faktureerbare ure, bestuur projekte en genereer fakture met intelligente outomatisering."
+      },
+      "accounting": {
+        "title": "Rekeningkunde",
+        "description": "Bestuur fakture, volg betalings en hou jou boeke georganiseer met eenvoudige finansiële gereedskap."
+      },
+      "aiInsights": {
+        "title": "KI-aangedrewe Insigte",
+        "description": "Gesels met KI om jou besigheidsdata te ondervra, verslae te genereer en uitvoerbare insigte te kry."
+      }
+    },
+    "freeTier": {
+      "title": "Altyd Gratis vir Klein Spanne",
+      "criteria1": "✓ Maatskappye met minder as 5 werknemers",
+      "criteria2": "✓ Inkomste onder $25,000 per jaar",
+      "description": "Geen kredietkaart benodig nie. Geen versteekte fooie nie. Net gratis tydopsporing en rekeningkunde vir klein spanne, vir ewig."
+    },
+    "mission": {
+      "title": "Ons Missie",
+      "paragraph1": "AfricAI Digital Books is gebou op 'n eenvoudige beginsel:",
+      "principle": "groot gereedskap moet toeganklik wees vir almal",
+      "paragraph2": "Alle inkomste van groter maatskappye word direk herbelê in ontwikkeling, gasheer, instandhouding en verbeterings. Ons doel is om elke jaar te eindig met 'n",
+      "zeroBalance": "balans van $0",
+      "paragraph2End": "om te verseker dat elke dollar teruggaan om AfricAI Digital Books beter te maak vir almal.",
+      "paragraph3": "Geen beleggers nie. Geen uitgang-strategie nie. Net volhoubare sagteware vir die lang termyn."
+    },
+    "support": {
+      "title": "Ondersteun Ons Missie",
+      "sponsor": {
+        "title": "Borg",
+        "description": "Finansiële ondersteuning om die ligte aan te hou en kenmerke te lewer. Jou logo op ons webwerf en ewige dankbaarheid.",
+        "button": "Word 'n Borg"
+      },
+      "angel": {
+        "title": "Engel Ondersteuner",
+        "description": "Eenmalige of herhalende skenkings om ontwikkeling te ondersteun. Elke bydrae help ons om onafhanklik te bly.",
+        "button": "Ondersteun as Engel"
+      },
+      "volunteer": {
+        "title": "Vrywilliger",
+        "description": "Dra kode, ontwerp, dokumentasie of terugvoer by. Help ons om saam iets wonderliks te bou.",
+        "button": "Sluit aan as Vrywilliger"
+      }
+    },
+    "cta": {
+      "title": "Gereed om jou besigheid te stroomlyn?",
+      "description": "Sluit aan by besighede wat KI gebruik om uitgawes te bestuur, tyd op te spoor en insigte te kry.",
+      "button": "Begin Gratis"
+    },
+    "footer": {
+      "copyright": "© 2025 AfricAI Digital Books. Gebou met ❤️ vir klein spanne oral."
+    }
   }
 }

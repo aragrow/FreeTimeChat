@@ -842,5 +842,71 @@
     "messages": "msg",
     "messagesPlural": "msgs",
     "archiveConversation": "Archive conversation"
+  },
+  "landing": {
+    "title": "AfricAI Digital Books",
+    "tagline": "Smart business management powered by AI",
+    "loginButton": "Login to Get Started",
+    "requestAccountButton": "Request an Account",
+    "whatIsTitle": "What is AfricAI Digital Books?",
+    "features": {
+      "expenseTracking": {
+        "title": "Expense Tracking",
+        "description": "Scan receipts with AI to automatically extract and categorize expenses. No manual data entry."
+      },
+      "timeManagement": {
+        "title": "Time & Project Management",
+        "description": "Track billable hours, manage projects, and generate invoices with intelligent automation."
+      },
+      "accounting": {
+        "title": "Accounting",
+        "description": "Manage invoices, track payments, and keep your books organized with simple financial tools."
+      },
+      "aiInsights": {
+        "title": "AI-Powered Insights",
+        "description": "Chat with AI to query your business data, generate reports, and get actionable insights."
+      }
+    },
+    "freeTier": {
+      "title": "Always Free for Small Teams",
+      "criteria1": "✓ Companies with under 5 employees",
+      "criteria2": "✓ Revenue under $25,000 per year",
+      "description": "No credit card required. No hidden fees. Just free time tracking and accounting for small teams, forever."
+    },
+    "mission": {
+      "title": "Our Mission",
+      "paragraph1": "AfricAI Digital Books is built on a simple principle:",
+      "principle": "great tools should be accessible to everyone",
+      "paragraph2": "All revenue from larger companies is reinvested directly into development, hosting, maintenance, and improvements. Our goal is to end each year at a",
+      "zeroBalance": "$0 balance",
+      "paragraph2End": "ensuring every dollar goes back into making AfricAI Digital Books better for everyone.",
+      "paragraph3": "No investors. No exit strategy. Just sustainable software for the long term."
+    },
+    "support": {
+      "title": "Support Our Mission",
+      "sponsor": {
+        "title": "Sponsor",
+        "description": "Financial support to keep the lights on and features coming. Your logo on our website and eternal gratitude.",
+        "button": "Become a Sponsor"
+      },
+      "angel": {
+        "title": "Angel Supporter",
+        "description": "One-time or recurring donations to support development. Every contribution helps us stay independent.",
+        "button": "Support as Angel"
+      },
+      "volunteer": {
+        "title": "Volunteer",
+        "description": "Contribute code, design, documentation, or feedback. Help us build something amazing together.",
+        "button": "Join as Volunteer"
+      }
+    },
+    "cta": {
+      "title": "Ready to streamline your business?",
+      "description": "Join businesses using AI to manage expenses, track time, and gain insights.",
+      "button": "Get Started Free"
+    },
+    "footer": {
+      "copyright": "© 2025 AfricAI Digital Books. Built with ❤️ for small teams everywhere."
+    }
   }
 }
