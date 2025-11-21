@@ -334,9 +334,10 @@ export class PaymentService {
 
     let status = invoice.status;
     if (totalPaid >= Number(invoice.totalAmount)) {
-      status = 'PAID';
+      status = 'COMPLETED'; // Use COMPLETED instead of PAID
     } else if (totalPaid > 0) {
-      status = 'PARTIAL_PAID';
+      // Keep current status if partially paid
+      status = invoice.status;
     }
 
     await this.prisma.invoice.update({
@@ -345,7 +346,7 @@ export class PaymentService {
         amountPaid: totalPaid,
         amountDue: Math.max(0, amountDue),
         status,
-        paidDate: status === 'PAID' ? new Date() : null,
+        paidDate: status === 'COMPLETED' ? new Date() : null,
       },
     });
   }

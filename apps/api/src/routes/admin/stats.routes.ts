@@ -218,11 +218,19 @@ router.get('/', async (req: Request, res: Response) => {
           }),
     ]);
 
+    // Determine tenant to query (for tenant admins, always use their tenant)
+    const queryTenantId =
+      isTenantAdmin && !isAdmin && currentUser.tenantId
+        ? currentUser.tenantId
+        : tenantId && tenantId !== 'all'
+          ? String(tenantId)
+          : null;
+
     // Get selected tenant info if filtering by tenant
     let selectedTenant = null;
-    if (tenantId && tenantId !== 'all') {
+    if (queryTenantId) {
       selectedTenant = await prisma.tenant.findUnique({
-        where: { id: String(tenantId) },
+        where: { id: queryTenantId },
         select: {
           id: true,
           name: true,
@@ -262,14 +270,7 @@ router.get('/', async (req: Request, res: Response) => {
       activeCoupons: 0,
     };
 
-    // Determine tenant to query (for tenant admins, always use their tenant)
-    const queryTenantId =
-      isTenantAdmin && !isAdmin && currentUser.tenantId
-        ? currentUser.tenantId
-        : tenantId && tenantId !== 'all'
-          ? String(tenantId)
-          : null;
-
+    // Query tenant database for stats if filtering by tenant
     if (queryTenantId) {
       try {
         const databaseService = getDatabaseService();
@@ -381,16 +382,33 @@ router.get('/', async (req: Request, res: Response) => {
           }),
           // Invoices
           clientDb.invoice.count(),
-          clientDb.invoice.count({ where: { status: 'DRAFT' } }),
-          clientDb.invoice.count({ where: { status: { in: ['SENT', 'VIEWED'] } } }),
-          clientDb.invoice.count({ where: { status: 'PAID' } }),
-          clientDb.invoice.count({ where: { status: 'OVERDUE' } }),
+          clientDb.invoice.count({ where: { status: 'PROCESSING' } }),
+          clientDb.invoice.count({
+            where: {
+              status: {
+                in: ['SENT_TO_CLIENT', 'SENT_EMAIL', 'SENT_MAIL', 'SENT_PAYPAL', 'SENT_STRIPE'],
+              },
+            },
+          }),
+          clientDb.invoice.count({ where: { status: 'COMPLETED' } }),
+          clientDb.invoice.count({ where: { status: 'INVALID' } }),
           clientDb.invoice.aggregate({
-            where: { status: 'PAID' },
+            where: { status: 'COMPLETED' },
             _sum: { totalAmount: true },
           }),
           clientDb.invoice.aggregate({
-            where: { status: { in: ['SENT', 'VIEWED', 'OVERDUE', 'PARTIAL_PAID'] } },
+            where: {
+              status: {
+                in: [
+                  'SENT_TO_CLIENT',
+                  'SENT_EMAIL',
+                  'SENT_MAIL',
+                  'SENT_PAYPAL',
+                  'SENT_STRIPE',
+                  'INVALID',
+                ],
+              },
+            },
             _sum: { amountDue: true },
           }),
           // Expenses
@@ -457,8 +475,8 @@ router.get('/', async (req: Request, res: Response) => {
           sentInvoices,
           paidInvoices,
           overdueInvoices,
-          totalRevenue: Number(invoiceRevenue._sum.totalAmount || 0),
-          outstandingBalance: Number(outstandingInvoices._sum.amountDue || 0),
+          totalRevenue: Number(invoiceRevenue._sum?.totalAmount || 0),
+          outstandingBalance: Number(outstandingInvoices._sum?.amountDue || 0),
           totalExpenses: Number(totalExpenses._sum.amount || 0),
           pendingExpenses,
           approvedExpenses,

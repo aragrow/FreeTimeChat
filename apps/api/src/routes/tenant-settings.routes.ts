@@ -6,6 +6,7 @@
  */
 
 import { Router } from 'express';
+import { WORLD_CURRENCIES } from '../data/currencies';
 import { PrismaClient as MainPrismaClient } from '../generated/prisma-main';
 import type { JWTPayload } from '@freetimechat/types';
 import type { Request, Response } from 'express';
@@ -13,39 +14,14 @@ import type { Request, Response } from 'express';
 const router = Router();
 const prisma = new MainPrismaClient();
 
-// Common currencies with USD and EUR first
-const SUPPORTED_CURRENCIES = [
-  { code: 'USD', name: 'US Dollar', symbol: '$' },
-  { code: 'EUR', name: 'Euro', symbol: '€' },
-  { code: 'GBP', name: 'British Pound', symbol: '£' },
-  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
-  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
-  { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
-  { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF' },
-  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
-  { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
-  { code: 'MXN', name: 'Mexican Peso', symbol: '$' },
-  { code: 'BRL', name: 'Brazilian Real', symbol: 'R$' },
-  { code: 'ZAR', name: 'South African Rand', symbol: 'R' },
-  { code: 'NGN', name: 'Nigerian Naira', symbol: '₦' },
-  { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh' },
-  { code: 'GHS', name: 'Ghanaian Cedi', symbol: 'GH₵' },
-  { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£' },
-  { code: 'MAD', name: 'Moroccan Dirham', symbol: 'MAD' },
-  { code: 'TZS', name: 'Tanzanian Shilling', symbol: 'TSh' },
-  { code: 'UGX', name: 'Ugandan Shilling', symbol: 'USh' },
-  { code: 'XOF', name: 'West African CFA Franc', symbol: 'CFA' },
-  { code: 'XAF', name: 'Central African CFA Franc', symbol: 'FCFA' },
-];
-
 /**
  * GET /api/v1/tenant/settings/currencies
- * Get list of supported currencies
+ * Get list of all supported world currencies (ISO 4217)
  */
 router.get('/currencies', async (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'success',
-    data: SUPPORTED_CURRENCIES,
+    data: WORLD_CURRENCIES,
   });
 });
 
@@ -204,11 +180,11 @@ router.put('/', async (req: Request, res: Response) => {
 
     // Validate currency if provided
     if (currency) {
-      const validCurrency = SUPPORTED_CURRENCIES.find((c) => c.code === currency);
+      const validCurrency = WORLD_CURRENCIES.find((c) => c.code === currency);
       if (!validCurrency) {
         res.status(400).json({
           status: 'error',
-          message: `Invalid currency code. Supported: ${SUPPORTED_CURRENCIES.map((c) => c.code).join(', ')}`,
+          message: `Invalid currency code. Must be a valid ISO 4217 currency code (e.g., USD, EUR, GBP)`,
         });
         return;
       }

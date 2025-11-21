@@ -879,7 +879,7 @@ router.post('/', async (req: Request, res: Response) => {
       data: {
         invoiceNumber,
         clientId,
-        status: 'DRAFT',
+        status: 'PROCESSING',
         issueDate: issueDate ? new Date(issueDate) : new Date(),
         dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default 30 days
         subtotal,
@@ -976,10 +976,10 @@ router.post('/:id/send-paypal', async (req: Request, res: Response) => {
       return;
     }
 
-    if (invoice.status !== 'DRAFT') {
+    if (invoice.status !== 'PROCESSING') {
       res.status(400).json({
         status: 'error',
-        message: 'Only draft invoices can be sent',
+        message: 'Only processing invoices can be sent',
       });
       return;
     }
@@ -1163,7 +1163,7 @@ router.post('/:id/send-paypal', async (req: Request, res: Response) => {
     const updatedInvoice = await clientDb.invoice.update({
       where: { id },
       data: {
-        status: 'SENT',
+        status: 'SENT_PAYPAL',
         paypalInvoiceId: createdInvoice.id,
         paypalInvoiceUrl: createdInvoice.href,
         sentBy: req.user?.sub || 'unknown',
@@ -1245,12 +1245,13 @@ router.post('/:id/record-payment', async (req: Request, res: Response) => {
     const totalPaid = invoice.amountPaid.toNumber() + parseFloat(amount);
     const newAmountDue = invoice.totalAmount.toNumber() - totalPaid;
 
-    // Determine new status
+    // Determine new status based on Prisma InvoiceStatus enum
     let newStatus: string = invoice.status;
     if (newAmountDue <= 0) {
-      newStatus = 'PAID';
+      newStatus = 'COMPLETED'; // Use COMPLETED instead of PAID
     } else if (totalPaid > 0) {
-      newStatus = 'PARTIAL_PAID';
+      // Keep current status or set to PROCESSING if partially paid
+      newStatus = invoice.status;
     }
 
     // Update invoice
@@ -1260,15 +1261,17 @@ router.post('/:id/record-payment', async (req: Request, res: Response) => {
         amountPaid: totalPaid,
         amountDue: Math.max(0, newAmountDue),
         status: newStatus as
-          | 'DRAFT'
-          | 'SENT'
-          | 'VIEWED'
-          | 'PAID'
-          | 'PARTIAL_PAID'
+          | 'PROCESSING'
+          | 'SENT_TO_CLIENT'
+          | 'SENT_EMAIL'
+          | 'SENT_MAIL'
+          | 'SENT_PAYPAL'
+          | 'SENT_STRIPE'
+          | 'INVALID'
+          | 'VOID'
           | 'CANCELLED'
-          | 'REFUNDED'
-          | 'OVERDUE',
-        paidDate: newStatus === 'PAID' ? new Date() : invoice.paidDate,
+          | 'COMPLETED',
+        paidDate: newStatus === 'COMPLETED' ? new Date() : invoice.paidDate,
       },
       include: {
         client: true,
