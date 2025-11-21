@@ -74,6 +74,10 @@ router.get('/', async (req: Request, res: Response) => {
         invoicePrefix: true,
         nextInvoiceNumber: true,
         logoUrl: true,
+        // Localization settings
+        language: true,
+        dateFormat: true,
+        timeZone: true,
         // Also include contact info for display
         contactName: true,
         contactEmail: true,
@@ -161,6 +165,10 @@ router.put('/', async (req: Request, res: Response) => {
       invoicePrefix,
       nextInvoiceNumber,
       logoUrl,
+      // Localization settings
+      language,
+      dateFormat,
+      timeZone,
       // Contact info
       contactName,
       contactEmail,
@@ -233,6 +241,10 @@ router.put('/', async (req: Request, res: Response) => {
     if (invoicePrefix !== undefined) updateData.invoicePrefix = invoicePrefix;
     if (nextInvoiceNumber !== undefined) updateData.nextInvoiceNumber = nextInvoiceNumber;
     if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
+    // Localization settings
+    if (language !== undefined) updateData.language = language;
+    if (dateFormat !== undefined) updateData.dateFormat = dateFormat;
+    if (timeZone !== undefined) updateData.timeZone = timeZone;
     if (contactName !== undefined) updateData.contactName = contactName;
     if (contactEmail !== undefined) updateData.contactEmail = contactEmail;
     if (contactPhone !== undefined) updateData.contactPhone = contactPhone;
@@ -274,6 +286,10 @@ router.put('/', async (req: Request, res: Response) => {
         invoicePrefix: true,
         nextInvoiceNumber: true,
         logoUrl: true,
+        // Localization settings
+        language: true,
+        dateFormat: true,
+        timeZone: true,
         contactName: true,
         contactEmail: true,
         contactPhone: true,
