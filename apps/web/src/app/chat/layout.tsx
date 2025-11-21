@@ -11,7 +11,6 @@ import type { Conversation } from '@/components/chat/ConversationList';
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { ConversationList } from '@/components/chat/ConversationList';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -43,6 +42,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
   // Fetch conversations on mount
   useEffect(() => {
     fetchConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchConversations = async () => {
@@ -135,11 +135,6 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                   />
                 </svg>
               </button>
-            </div>
-
-            {/* Language Selector */}
-            <div className="px-4 py-3 border-b border-gray-200">
-              <LanguageSelector variant="dropdown" className="w-full" />
             </div>
 
             {/* Sidebar Content */}

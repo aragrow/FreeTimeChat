@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import type { LanguageCode } from '@/contexts/TranslationContext';
-import { SUPPORTED_LANGUAGES } from '@/contexts/TranslationContext';
 import af from '@/locales/af.json';
 import de from '@/locales/de.json';
 import en from '@/locales/en.json';
@@ -82,26 +81,6 @@ export function LandingPage({ lang }: LandingPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      {/* Language Selector */}
-      <div className="absolute top-4 right-4 z-50">
-        <div className="flex gap-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2">
-          {Object.entries(SUPPORTED_LANGUAGES).map(([code, { flag }]) => (
-            <Link
-              key={code}
-              href={code === 'en' ? '/' : `/${code}`}
-              className={`px-3 py-2 rounded transition-colors ${
-                code === lang
-                  ? 'bg-blue-600 text-white'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-              title={SUPPORTED_LANGUAGES[code as LanguageCode].nativeName}
-            >
-              {flag}
-            </Link>
-          ))}
-        </div>
-      </div>
-
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-16 md:py-24">
         <div className="flex flex-col items-center text-center">

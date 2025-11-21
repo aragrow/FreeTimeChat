@@ -125,7 +125,10 @@
     "impersonating": "Voorstel as",
     "closeSidebar": "Sluit sybalk",
     "toggleSidebar": "Skakel sybalk",
-    "logout": "Teken Uit"
+    "logout": "Teken Uit",
+    "main": "Hoof",
+    "overview": "Oorsig",
+    "userManagement": "Gebruikersbestuur"
   },
   "auth": {
     "signIn": "Teken In",
@@ -341,18 +344,30 @@
       "expensesDesc": "Volg besigheidsuitgawes"
     },
     "kpis": {
-      "totalUsers": { "title": "Totale Gebruikers", "subtitle": "aktief" },
+      "totalUsers": {
+        "title": "Totale Gebruikers",
+        "subtitle": "aktief"
+      },
       "activeUsers": {
         "title": "Aktiewe Gebruikers",
         "subtitle": "hierdie maand"
       },
-      "totalTenants": { "title": "Totale Huurders", "subtitle": "aktief" },
-      "totalProjects": { "title": "Totale Projekte", "subtitle": "aktief" },
+      "totalTenants": {
+        "title": "Totale Huurders",
+        "subtitle": "aktief"
+      },
+      "totalProjects": {
+        "title": "Totale Projekte",
+        "subtitle": "aktief"
+      },
       "activeProjects": {
         "title": "Aktiewe Projekte",
         "subtitle": "in uitvoering"
       },
-      "totalHours": { "title": "Totale Ure", "subtitle": "hierdie maand" },
+      "totalHours": {
+        "title": "Totale Ure",
+        "subtitle": "hierdie maand"
+      },
       "billableHours": {
         "title": "Faktureerbare Ure",
         "subtitle": "hierdie maand"
@@ -365,7 +380,10 @@
         "title": "Hangende Fakture",
         "subtitle": "wag vir betaling"
       },
-      "totalInvoices": { "title": "Totale Fakture", "subtitle": "alle tyd" },
+      "totalInvoices": {
+        "title": "Totale Fakture",
+        "subtitle": "alle tyd"
+      },
       "totalExpenses": {
         "title": "Totale Uitgawes",
         "subtitle": "hierdie maand"
@@ -374,13 +392,22 @@
         "title": "Hangende Versoeke",
         "subtitle": "wag vir goedkeuring"
       },
-      "totalTasks": { "title": "Totale Take", "subtitle": "almal" },
+      "totalTasks": {
+        "title": "Totale Take",
+        "subtitle": "almal"
+      },
       "completedTasks": {
         "title": "Voltooide Take",
         "subtitle": "hierdie maand"
       },
-      "inProgressTasks": { "title": "In Uitvoering", "subtitle": "take" },
-      "totalClients": { "title": "Totale Kliënte", "subtitle": "aktief" },
+      "inProgressTasks": {
+        "title": "In Uitvoering",
+        "subtitle": "take"
+      },
+      "totalClients": {
+        "title": "Totale Kliënte",
+        "subtitle": "aktief"
+      },
       "avgHoursPerProject": {
         "title": "Gem. Ure/Projek",
         "subtitle": "hierdie maand"

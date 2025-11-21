@@ -125,7 +125,10 @@
     "impersonating": "Nadoen van",
     "closeSidebar": "Zijbalk sluiten",
     "toggleSidebar": "Zijbalk schakelen",
-    "logout": "Uitloggen"
+    "logout": "Uitloggen",
+    "main": "Hoofd",
+    "overview": "Overzicht",
+    "userManagement": "Gebruikersbeheer"
   },
   "auth": {
     "signIn": "Inloggen",
@@ -341,40 +344,70 @@
       "expensesDesc": "Bedrijfsonkosten volgen"
     },
     "kpis": {
-      "totalUsers": { "title": "Totaal Gebruikers", "subtitle": "actief" },
+      "totalUsers": {
+        "title": "Totaal Gebruikers",
+        "subtitle": "actief"
+      },
       "activeUsers": {
         "title": "Actieve Gebruikers",
         "subtitle": "deze maand"
       },
-      "totalTenants": { "title": "Totaal Tenants", "subtitle": "actief" },
-      "totalProjects": { "title": "Totaal Projecten", "subtitle": "actief" },
+      "totalTenants": {
+        "title": "Totaal Tenants",
+        "subtitle": "actief"
+      },
+      "totalProjects": {
+        "title": "Totaal Projecten",
+        "subtitle": "actief"
+      },
       "activeProjects": {
         "title": "Actieve Projecten",
         "subtitle": "in uitvoering"
       },
-      "totalHours": { "title": "Totaal Uren", "subtitle": "deze maand" },
+      "totalHours": {
+        "title": "Totaal Uren",
+        "subtitle": "deze maand"
+      },
       "billableHours": {
         "title": "Factureerbare Uren",
         "subtitle": "deze maand"
       },
-      "totalRevenue": { "title": "Totale Omzet", "subtitle": "deze maand" },
+      "totalRevenue": {
+        "title": "Totale Omzet",
+        "subtitle": "deze maand"
+      },
       "pendingInvoices": {
         "title": "Openstaande Facturen",
         "subtitle": "wachten op betaling"
       },
-      "totalInvoices": { "title": "Totaal Facturen", "subtitle": "alle tijd" },
-      "totalExpenses": { "title": "Totale Onkosten", "subtitle": "deze maand" },
+      "totalInvoices": {
+        "title": "Totaal Facturen",
+        "subtitle": "alle tijd"
+      },
+      "totalExpenses": {
+        "title": "Totale Onkosten",
+        "subtitle": "deze maand"
+      },
       "pendingAccountRequests": {
         "title": "Openstaande Aanvragen",
         "subtitle": "wachten op goedkeuring"
       },
-      "totalTasks": { "title": "Totaal Taken", "subtitle": "alle" },
+      "totalTasks": {
+        "title": "Totaal Taken",
+        "subtitle": "alle"
+      },
       "completedTasks": {
         "title": "Voltooide Taken",
         "subtitle": "deze maand"
       },
-      "inProgressTasks": { "title": "In Uitvoering", "subtitle": "taken" },
-      "totalClients": { "title": "Totaal Klanten", "subtitle": "actief" },
+      "inProgressTasks": {
+        "title": "In Uitvoering",
+        "subtitle": "taken"
+      },
+      "totalClients": {
+        "title": "Totaal Klanten",
+        "subtitle": "actief"
+      },
       "avgHoursPerProject": {
         "title": "Gem. Uren/Project",
         "subtitle": "deze maand"

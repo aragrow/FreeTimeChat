@@ -125,7 +125,10 @@
     "impersonating": "Impersonando",
     "closeSidebar": "Chiudi barra laterale",
     "toggleSidebar": "Attiva/disattiva barra laterale",
-    "logout": "Esci"
+    "logout": "Esci",
+    "main": "Principale",
+    "overview": "Panoramica",
+    "userManagement": "Gestione Utenti"
   },
   "auth": {
     "signIn": "Accedi",
@@ -341,17 +344,38 @@
       "expensesDesc": "Traccia spese aziendali"
     },
     "kpis": {
-      "totalUsers": { "title": "Totale Utenti", "subtitle": "attivi" },
-      "activeUsers": { "title": "Utenti Attivi", "subtitle": "questo mese" },
-      "totalTenants": { "title": "Totale Tenant", "subtitle": "attivi" },
-      "totalProjects": { "title": "Totale Progetti", "subtitle": "attivi" },
-      "activeProjects": { "title": "Progetti Attivi", "subtitle": "in corso" },
-      "totalHours": { "title": "Totale Ore", "subtitle": "questo mese" },
+      "totalUsers": {
+        "title": "Totale Utenti",
+        "subtitle": "attivi"
+      },
+      "activeUsers": {
+        "title": "Utenti Attivi",
+        "subtitle": "questo mese"
+      },
+      "totalTenants": {
+        "title": "Totale Tenant",
+        "subtitle": "attivi"
+      },
+      "totalProjects": {
+        "title": "Totale Progetti",
+        "subtitle": "attivi"
+      },
+      "activeProjects": {
+        "title": "Progetti Attivi",
+        "subtitle": "in corso"
+      },
+      "totalHours": {
+        "title": "Totale Ore",
+        "subtitle": "questo mese"
+      },
       "billableHours": {
         "title": "Ore Fatturabili",
         "subtitle": "questo mese"
       },
-      "totalRevenue": { "title": "Ricavo Totale", "subtitle": "questo mese" },
+      "totalRevenue": {
+        "title": "Ricavo Totale",
+        "subtitle": "questo mese"
+      },
       "pendingInvoices": {
         "title": "Fatture in Attesa",
         "subtitle": "in attesa di pagamento"
@@ -360,18 +384,30 @@
         "title": "Totale Fatture",
         "subtitle": "tutto il tempo"
       },
-      "totalExpenses": { "title": "Spese Totali", "subtitle": "questo mese" },
+      "totalExpenses": {
+        "title": "Spese Totali",
+        "subtitle": "questo mese"
+      },
       "pendingAccountRequests": {
         "title": "Richieste in Attesa",
         "subtitle": "in attesa di approvazione"
       },
-      "totalTasks": { "title": "Totale Attività", "subtitle": "tutte" },
+      "totalTasks": {
+        "title": "Totale Attività",
+        "subtitle": "tutte"
+      },
       "completedTasks": {
         "title": "Attività Completate",
         "subtitle": "questo mese"
       },
-      "inProgressTasks": { "title": "In Corso", "subtitle": "attività" },
-      "totalClients": { "title": "Totale Clienti", "subtitle": "attivi" },
+      "inProgressTasks": {
+        "title": "In Corso",
+        "subtitle": "attività"
+      },
+      "totalClients": {
+        "title": "Totale Clienti",
+        "subtitle": "attivi"
+      },
       "avgHoursPerProject": {
         "title": "Ore Medie/Progetto",
         "subtitle": "questo mese"

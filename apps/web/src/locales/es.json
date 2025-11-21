@@ -125,7 +125,10 @@
     "impersonating": "Suplantando",
     "closeSidebar": "Cerrar barra lateral",
     "toggleSidebar": "Alternar barra lateral",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "main": "Principal",
+    "overview": "Resumen",
+    "userManagement": "Gestión de Usuarios"
   },
   "auth": {
     "signIn": "Iniciar Sesión",
@@ -341,17 +344,38 @@
       "expensesDesc": "Rastrear gastos comerciales"
     },
     "kpis": {
-      "totalUsers": { "title": "Total de Usuarios", "subtitle": "activos" },
-      "activeUsers": { "title": "Usuarios Activos", "subtitle": "este mes" },
-      "totalTenants": { "title": "Total de Inquilinos", "subtitle": "activos" },
-      "totalProjects": { "title": "Total de Proyectos", "subtitle": "activos" },
+      "totalUsers": {
+        "title": "Total de Usuarios",
+        "subtitle": "activos"
+      },
+      "activeUsers": {
+        "title": "Usuarios Activos",
+        "subtitle": "este mes"
+      },
+      "totalTenants": {
+        "title": "Total de Inquilinos",
+        "subtitle": "activos"
+      },
+      "totalProjects": {
+        "title": "Total de Proyectos",
+        "subtitle": "activos"
+      },
       "activeProjects": {
         "title": "Proyectos Activos",
         "subtitle": "en progreso"
       },
-      "totalHours": { "title": "Total de Horas", "subtitle": "este mes" },
-      "billableHours": { "title": "Horas Facturables", "subtitle": "este mes" },
-      "totalRevenue": { "title": "Ingresos Totales", "subtitle": "este mes" },
+      "totalHours": {
+        "title": "Total de Horas",
+        "subtitle": "este mes"
+      },
+      "billableHours": {
+        "title": "Horas Facturables",
+        "subtitle": "este mes"
+      },
+      "totalRevenue": {
+        "title": "Ingresos Totales",
+        "subtitle": "este mes"
+      },
       "pendingInvoices": {
         "title": "Facturas Pendientes",
         "subtitle": "esperando pago"
@@ -360,18 +384,30 @@
         "title": "Total de Facturas",
         "subtitle": "todo el tiempo"
       },
-      "totalExpenses": { "title": "Gastos Totales", "subtitle": "este mes" },
+      "totalExpenses": {
+        "title": "Gastos Totales",
+        "subtitle": "este mes"
+      },
       "pendingAccountRequests": {
         "title": "Solicitudes Pendientes",
         "subtitle": "esperando aprobación"
       },
-      "totalTasks": { "title": "Total de Tareas", "subtitle": "todas" },
+      "totalTasks": {
+        "title": "Total de Tareas",
+        "subtitle": "todas"
+      },
       "completedTasks": {
         "title": "Tareas Completadas",
         "subtitle": "este mes"
       },
-      "inProgressTasks": { "title": "En Progreso", "subtitle": "tareas" },
-      "totalClients": { "title": "Total de Clientes", "subtitle": "activos" },
+      "inProgressTasks": {
+        "title": "En Progreso",
+        "subtitle": "tareas"
+      },
+      "totalClients": {
+        "title": "Total de Clientes",
+        "subtitle": "activos"
+      },
       "avgHoursPerProject": {
         "title": "Horas Prom/Proyecto",
         "subtitle": "este mes"

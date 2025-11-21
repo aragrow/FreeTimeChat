@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -133,11 +132,6 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                 />
               </svg>
             </button>
-          </div>
-
-          {/* Language Selector - Top of sidebar */}
-          <div className="px-4 py-3 border-b border-gray-200">
-            <LanguageSelector variant="dropdown" className="w-full" />
           </div>
 
           {/* Navigation Links */}

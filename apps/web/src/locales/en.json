@@ -125,7 +125,10 @@
     "impersonating": "Impersonating",
     "closeSidebar": "Close sidebar",
     "toggleSidebar": "Toggle sidebar",
-    "logout": "Logout"
+    "logout": "Logout",
+    "main": "Main",
+    "overview": "Overview",
+    "userManagement": "User Management"
   },
   "auth": {
     "signIn": "Sign in",
@@ -647,7 +650,6 @@
     "currentStatus": "Current Status:",
     "newStatus": "New Status",
     "selectNewStatus": "Select new status",
-    "updateStatus": "Update Status",
     "statusSuccess": "Status updated successfully",
     "failedStatus": "Failed to update status: {error}",
     "generate": {

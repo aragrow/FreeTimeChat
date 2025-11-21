@@ -125,7 +125,10 @@
     "impersonating": "Identität annehmen von",
     "closeSidebar": "Seitenleiste schließen",
     "toggleSidebar": "Seitenleiste umschalten",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "main": "Hauptmenü",
+    "overview": "Überblick",
+    "userManagement": "Benutzerverwaltung"
   },
   "auth": {
     "signIn": "Anmelden",
@@ -341,20 +344,38 @@
       "expensesDesc": "Geschäftsausgaben verfolgen"
     },
     "kpis": {
-      "totalUsers": { "title": "Gesamte Benutzer", "subtitle": "aktiv" },
-      "activeUsers": { "title": "Aktive Benutzer", "subtitle": "diesen Monat" },
-      "totalTenants": { "title": "Gesamte Mandanten", "subtitle": "aktiv" },
-      "totalProjects": { "title": "Gesamte Projekte", "subtitle": "aktiv" },
+      "totalUsers": {
+        "title": "Gesamte Benutzer",
+        "subtitle": "aktiv"
+      },
+      "activeUsers": {
+        "title": "Aktive Benutzer",
+        "subtitle": "diesen Monat"
+      },
+      "totalTenants": {
+        "title": "Gesamte Mandanten",
+        "subtitle": "aktiv"
+      },
+      "totalProjects": {
+        "title": "Gesamte Projekte",
+        "subtitle": "aktiv"
+      },
       "activeProjects": {
         "title": "Aktive Projekte",
         "subtitle": "in Bearbeitung"
       },
-      "totalHours": { "title": "Gesamte Stunden", "subtitle": "diesen Monat" },
+      "totalHours": {
+        "title": "Gesamte Stunden",
+        "subtitle": "diesen Monat"
+      },
       "billableHours": {
         "title": "Abrechenbare Stunden",
         "subtitle": "diesen Monat"
       },
-      "totalRevenue": { "title": "Gesamtumsatz", "subtitle": "diesen Monat" },
+      "totalRevenue": {
+        "title": "Gesamtumsatz",
+        "subtitle": "diesen Monat"
+      },
       "pendingInvoices": {
         "title": "Ausstehende Rechnungen",
         "subtitle": "warten auf Zahlung"
@@ -371,13 +392,22 @@
         "title": "Ausstehende Anfragen",
         "subtitle": "warten auf Genehmigung"
       },
-      "totalTasks": { "title": "Gesamte Aufgaben", "subtitle": "alle" },
+      "totalTasks": {
+        "title": "Gesamte Aufgaben",
+        "subtitle": "alle"
+      },
       "completedTasks": {
         "title": "Abgeschlossene Aufgaben",
         "subtitle": "diesen Monat"
       },
-      "inProgressTasks": { "title": "In Bearbeitung", "subtitle": "Aufgaben" },
-      "totalClients": { "title": "Gesamte Kunden", "subtitle": "aktiv" },
+      "inProgressTasks": {
+        "title": "In Bearbeitung",
+        "subtitle": "Aufgaben"
+      },
+      "totalClients": {
+        "title": "Gesamte Kunden",
+        "subtitle": "aktiv"
+      },
       "avgHoursPerProject": {
         "title": "Durchschn. Std/Projekt",
         "subtitle": "diesen Monat"
