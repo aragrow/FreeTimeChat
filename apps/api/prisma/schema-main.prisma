@@ -94,6 +94,11 @@ model Tenant {
   nextInvoiceNumber Int     @default(1) @map("next_invoice_number")
   logoUrl           String? @map("logo_url") // URL to tenant logo
 
+  // Localization Settings
+  language   String @default("en") @map("language") // Language code: en, es, fr, de, nl, it, af
+  dateFormat String @default("MM/DD/YYYY") @map("date_format") // Date format preference
+  timeZone   String @default("America/New_York") @map("time_zone") // IANA timezone identifier
+
   // Payment Methods
   enableStripe         Boolean @default(false) @map("enable_stripe")
   enablePaypal         Boolean @default(false) @map("enable_paypal")

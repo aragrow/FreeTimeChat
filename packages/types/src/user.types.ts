@@ -29,15 +29,67 @@ export interface User {
 export type UserPublic = Omit<User, 'passwordHash' | 'twoFactorSecret'>;
 
 /**
- * Client entity
+ * Client entity (Tenant)
  */
 export interface Client {
   id: string;
   name: string;
   slug: string;
-  databaseName: string;
+  tenantKey: string;
+  databaseId?: string;
+  databaseName?: string;
   databaseHost: string;
   isActive: boolean;
+  isSeeded: boolean;
+
+  // Contact Information
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+
+  // Billing Address
+  billingStreet?: string;
+  billingCity?: string;
+  billingState?: string;
+  billingZip?: string;
+  billingCountry?: string;
+  billingEmail?: string;
+
+  // Invoice Address
+  invoiceContact?: string;
+  invoiceEmail?: string;
+  invoicePhone?: string;
+  invoiceStreet?: string;
+  invoiceCity?: string;
+  invoiceState?: string;
+  invoiceZip?: string;
+  invoiceCountry?: string;
+  taxId?: string;
+
+  // Invoice Settings
+  currency: string;
+  invoicePrefix?: string;
+  nextInvoiceNumber: number;
+  logoUrl?: string;
+
+  // Localization Settings
+  language: string;
+  dateFormat: string;
+  timeZone: string;
+
+  // Payment Methods
+  enableStripe: boolean;
+  enablePaypal: boolean;
+  stripePublishableKey?: string;
+  stripeSecretKey?: string;
+  paypalClientId?: string;
+  paypalClientSecret?: string;
+  paypalSandbox: boolean;
+  defaultPaymentMethod?: string;
+
+  // Navigation Settings
+  navigationConfig?: Record<string, any>;
+
   createdAt: Date;
   updatedAt: Date;
 }

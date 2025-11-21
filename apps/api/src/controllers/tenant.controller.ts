@@ -146,6 +146,9 @@ export class TenantController {
         billingZip,
         billingCountry,
         billingEmail,
+        language,
+        dateFormat,
+        timeZone,
         isActive,
         adminUsername,
       } = req.body;
@@ -222,6 +225,9 @@ export class TenantController {
         billingZip,
         billingCountry,
         billingEmail,
+        language,
+        dateFormat,
+        timeZone,
         isActive,
       });
 
@@ -298,6 +304,9 @@ export class TenantController {
         billingZip,
         billingCountry,
         billingEmail,
+        language,
+        dateFormat,
+        timeZone,
         isActive,
       } = req.body;
 
@@ -358,6 +367,9 @@ export class TenantController {
       if (billingZip !== undefined) updateData.billingZip = billingZip;
       if (billingCountry !== undefined) updateData.billingCountry = billingCountry;
       if (billingEmail !== undefined) updateData.billingEmail = billingEmail;
+      if (language !== undefined) updateData.language = language;
+      if (dateFormat !== undefined) updateData.dateFormat = dateFormat;
+      if (timeZone !== undefined) updateData.timeZone = timeZone;
       if (isActive !== undefined) updateData.isActive = isActive;
 
       const tenant = await this.tenantService.update(id, updateData);
