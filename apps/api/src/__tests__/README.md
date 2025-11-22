@@ -178,12 +178,69 @@ describe('POST /api/v1/resource', () => {
 
 ## Test Configuration
 
+### Port-Agnostic Testing ✨
+
+**The test suite is completely port-agnostic** - tests work regardless of which
+port the API uses!
+
+#### How It Works
+
+Tests use supertest's `request(app)` pattern which invokes the Express app
+directly:
+
+```typescript
+import request from 'supertest';
+import { app } from '../../app';
+
+// No server needed - app is invoked directly!
+const response = await request(app)
+  .post('/api/v1/auth/login')
+  .send({ email: 'user@example.com', password: 'password' });
+```
+
+**Benefits:**
+
+- ✅ No port conflicts
+- ✅ No need to start a server
+- ✅ Faster test execution
+- ✅ Works in any environment (local, CI, Docker)
+
+#### Environment Variables
+
+All configuration respects environment variables with sensible defaults:
+
+```bash
+# API Configuration (auto-adapts, not directly used by tests)
+PORT=3001              # API port (default: 3001)
+API_URL=http://...     # Full API URL (auto-generated)
+
+# Database Configuration (respects env vars)
+DATABASE_URL=postgresql://...           # Main database
+CLIENT_DATABASE_URL=postgresql://...    # Client database
+
+# Redis Configuration (respects env vars)
+REDIS_HOST=localhost                    # Redis host (default: localhost)
+REDIS_PORT=6379                         # Redis port (default: 6379)
+REDIS_PASSWORD=your_password            # Redis password
+REDIS_DB=1                              # Redis database (default: 1 for tests)
+```
+
+#### Adaptive Timeouts
+
+Test timeouts automatically adjust for CI environments:
+
+- **Local**: 10 seconds
+- **CI** (GitHub Actions): 30 seconds
+
+See [`helpers/test-config.ts`](./helpers/test-config.ts) for configuration
+utilities.
+
 ### Jest Configuration
 
 - **Preset**: ts-jest
 - **Environment**: node
 - **Coverage**: Enabled with text, lcov, and HTML reports
-- **Timeout**: 10 seconds
+- **Timeout**: Adaptive (10s local, 30s CI)
 - **Setup**: Automatic via setup.ts
 
 ### Test Environment Variables
@@ -191,9 +248,13 @@ describe('POST /api/v1/resource', () => {
 All test environment variables are configured in `setup.ts`:
 
 - NODE_ENV=test
+- PORT=3001 (or from env)
+- API_URL=http://localhost:3001 (or from env)
 - JWT_ACCESS_TOKEN_EXPIRY=15m
 - JWT_REFRESH_TOKEN_EXPIRY=7d
 - BCRYPT_ROUNDS=4 (faster tests)
+- DATABASE_URL=postgresql://... (Docker defaults with env override)
+- REDIS_HOST/PORT/PASSWORD (Docker defaults with env override)
 
 ## Best Practices
 

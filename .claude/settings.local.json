@@ -117,7 +117,8 @@
       "Bash(/opt/homebrew/Cellar/libpq/17.2/bin/psql:*)",
       "Bash(CLIENT_DATABASE_URL=\"postgresql://david@localhost:5432/freetimechat_aragrow_llc\" npx prisma db push:*)",
       "Bash(/opt/homebrew/opt/postgresql@16/bin/psql:*)",
-      "Bash(pnpm --filter @freetimechat/api test:*)"
+      "Bash(pnpm --filter @freetimechat/api test:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkNWYzYzBmNi0wZjY1LTRkM2MtYjkzOC05YmVjMzFhMDcwNmEiLCJlbWFpbCI6IjAwMDAwMkBhcmFncm93LWxsYy5sb2NhbCIsInJvbGUiOiJ0ZW5hbnRhZG1pbiIsInJvbGVzIjpbInRlbmFudGFkbWluIl0sInRlbmFudElkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMTAxIiwiZGF0YWJhc2VOYW1lIjoiZnJlZXRpbWVjaGF0X2FyYWdyb3dfbGxjIiwianRpIjoiZTQ2NzQyNGQyODlkYTBiZWMwMDE3OGMxYWI1MzFiNWEiLCJpYXQiOjE3NjM3ODQyNzUsImV4cCI6MTc2Mzc4NTE3NSwiYXVkIjoiZnJlZXRpbWVjaGF0LXdlYiIsImlzcyI6ImZyZWV0aW1lY2hhdC1hcGkifQ.Gvrl4QaT3nWhoygQsphtsPF2jxq3l4CZIW7bRqBdk1DV9Ap4Cy9iptKJJAdzuUER-scBxq2PVCNCTtd3iA_IzB1EzhEcv3d4rS04G1e0UXqtPzOV_06pDrEkE2AGam3Y5AdkdW-lTcIO0IVz3mhIe0GEDjmSEJUCCaq0a5jCPPPCx85aOIfsrPvln3hO7m9Q_lc9euBZKeIhs1K2TOz2RU0ye4xg7fDIhWiBtpd6zkyk35l0_-IsLHFBhxTMDpwGwnxcN_JWClScW1uR4Ua1E1sDn-j7c226Ax5x7esp9bnN3AC_wz9ClkzXpNjRK-2wwLGsXUaW2ti7A6Lz5IYCWg\")"
     ],
     "deny": [],
     "ask": []
