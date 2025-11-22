@@ -406,7 +406,7 @@ async function main() {
         name: tenantConfig.name,
         slug: tenantConfig.slug,
         tenantKey: tenantConfig.tenantKey,
-        databaseHost: 'localhost',
+        databaseHost: '127.0.0.1',
         isActive: true,
         currency: tenantConfig.currency,
         language: tenantConfig.language,

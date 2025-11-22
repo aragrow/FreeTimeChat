@@ -21,12 +21,16 @@ describe('Client CRUD Integration Tests', () => {
   let dbAvailable = false;
   let adminToken: string;
   let createdClientId: string;
+  let timestamp: number;
 
   beforeAll(async () => {
     dbAvailable = await isDatabaseAvailable();
     if (dbAvailable) {
       await cleanupTestDatabase();
       await seedTestDatabase();
+
+      // Generate timestamp for unique test data
+      timestamp = Date.now();
 
       // Login as tenant admin to get access token
       const loginResponse = await request(app)
@@ -56,7 +60,7 @@ describe('Client CRUD Integration Tests', () => {
       }
 
       const clientData = {
-        name: 'Test Client Corporation',
+        name: `Test Client Corporation ${timestamp}`,
       };
 
       const response = await request(app)
@@ -66,15 +70,15 @@ describe('Client CRUD Integration Tests', () => {
         .expect(201);
 
       expect(response.body.status).toBe('success');
-      expect(response.body.data.client).toBeDefined();
-      expect(response.body.data.client.name).toBe(clientData.name);
-      expect(response.body.data.client.slug).toBe('test-client-corporation');
-      expect(response.body.data.client.isActive).toBe(true);
-      expect(response.body.data.client.discountPercentage).toBe('0');
-      expect(response.body.data.client.invoiceNextNumber).toBe(1);
-      expect(response.body.data.client.invoiceNumberPadding).toBe(5);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.name).toBe(clientData.name);
+      expect(response.body.data.slug).toContain('test-client-corporation');
+      expect(response.body.data.isActive).toBe(true);
+      expect(response.body.data.discountPercentage).toBe('0');
+      expect(response.body.data.invoiceNextNumber).toBe(1);
+      expect(response.body.data.invoiceNumberPadding).toBe(5);
 
-      createdClientId = response.body.data.client.id;
+      createdClientId = response.body.data.id;
     });
 
     it('should create a client with complete billing information', async () => {
@@ -84,10 +88,10 @@ describe('Client CRUD Integration Tests', () => {
       }
 
       const clientData = {
-        name: 'Acme Corporation',
+        name: `Acme Corporation ${timestamp}`,
         hourlyRate: 150.0,
         discountPercentage: 10.5,
-        email: 'billing@acme.com',
+        email: `billing-${timestamp}@acme.com`,
         phone: '+1-555-123-4567',
         website: 'https://acme.com',
         contactPerson: 'John Doe',
@@ -97,7 +101,7 @@ describe('Client CRUD Integration Tests', () => {
         billingState: 'CA',
         billingPostalCode: '94105',
         billingCountry: 'USA',
-        invoicePrefix: 'ACME-',
+        invoicePrefix: `ACME-${timestamp}-`,
         invoiceNextNumber: 1000,
         invoiceNumberPadding: 6,
       };
@@ -109,20 +113,18 @@ describe('Client CRUD Integration Tests', () => {
         .expect(201);
 
       expect(response.body.status).toBe('success');
-      expect(response.body.data.client.name).toBe(clientData.name);
-      expect(response.body.data.client.hourlyRate).toBe(clientData.hourlyRate.toString());
-      expect(response.body.data.client.discountPercentage).toBe(
-        clientData.discountPercentage.toString()
-      );
-      expect(response.body.data.client.email).toBe(clientData.email);
-      expect(response.body.data.client.phone).toBe(clientData.phone);
-      expect(response.body.data.client.website).toBe(clientData.website);
-      expect(response.body.data.client.contactPerson).toBe(clientData.contactPerson);
-      expect(response.body.data.client.billingAddressLine1).toBe(clientData.billingAddressLine1);
-      expect(response.body.data.client.billingCity).toBe(clientData.billingCity);
-      expect(response.body.data.client.invoicePrefix).toBe(clientData.invoicePrefix);
-      expect(response.body.data.client.invoiceNextNumber).toBe(clientData.invoiceNextNumber);
-      expect(response.body.data.client.invoiceNumberPadding).toBe(clientData.invoiceNumberPadding);
+      expect(response.body.data.name).toBe(clientData.name);
+      expect(response.body.data.hourlyRate).toBe(clientData.hourlyRate.toString());
+      expect(response.body.data.discountPercentage).toBe(clientData.discountPercentage.toString());
+      expect(response.body.data.email).toBe(clientData.email);
+      expect(response.body.data.phone).toBe(clientData.phone);
+      expect(response.body.data.website).toBe(clientData.website);
+      expect(response.body.data.contactPerson).toBe(clientData.contactPerson);
+      expect(response.body.data.billingAddressLine1).toBe(clientData.billingAddressLine1);
+      expect(response.body.data.billingCity).toBe(clientData.billingCity);
+      expect(response.body.data.invoicePrefix).toBe(clientData.invoicePrefix);
+      expect(response.body.data.invoiceNextNumber).toBe(clientData.invoiceNextNumber);
+      expect(response.body.data.invoiceNumberPadding).toBe(clientData.invoiceNumberPadding);
     });
 
     it('should reject client creation without name', async () => {
@@ -151,7 +153,7 @@ describe('Client CRUD Integration Tests', () => {
         .post('/api/v1/admin/clients')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Invalid Client',
+          name: `Invalid Client Hourly ${timestamp}`,
           hourlyRate: -10,
         })
         .expect(400);
@@ -170,7 +172,7 @@ describe('Client CRUD Integration Tests', () => {
         .post('/api/v1/admin/clients')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Invalid Client',
+          name: `Invalid Client Discount ${timestamp}`,
           discountPercentage: 150,
         })
         .expect(400);
@@ -290,7 +292,7 @@ describe('Client CRUD Integration Tests', () => {
       }
 
       const updateData = {
-        name: 'Updated Test Client',
+        name: `Updated Test Client ${timestamp}`,
         hourlyRate: 175.5,
         discountPercentage: 15,
         email: 'updated@test.com',
@@ -325,7 +327,7 @@ describe('Client CRUD Integration Tests', () => {
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.hourlyRate).toBe('200');
-      expect(response.body.data.name).toBe('Updated Test Client'); // Name should remain unchanged
+      expect(response.body.data.name).toBe(`Updated Test Client ${timestamp}`); // Name should remain unchanged from previous update
     });
 
     it('should reject invalid hourly rate update', async () => {

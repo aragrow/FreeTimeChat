@@ -21,17 +21,35 @@ const databaseService = getDatabaseService();
  */
 router.post('/', authenticateJWT, requireRole('admin'), async (req: Request, res: Response) => {
   try {
-    const { name, slug, tenantKey, contactEmail } = req.body;
+    const { name, slug, tenantKey, contactEmail, hourlyRate, discountPercentage, ...otherFields } =
+      req.body;
 
     // Validate required fields
-    if (!name || !slug || !tenantKey) {
+    if (!name || !name.trim()) {
       res.status(400).json({
         status: 'error',
-        message: 'Missing required fields',
-        required: ['name', 'slug', 'tenantKey'],
+        message: 'Client name is required',
       });
       return;
     }
+
+    // Auto-generate slug from name if not provided
+    const finalSlug =
+      slug ||
+      name
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+
+    // Auto-generate tenantKey from name if not provided
+    const finalTenantKey =
+      tenantKey ||
+      name
+        .toUpperCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^A-Z0-9-]/g, '');
 
     // Validate email format if provided
     if (contactEmail) {
@@ -45,13 +63,37 @@ router.post('/', authenticateJWT, requireRole('admin'), async (req: Request, res
       }
     }
 
+    // Validate hourlyRate if provided
+    if (hourlyRate !== undefined && hourlyRate !== null) {
+      const rate = parseFloat(hourlyRate);
+      if (isNaN(rate) || rate < 0) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Hourly rate must be a positive number',
+        });
+        return;
+      }
+    }
+
+    // Validate discountPercentage if provided
+    if (discountPercentage !== undefined && discountPercentage !== null) {
+      const discount = parseFloat(discountPercentage);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Discount percentage must be between 0 and 100',
+        });
+        return;
+      }
+    }
+
     // Create tenant
     const tenant = await tenantService.create({
-      name,
-      slug,
-      tenantKey,
+      name: name.trim(),
+      slug: finalSlug,
+      tenantKey: finalTenantKey,
       contactEmail,
-      ...req.body,
+      ...otherFields,
     });
 
     res.status(201).json({

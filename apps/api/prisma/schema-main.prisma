@@ -60,7 +60,7 @@ model Tenant {
   tenantKey    String  @unique @map("tenant_key") // Unique short key for tenant authentication (e.g., TENANT-1234)
   databaseId   String? @unique @map("database_id") // UUID4 for database identification
   databaseName String? @unique @map("database_name") // Database for this tenant's data
-  databaseHost String  @default("localhost") @map("database_host")
+  databaseHost String  @default("127.0.0.1") @map("database_host")
   isActive     Boolean @default(true) @map("is_active")
   isSeeded     Boolean @default(false) @map("is_seeded") // Track if created by seed script
 

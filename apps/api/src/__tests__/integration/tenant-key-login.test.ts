@@ -23,7 +23,7 @@ import bcrypt from 'bcrypt';
 import request from 'supertest';
 import { app } from '../../app';
 import { PrismaClient as MainPrismaClient } from '../../generated/prisma-main';
-import { isDatabaseAvailable } from '../helpers/database-checker';
+import { cleanupTestDatabase, isDatabaseAvailable, seedTestDatabase } from '../helpers/test-seed';
 
 describe('Tenant Key Login Integration Tests', () => {
   let dbAvailable = false;
@@ -40,40 +40,76 @@ describe('Tenant Key Login Integration Tests', () => {
     dbAvailable = await isDatabaseAvailable();
 
     if (dbAvailable) {
+      // Seed database with roles, capabilities, and ARAGROW-LLC tenant
+      await cleanupTestDatabase();
+      await seedTestDatabase();
+
       prisma = new MainPrismaClient();
 
       try {
-        // Create test customers with unique database names
+        // Use timestamp for unique emails (not database names)
         const timestamp = Date.now();
-        testTenant1 = await prisma.tenant.create({
-          data: {
-            name: 'Test Customer 1',
-            slug: `test-customer-1-${timestamp}`,
-            tenantKey: `TEST-CUST-001-${timestamp}`,
-            databaseName: `freetimechat_test_tenant_1_${timestamp}`,
-            databaseHost: 'localhost',
-            isActive: true,
-          },
+
+        // Use ARAGROW-LLC tenant as testTenant1 (created by seedTestDatabase)
+        const aragrowTenant = await prisma.tenant.findUnique({
+          where: { id: '00000000-0000-0000-0000-000000000101' },
         });
 
-        testTenant2 = await prisma.tenant.create({
-          data: {
+        if (!aragrowTenant) {
+          throw new Error('ARAGROW-LLC tenant not found - seedTestDatabase may have failed');
+        }
+
+        testTenant1 = {
+          id: aragrowTenant.id,
+          name: aragrowTenant.name,
+          tenantKey: aragrowTenant.tenantKey,
+          databaseName: aragrowTenant.databaseName,
+        };
+
+        // Create second tenant using upsert with fixed ID to prevent duplicates
+        const tenant2 = await prisma.tenant.upsert({
+          where: { id: '00000000-0000-0000-0000-000000000102' },
+          update: {
+            isActive: true,
+          },
+          create: {
+            id: '00000000-0000-0000-0000-000000000102',
             name: 'Test Customer 2',
-            slug: `test-customer-2-${timestamp}`,
-            tenantKey: `TEST-CUST-002-${timestamp}`,
-            databaseName: `freetimechat_test_tenant_2_${timestamp}`,
+            slug: 'test-customer-2',
+            tenantKey: 'TEST-CUST-002',
+            databaseName: 'freetimechat_test_tenant_2',
             databaseHost: 'localhost',
             isActive: true,
           },
         });
 
-        // Create test admin user (no customer assignment)
+        testTenant2 = {
+          id: tenant2.id,
+          name: tenant2.name,
+          tenantKey: tenant2.tenantKey,
+          databaseName: tenant2.databaseName,
+        };
+
+        // Get roles created by seedTestDatabase
+        const adminRole = await prisma.role.findFirst({
+          where: { name: 'admin' },
+        });
+
+        const userRole = await prisma.role.findFirst({
+          where: { name: 'user' },
+        });
+
+        if (!adminRole || !userRole) {
+          throw new Error('Roles not found - seedTestDatabase may have failed');
+        }
+
+        // Create test admin user (no tenant assignment)
         const adminPassword = 'AdminPass123!';
         const adminHash = await bcrypt.hash(adminPassword, 10);
 
         const adminUserRecord = await prisma.user.create({
           data: {
-            email: 'test-admin@freetimechat.test',
+            email: `test-admin-${timestamp}@freetimechat.test`,
             passwordHash: adminHash,
             name: 'Test Admin',
             isActive: true,
@@ -87,26 +123,20 @@ describe('Tenant Key Login Integration Tests', () => {
         };
 
         // Assign admin role to admin user
-        const adminRole = await prisma.role.findFirst({
-          where: { name: 'admin' },
+        await prisma.userRole.create({
+          data: {
+            userId: adminUserRecord.id,
+            roleId: adminRole.id,
+          },
         });
 
-        if (adminRole) {
-          await prisma.userRole.create({
-            data: {
-              userId: adminUserRecord.id,
-              roleId: adminRole.id,
-            },
-          });
-        }
-
-        // Create test user 1 (belongs to customer 1)
+        // Create test user 1 (belongs to ARAGROW-LLC tenant)
         const user1Password = 'UserPass123!';
         const user1Hash = await bcrypt.hash(user1Password, 10);
 
         const user1Record = await prisma.user.create({
           data: {
-            email: 'test-user1@freetimechat.test',
+            email: `test-user1-${timestamp}@freetimechat.test`,
             passwordHash: user1Hash,
             name: 'Test User 1',
             tenantId: testTenant1.id,
@@ -121,18 +151,12 @@ describe('Tenant Key Login Integration Tests', () => {
         };
 
         // Assign user role to user 1
-        const userRole = await prisma.role.findFirst({
-          where: { name: 'user' },
+        await prisma.userRole.create({
+          data: {
+            userId: user1Record.id,
+            roleId: userRole.id,
+          },
         });
-
-        if (userRole) {
-          await prisma.userRole.create({
-            data: {
-              userId: user1Record.id,
-              roleId: userRole.id,
-            },
-          });
-        }
 
         // Create test user 2 (belongs to customer 2)
         const user2Password = 'UserPass456!';
@@ -140,7 +164,7 @@ describe('Tenant Key Login Integration Tests', () => {
 
         const user2Record = await prisma.user.create({
           data: {
-            email: 'test-user2@freetimechat.test',
+            email: `test-user2-${timestamp}@freetimechat.test`,
             passwordHash: user2Hash,
             name: 'Test User 2',
             tenantId: testTenant2.id,
@@ -154,14 +178,13 @@ describe('Tenant Key Login Integration Tests', () => {
           password: user2Password,
         };
 
-        if (userRole) {
-          await prisma.userRole.create({
-            data: {
-              userId: user2Record.id,
-              roleId: userRole.id,
-            },
-          });
-        }
+        // Assign user role to user 2
+        await prisma.userRole.create({
+          data: {
+            userId: user2Record.id,
+            roleId: userRole.id,
+          },
+        });
 
         console.log('✅ Test data created successfully');
       } catch (error) {
@@ -173,45 +196,52 @@ describe('Tenant Key Login Integration Tests', () => {
 
   afterAll(async () => {
     if (dbAvailable && prisma) {
-      // Clean up test data in correct order to avoid foreign key constraint violations
-      await prisma.refreshToken.deleteMany({
-        where: {
-          user: {
-            email: {
-              in: [testAdminUser?.email, testUser1?.email, testUser2?.email],
+      try {
+        // Clean up test-specific data (test users created in beforeAll)
+        await prisma.refreshToken.deleteMany({
+          where: {
+            user: {
+              email: {
+                contains: '@freetimechat.test',
+              },
             },
           },
-        },
-      });
+        });
 
-      await prisma.userRole.deleteMany({
-        where: {
-          user: {
-            email: {
-              in: [testAdminUser?.email, testUser1?.email, testUser2?.email],
+        await prisma.userRole.deleteMany({
+          where: {
+            user: {
+              email: {
+                contains: '@freetimechat.test',
+              },
             },
           },
-        },
-      });
+        });
 
-      await prisma.user.deleteMany({
-        where: {
-          email: {
-            in: [testAdminUser?.email, testUser1?.email, testUser2?.email],
+        await prisma.user.deleteMany({
+          where: {
+            email: {
+              contains: '@freetimechat.test',
+            },
           },
-        },
-      });
+        });
 
-      await prisma.tenant.deleteMany({
-        where: {
-          id: {
-            in: [testTenant1?.id, testTenant2?.id],
+        // Delete second test tenant (testTenant2)
+        await prisma.tenant.deleteMany({
+          where: {
+            id: '00000000-0000-0000-0000-000000000102',
           },
-        },
-      });
+        });
 
-      await prisma.$disconnect();
-      console.log('✅ Test data cleaned up successfully');
+        await prisma.$disconnect();
+
+        // Clean up seeded data (ARAGROW tenant, roles, capabilities)
+        await cleanupTestDatabase();
+
+        console.log('✅ Test data cleaned up successfully');
+      } catch (error) {
+        console.error('Cleanup failed:', error);
+      }
     }
   });
 

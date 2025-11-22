@@ -9,6 +9,14 @@
  * by the integration tests themselves.
  */
 
+// CRITICAL: Load .env file FIRST before any other imports
+// This ensures environment variables are available when app modules initialize
+import path from 'path';
+import dotenv from 'dotenv';
+
+// Load .env file from apps/api directory
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
 import { getTestTimeout } from './helpers/test-config';
 
 // Set test environment variables
@@ -30,6 +38,11 @@ process.env.DATABASE_URL =
 process.env.CLIENT_DATABASE_URL =
   process.env.CLIENT_DATABASE_URL ||
   'postgresql://freetimechat:freetimechat_dev_password@localhost:5432/freetimechat_client_dev';
+
+// PostgreSQL connection credentials for tenant databases
+process.env.POSTGRES_USER = process.env.POSTGRES_USER || 'freetimechat';
+process.env.POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || 'freetimechat_dev_password';
+process.env.POSTGRES_PORT = process.env.POSTGRES_PORT || '5432';
 
 // Redis configuration for tests (Docker Redis)
 // Uses environment variables if set, otherwise falls back to defaults

@@ -4,7 +4,15 @@
  * Sets up Express app with middleware, routes, and error handling
  */
 
-import express, { Application, Request, Response } from 'express';
+// Load environment variables first (before any imports that might use them)
+import path from 'path';
+import dotenv from 'dotenv';
+
+// Explicitly specify .env file path (works regardless of where the process is run from)
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+import express from 'express';
+import type { Application, Request, Response } from 'express';
 import { setupMiddleware } from '@/middleware';
 import { errorHandler, notFoundHandler } from '@/middleware/errorHandler.middleware';
 import apiRoutes from '@/routes';

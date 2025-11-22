@@ -105,6 +105,16 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     const client = await clientDb.client.findUnique({
       where: { id },
+      include: {
+        _count: {
+          select: {
+            projects: true,
+            products: true,
+            invoices: true,
+            expenses: true,
+          },
+        },
+      },
     });
 
     if (!client) {
@@ -184,6 +194,30 @@ router.post('/', async (req: Request, res: Response) => {
         message: 'Client name is required',
       });
       return;
+    }
+
+    // Validate hourlyRate if provided
+    if (hourlyRate !== undefined && hourlyRate !== null) {
+      const rate = parseFloat(hourlyRate);
+      if (isNaN(rate) || rate < 0) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Hourly rate must be a positive number',
+        });
+        return;
+      }
+    }
+
+    // Validate discountPercentage if provided
+    if (discountPercentage !== undefined && discountPercentage !== null) {
+      const discount = parseFloat(discountPercentage);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Discount percentage must be between 0 and 100',
+        });
+        return;
+      }
     }
 
     // Generate slug from name
@@ -419,16 +453,57 @@ router.put('/:id', async (req: Request, res: Response) => {
       return;
     }
 
+    // Validate hourlyRate if provided
+    if (hourlyRate !== undefined && hourlyRate !== null) {
+      const rate = parseFloat(hourlyRate);
+      if (isNaN(rate) || rate < 0) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Hourly rate must be a positive number',
+        });
+        return;
+      }
+    }
+
+    // Validate discountPercentage if provided
+    if (discountPercentage !== undefined && discountPercentage !== null) {
+      const discount = parseFloat(discountPercentage);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Discount percentage must be between 0 and 100',
+        });
+        return;
+      }
+    }
+
     // Build update data (map form fields to schema fields)
     const updateData: any = {};
 
     if (name !== undefined && name.trim()) {
       updateData.name = name.trim();
-      updateData.slug = name
+      const newSlug = name
         .toLowerCase()
         .trim()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
+
+      // Check if slug is being changed and if new slug already exists (for a different client)
+      if (newSlug !== existingClient.slug) {
+        const existingSlug = await clientDb.client.findUnique({
+          where: { slug: newSlug },
+        });
+
+        if (existingSlug && existingSlug.id !== id) {
+          res.status(400).json({
+            status: 'error',
+            message: 'A client with this name already exists',
+          });
+          return;
+        }
+      }
+
+      updateData.slug = newSlug;
     }
 
     if (companyName !== undefined) updateData.companyName = companyName?.trim() || null;
@@ -537,7 +612,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Business client deleted successfully',
+      message: 'Business client deactivated successfully',
       data: client,
     });
   } catch (error) {
@@ -545,6 +620,118 @@ router.delete('/:id', async (req: Request, res: Response) => {
     res.status(500).json({
       status: 'error',
       message: 'Failed to delete business client',
+    });
+  }
+});
+
+/**
+ * POST /api/v1/admin/clients/:id/reactivate
+ * Reactivate a soft-deleted business client
+ */
+router.post('/:id/reactivate', async (req: Request, res: Response) => {
+  try {
+    if (!req.clientDb) {
+      res.status(500).json({
+        status: 'error',
+        message: 'Tenant database not available',
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const clientDb = req.clientDb as ClientPrismaClient;
+
+    // Check if client exists
+    const existingClient = await clientDb.client.findUnique({
+      where: { id },
+    });
+
+    if (!existingClient) {
+      res.status(404).json({
+        status: 'error',
+        message: 'Business client not found',
+      });
+      return;
+    }
+
+    // Check if already active
+    if (existingClient.isActive) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Business client is already active',
+      });
+      return;
+    }
+
+    // Reactivate client
+    const client = await clientDb.client.update({
+      where: { id },
+      data: {
+        isActive: true,
+        deletedAt: null,
+      },
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Business client reactivated successfully',
+      data: client,
+    });
+  } catch (error) {
+    console.error('Error reactivating business client:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to reactivate business client',
+    });
+  }
+});
+
+/**
+ * GET /api/v1/admin/clients/:id/stats
+ * Get business client statistics
+ */
+router.get('/:id/stats', async (req: Request, res: Response) => {
+  try {
+    if (!req.clientDb) {
+      res.status(500).json({
+        status: 'error',
+        message: 'Tenant database not available',
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const clientDb = req.clientDb as ClientPrismaClient;
+
+    // Check if client exists
+    const existingClient = await clientDb.client.findUnique({
+      where: { id },
+    });
+
+    if (!existingClient) {
+      res.status(404).json({
+        status: 'error',
+        message: 'Business client not found',
+      });
+      return;
+    }
+
+    // For now, return basic counts - can be extended with more stats
+    // These would need to be added to the client schema first
+    const stats = {
+      userCount: 0,
+      activeUserCount: 0,
+    };
+
+    res.status(200).json({
+      status: 'success',
+      data: stats,
+    });
+  } catch (error) {
+    console.error('Error getting business client stats:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to get business client statistics',
     });
   }
 });
