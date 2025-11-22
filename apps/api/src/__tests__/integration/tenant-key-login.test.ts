@@ -42,127 +42,132 @@ describe('Tenant Key Login Integration Tests', () => {
     if (dbAvailable) {
       prisma = new MainPrismaClient();
 
-      // Create test customers with unique database names
-      const timestamp = Date.now();
-      testTenant1 = await prisma.tenant.create({
-        data: {
-          name: 'Test Customer 1',
-          slug: `test-customer-1-${timestamp}`,
-          tenantKey: `TEST-CUST-001-${timestamp}`,
-          databaseName: `freetimechat_test_tenant_1_${timestamp}`,
-          databaseHost: 'localhost',
-          isActive: true,
-        },
-      });
-
-      testTenant2 = await prisma.tenant.create({
-        data: {
-          name: 'Test Customer 2',
-          slug: `test-customer-2-${timestamp}`,
-          tenantKey: `TEST-CUST-002-${timestamp}`,
-          databaseName: `freetimechat_test_tenant_2_${timestamp}`,
-          databaseHost: 'localhost',
-          isActive: true,
-        },
-      });
-
-      // Create test admin user (no customer assignment)
-      const adminPassword = 'AdminPass123!';
-      const adminHash = await bcrypt.hash(adminPassword, 10);
-
-      const adminUserRecord = await prisma.user.create({
-        data: {
-          email: 'test-admin@freetimechat.test',
-          passwordHash: adminHash,
-          name: 'Test Admin',
-          isActive: true,
-        },
-      });
-
-      testAdminUser = {
-        id: adminUserRecord.id,
-        email: adminUserRecord.email,
-        password: adminPassword,
-      };
-
-      // Assign admin role to admin user
-      const adminRole = await prisma.role.findFirst({
-        where: { name: 'admin' },
-      });
-
-      if (adminRole) {
-        await prisma.userRole.create({
+      try {
+        // Create test customers with unique database names
+        const timestamp = Date.now();
+        testTenant1 = await prisma.tenant.create({
           data: {
-            userId: adminUserRecord.id,
-            roleId: adminRole.id,
+            name: 'Test Customer 1',
+            slug: `test-customer-1-${timestamp}`,
+            tenantKey: `TEST-CUST-001-${timestamp}`,
+            databaseName: `freetimechat_test_tenant_1_${timestamp}`,
+            databaseHost: 'localhost',
+            isActive: true,
           },
         });
-      }
 
-      // Create test user 1 (belongs to customer 1)
-      const user1Password = 'UserPass123!';
-      const user1Hash = await bcrypt.hash(user1Password, 10);
-
-      const user1Record = await prisma.user.create({
-        data: {
-          email: 'test-user1@freetimechat.test',
-          passwordHash: user1Hash,
-          name: 'Test User 1',
-          tenantId: testTenant1.id,
-          isActive: true,
-        },
-      });
-
-      testUser1 = {
-        id: user1Record.id,
-        email: user1Record.email,
-        password: user1Password,
-      };
-
-      // Assign user role to user 1
-      const userRole = await prisma.role.findFirst({
-        where: { name: 'user' },
-      });
-
-      if (userRole) {
-        await prisma.userRole.create({
+        testTenant2 = await prisma.tenant.create({
           data: {
-            userId: user1Record.id,
-            roleId: userRole.id,
+            name: 'Test Customer 2',
+            slug: `test-customer-2-${timestamp}`,
+            tenantKey: `TEST-CUST-002-${timestamp}`,
+            databaseName: `freetimechat_test_tenant_2_${timestamp}`,
+            databaseHost: 'localhost',
+            isActive: true,
           },
         });
-      }
 
-      // Create test user 2 (belongs to customer 2)
-      const user2Password = 'UserPass456!';
-      const user2Hash = await bcrypt.hash(user2Password, 10);
+        // Create test admin user (no customer assignment)
+        const adminPassword = 'AdminPass123!';
+        const adminHash = await bcrypt.hash(adminPassword, 10);
 
-      const user2Record = await prisma.user.create({
-        data: {
-          email: 'test-user2@freetimechat.test',
-          passwordHash: user2Hash,
-          name: 'Test User 2',
-          tenantId: testTenant2.id,
-          isActive: true,
-        },
-      });
-
-      testUser2 = {
-        id: user2Record.id,
-        email: user2Record.email,
-        password: user2Password,
-      };
-
-      if (userRole) {
-        await prisma.userRole.create({
+        const adminUserRecord = await prisma.user.create({
           data: {
-            userId: user2Record.id,
-            roleId: userRole.id,
+            email: 'test-admin@freetimechat.test',
+            passwordHash: adminHash,
+            name: 'Test Admin',
+            isActive: true,
           },
         });
-      }
 
-      console.log('✅ Test data created successfully');
+        testAdminUser = {
+          id: adminUserRecord.id,
+          email: adminUserRecord.email,
+          password: adminPassword,
+        };
+
+        // Assign admin role to admin user
+        const adminRole = await prisma.role.findFirst({
+          where: { name: 'admin' },
+        });
+
+        if (adminRole) {
+          await prisma.userRole.create({
+            data: {
+              userId: adminUserRecord.id,
+              roleId: adminRole.id,
+            },
+          });
+        }
+
+        // Create test user 1 (belongs to customer 1)
+        const user1Password = 'UserPass123!';
+        const user1Hash = await bcrypt.hash(user1Password, 10);
+
+        const user1Record = await prisma.user.create({
+          data: {
+            email: 'test-user1@freetimechat.test',
+            passwordHash: user1Hash,
+            name: 'Test User 1',
+            tenantId: testTenant1.id,
+            isActive: true,
+          },
+        });
+
+        testUser1 = {
+          id: user1Record.id,
+          email: user1Record.email,
+          password: user1Password,
+        };
+
+        // Assign user role to user 1
+        const userRole = await prisma.role.findFirst({
+          where: { name: 'user' },
+        });
+
+        if (userRole) {
+          await prisma.userRole.create({
+            data: {
+              userId: user1Record.id,
+              roleId: userRole.id,
+            },
+          });
+        }
+
+        // Create test user 2 (belongs to customer 2)
+        const user2Password = 'UserPass456!';
+        const user2Hash = await bcrypt.hash(user2Password, 10);
+
+        const user2Record = await prisma.user.create({
+          data: {
+            email: 'test-user2@freetimechat.test',
+            passwordHash: user2Hash,
+            name: 'Test User 2',
+            tenantId: testTenant2.id,
+            isActive: true,
+          },
+        });
+
+        testUser2 = {
+          id: user2Record.id,
+          email: user2Record.email,
+          password: user2Password,
+        };
+
+        if (userRole) {
+          await prisma.userRole.create({
+            data: {
+              userId: user2Record.id,
+              roleId: userRole.id,
+            },
+          });
+        }
+
+        console.log('✅ Test data created successfully');
+      } catch (error) {
+        console.error('Setup failed:', error);
+        throw error;
+      }
     }
   });
 
@@ -260,7 +265,7 @@ describe('Tenant Key Login Integration Tests', () => {
         return;
       }
 
-      // Admin can provide any tenantKey and still login
+      // Admin with invalid tenantKey should get 401 for invalid tenant key
       const response = await request(app)
         .post('/api/v1/auth/login')
         .send({
@@ -268,9 +273,10 @@ describe('Tenant Key Login Integration Tests', () => {
           password: testAdminUser.password,
           tenantKey: 'INVALID-KEY',
         })
-        .expect(500); // Will fail because tenantKey doesn't exist
+        .expect(401); // Invalid tenant key returns 401
 
       expect(response.body.status).toBe('error');
+      expect(response.body.message).toContain('Invalid tenant key');
     });
   });
 
@@ -287,10 +293,10 @@ describe('Tenant Key Login Integration Tests', () => {
           email: testUser1.email,
           password: testUser1.password,
         })
-        .expect(500);
+        .expect(400); // Tenant key required returns 400
 
       expect(response.body.status).toBe('error');
-      expect(response.body.message).toContain('failed');
+      expect(response.body.message).toContain('Tenant key is required');
     });
 
     it('should allow non-admin user to login with correct tenantKey', async () => {
@@ -328,10 +334,10 @@ describe('Tenant Key Login Integration Tests', () => {
           password: testUser1.password,
           tenantKey: 'INVALID-CUSTOMER-KEY',
         })
-        .expect(500);
+        .expect(401); // Invalid tenant key returns 401
 
       expect(response.body.status).toBe('error');
-      expect(response.body.message).toContain('failed');
+      expect(response.body.message).toContain('Invalid tenant key');
     });
 
     it('should reject non-admin user login with wrong tenantKey (belongs to different customer)', async () => {
@@ -348,10 +354,10 @@ describe('Tenant Key Login Integration Tests', () => {
           password: testUser1.password,
           tenantKey: testTenant2.tenantKey, // Wrong tenant key
         })
-        .expect(500);
+        .expect(403); // Access denied returns 403
 
       expect(response.body.status).toBe('error');
-      expect(response.body.message).toContain('failed');
+      expect(response.body.message).toContain('Access denied');
     });
 
     it('should allow user 2 to login with their correct tenantKey', async () => {
