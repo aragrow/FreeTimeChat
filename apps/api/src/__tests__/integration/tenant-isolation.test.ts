@@ -51,13 +51,14 @@ describe('Multi-Tenant Isolation Integration Tests', () => {
     clientPrisma = new ClientPrismaClient();
 
     try {
-      // Create two test clients
+      // Create two test clients with unique database names
+      const timestamp = Date.now();
       const client1 = await mainPrisma.tenant.create({
         data: {
-          tenantKey: 'TENANT-1-TEST',
+          tenantKey: `TENANT-1-TEST-${timestamp}`,
           name: 'Test Client 1',
-          slug: `test-client-1-${Date.now()}`,
-          databaseName: 'freetimechat_client_dev',
+          slug: `test-client-1-${timestamp}`,
+          databaseName: `freetimechat_test_client_1_${timestamp}`,
           isActive: true,
         },
       });
@@ -65,10 +66,10 @@ describe('Multi-Tenant Isolation Integration Tests', () => {
 
       const client2 = await mainPrisma.tenant.create({
         data: {
-          tenantKey: 'TENANT-2-TEST',
+          tenantKey: `TENANT-2-TEST-${timestamp}`,
           name: 'Test Client 2',
-          slug: `test-client-2-${Date.now()}`,
-          databaseName: 'freetimechat_client_dev',
+          slug: `test-client-2-${timestamp}`,
+          databaseName: `freetimechat_test_client_2_${timestamp}`,
           isActive: true,
         },
       });

@@ -42,13 +42,14 @@ describe('Tenant Key Login Integration Tests', () => {
     if (dbAvailable) {
       prisma = new MainPrismaClient();
 
-      // Create test customers
+      // Create test customers with unique database names
+      const timestamp = Date.now();
       testTenant1 = await prisma.tenant.create({
         data: {
           name: 'Test Customer 1',
-          slug: 'test-customer-1',
-          tenantKey: 'TEST-CUST-001',
-          databaseName: 'freetimechat_customer_dev',
+          slug: `test-customer-1-${timestamp}`,
+          tenantKey: `TEST-CUST-001-${timestamp}`,
+          databaseName: `freetimechat_test_tenant_1_${timestamp}`,
           databaseHost: 'localhost',
           isActive: true,
         },
@@ -57,9 +58,9 @@ describe('Tenant Key Login Integration Tests', () => {
       testTenant2 = await prisma.tenant.create({
         data: {
           name: 'Test Customer 2',
-          slug: 'test-customer-2',
-          tenantKey: 'TEST-CUST-002',
-          databaseName: 'freetimechat_customer_dev',
+          slug: `test-customer-2-${timestamp}`,
+          tenantKey: `TEST-CUST-002-${timestamp}`,
+          databaseName: `freetimechat_test_tenant_2_${timestamp}`,
           databaseHost: 'localhost',
           isActive: true,
         },

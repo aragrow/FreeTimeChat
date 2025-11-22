@@ -127,6 +127,7 @@ describe('Authentication Flow Integration Tests', () => {
         .send({
           email: testUser.email,
           password: testUser.password,
+          tenantKey: 'DEFAULT-TENANT', // Required for non-admin users
         })
         .expect(200);
 
@@ -147,6 +148,7 @@ describe('Authentication Flow Integration Tests', () => {
         .send({
           email: testUser.email,
           password: 'WrongPassword123!',
+          tenantKey: 'DEFAULT-TENANT', // Required for non-admin users
         })
         .expect(401);
 

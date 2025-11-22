@@ -42,17 +42,16 @@ export async function attachClientDatabase(
       tenantId = req.user.tenantId;
     }
 
-    if (!tenantId) {
-      res.status(400).json({
-        status: 'error',
-        message:
-          'Tenant ID required. Admins can provide X-Tenant-ID header or tenantId query parameter.',
-      });
-      return;
-    }
-
     // Get database service
     const databaseService = getDatabaseService();
+
+    // Skip client database attachment for system admins without a specific tenant
+    if (!tenantId || tenantId === 'system') {
+      // Attach only main database for admin operations
+      req.mainDb = databaseService.getMainDatabase();
+      next();
+      return;
+    }
 
     // Get client database connection
     try {
