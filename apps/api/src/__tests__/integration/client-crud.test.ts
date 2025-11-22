@@ -28,12 +28,13 @@ describe('Client CRUD Integration Tests', () => {
       await cleanupTestDatabase();
       await seedTestDatabase();
 
-      // Login as admin to get access token
+      // Login as tenant admin to get access token
       const loginResponse = await request(app)
         .post('/api/v1/auth/login')
         .send({
-          email: 'admin@freetimechat.local',
-          password: '0pen@2025',
+          email: '000002@aragrow-llc.local',
+          password: 'Open@2025',
+          tenantKey: 'ARAGROW-LLC',
         })
         .expect(200);
 
