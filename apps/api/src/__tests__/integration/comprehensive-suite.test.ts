@@ -161,7 +161,7 @@ beforeAll(async () => {
       slug: 'test-tenant-1',
       tenantKey: 'TEST-1',
       databaseName: 'freetimechat_test_tenant_1',
-      databaseHost: 'localhost',
+      databaseHost: '127.0.0.1',
       isActive: true,
     },
   });
@@ -174,7 +174,7 @@ beforeAll(async () => {
       slug: 'test-tenant-2',
       tenantKey: 'TEST-2',
       databaseName: 'freetimechat_test_tenant_2',
-      databaseHost: 'localhost',
+      databaseHost: '127.0.0.1',
       isActive: true,
     },
   });
@@ -253,6 +253,14 @@ async function createTestUser(
   // Track the created user
   trackEntity('USER', userId, { email, name, tenantId: tenantId || undefined });
 
+  // If tenantId provided, update the user's tenantId (for test purposes)
+  if (tenantId) {
+    await prismaMain.user.update({
+      where: { id: userId },
+      data: { tenantId },
+    });
+  }
+
   // Assign role
   await prismaMain.userRole.create({
     data: {
@@ -262,10 +270,25 @@ async function createTestUser(
   });
 
   // Login to get token
-  const loginResponse = await request(app).post('/api/v1/auth/login').send({
-    email,
-    password: 'TestPassword123!',
-  });
+  // For non-admin users, we need to provide the tenantKey
+  let tenantKey: string | undefined;
+  if (tenantId) {
+    const tenant = await prismaMain.tenant.findUnique({
+      where: { id: tenantId },
+      select: { tenantKey: true },
+    });
+    if (tenant) {
+      tenantKey = tenant.tenantKey;
+    }
+  }
+
+  const loginResponse = await request(app)
+    .post('/api/v1/auth/login')
+    .send({
+      email,
+      password: 'TestPassword123!',
+      ...(tenantKey && { tenantKey }),
+    });
 
   return {
     token: loginResponse.body.data.accessToken,
