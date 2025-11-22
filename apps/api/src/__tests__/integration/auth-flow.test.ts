@@ -234,8 +234,9 @@ describe('Authentication Flow Integration Tests', () => {
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.email).toBe(testUser.email);
-      expect(response.body.data.sub).toBeDefined(); // JWT includes sub (user ID)
-      expect(response.body.data.role).toBeDefined(); // JWT includes role
+      expect(response.body.data.id).toBeDefined(); // User ID
+      expect(response.body.data.role).toBeDefined(); // Role from JWT
+      expect(response.body.data.roles).toBeDefined(); // Roles array from JWT
     });
 
     it('should reject request without token', async () => {
