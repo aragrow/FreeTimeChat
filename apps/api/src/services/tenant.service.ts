@@ -24,6 +24,9 @@ export interface CreateTenantData {
   billingZip?: string;
   billingCountry?: string;
   billingEmail?: string;
+  language?: string;
+  dateFormat?: string;
+  timeZone?: string;
   isActive?: boolean;
 }
 
@@ -42,6 +45,9 @@ export interface UpdateTenantData {
   billingZip?: string;
   billingCountry?: string;
   billingEmail?: string;
+  language?: string;
+  dateFormat?: string;
+  timeZone?: string;
   isActive?: boolean;
 }
 
@@ -274,6 +280,9 @@ export class TenantService {
         billingZip: data.billingZip,
         billingCountry: data.billingCountry,
         billingEmail: data.billingEmail,
+        language: data.language,
+        dateFormat: data.dateFormat,
+        timeZone: data.timeZone,
       },
       select: {
         id: true,
