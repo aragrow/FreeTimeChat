@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
-import { attachClientDatabase } from '../middleware/client-database.middleware';
+import { attachTenantDatabase } from '../middleware/tenant-database.middleware';
 import { validate } from '../middleware/validation.middleware';
 import { TaskService } from '../services/task.service';
 import {
@@ -26,7 +26,7 @@ import type { Request, Response } from 'express';
 const router = Router();
 
 // All routes require authentication and client database
-router.use(authenticateJWT, attachClientDatabase);
+router.use(authenticateJWT, attachTenantDatabase);
 
 /**
  * POST /api/v1/tasks
@@ -34,14 +34,14 @@ router.use(authenticateJWT, attachClientDatabase);
  */
 router.post('/', validate(createTaskSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
     const { projectId, title, description, status, priority, assignedToUserId, dueDate } = req.body;
 
-    const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+    const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
     const task = await taskService.create({
       projectId,
       title,
@@ -72,7 +72,7 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response)
  */
 router.get('/', validate(listTasksSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -92,7 +92,7 @@ router.get('/', validate(listTasksSchema), async (req: Request, res: Response) =
 
     const skip = (page - 1) * limit;
 
-    const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+    const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
     const [tasks, total] = await Promise.all([
       taskService.list({ skip, take: limit, projectId, status, priority, assignedToUserId }),
       taskService.count(projectId, status, priority, assignedToUserId),
@@ -123,7 +123,7 @@ router.get('/', validate(listTasksSchema), async (req: Request, res: Response) =
  */
 router.get('/my-tasks', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -136,7 +136,7 @@ router.get('/my-tasks', async (req: Request, res: Response) => {
       | 'CANCELLED'
       | undefined;
 
-    const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+    const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
     const tasks = await taskService.getByAssignedUser(req.user.sub, status);
 
     res.json({
@@ -158,12 +158,12 @@ router.get('/my-tasks', async (req: Request, res: Response) => {
  */
 router.get('/overdue', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
-    const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+    const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
     const tasks = await taskService.getOverdue();
 
     res.json({
@@ -185,14 +185,14 @@ router.get('/overdue', async (req: Request, res: Response) => {
  */
 router.get('/:id', validate(getTaskByIdSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+    const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
     const task = await taskService.getById(id);
 
     if (!task) {
@@ -222,7 +222,7 @@ router.get('/:id', validate(getTaskByIdSchema), async (req: Request, res: Respon
  */
 router.patch('/:id', validate(updateTaskSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -230,7 +230,7 @@ router.patch('/:id', validate(updateTaskSchema), async (req: Request, res: Respo
     const { id } = req.params;
     const { title, description, status, priority, assignedToUserId, dueDate } = req.body;
 
-    const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+    const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
 
     // Check if task exists
     const existing = await taskService.getById(id);
@@ -274,7 +274,7 @@ router.patch(
   validate(updateTaskStatusSchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb) {
+      if (!req.tenantDb) {
         res.status(500).json({ status: 'error', message: 'Client database not available' });
         return;
       }
@@ -282,7 +282,7 @@ router.patch(
       const { id } = req.params;
       const { status } = req.body;
 
-      const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+      const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
 
       // Check if task exists
       const existing = await taskService.getById(id);
@@ -320,7 +320,7 @@ router.patch(
   validate(updateTaskPrioritySchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb) {
+      if (!req.tenantDb) {
         res.status(500).json({ status: 'error', message: 'Client database not available' });
         return;
       }
@@ -328,7 +328,7 @@ router.patch(
       const { id } = req.params;
       const { priority } = req.body;
 
-      const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+      const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
 
       // Check if task exists
       const existing = await taskService.getById(id);
@@ -363,7 +363,7 @@ router.patch(
  */
 router.post('/:id/assign', validate(assignTaskSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -371,7 +371,7 @@ router.post('/:id/assign', validate(assignTaskSchema), async (req: Request, res:
     const { id } = req.params;
     const { userId } = req.body;
 
-    const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+    const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
 
     // Check if task exists
     const existing = await taskService.getById(id);
@@ -405,14 +405,14 @@ router.post('/:id/assign', validate(assignTaskSchema), async (req: Request, res:
  */
 router.post('/:id/unassign', validate(unassignTaskSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+    const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
 
     // Check if task exists
     const existing = await taskService.getById(id);
@@ -446,14 +446,14 @@ router.post('/:id/unassign', validate(unassignTaskSchema), async (req: Request, 
  */
 router.delete('/:id', validate(deleteTaskSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const taskService = new TaskService(req.clientDb as ClientPrismaClient);
+    const taskService = new TaskService(req.tenantDb as ClientPrismaClient);
 
     // Check if task exists
     const existing = await taskService.getById(id);

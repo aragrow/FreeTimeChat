@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
-import { attachClientDatabase } from '../middleware/client-database.middleware';
+import { attachTenantDatabase } from '../middleware/tenant-database.middleware';
 import { validate } from '../middleware/validation.middleware';
 import { OvertimeCalculationService } from '../services/overtime-calculation.service';
 import { TimeEntryService } from '../services/time-entry.service';
@@ -30,7 +30,7 @@ import type { Request, Response } from 'express';
 const router = Router();
 
 // All routes require authentication and client database
-router.use(authenticateJWT, attachClientDatabase);
+router.use(authenticateJWT, attachTenantDatabase);
 
 /**
  * POST /api/v1/time-entries
@@ -38,7 +38,7 @@ router.use(authenticateJWT, attachClientDatabase);
  */
 router.post('/', validate(createTimeEntrySchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -50,7 +50,7 @@ router.post('/', validate(createTimeEntrySchema), async (req: Request, res: Resp
       return;
     }
 
-    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.tenantDb as ClientPrismaClient, req.mainDb!);
 
     // Check for overlaps if endTime is provided
     if (endTime) {
@@ -97,7 +97,7 @@ router.post('/', validate(createTimeEntrySchema), async (req: Request, res: Resp
  */
 router.post('/start', validate(startTimeEntrySchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -109,7 +109,7 @@ router.post('/start', validate(startTimeEntrySchema), async (req: Request, res: 
       return;
     }
 
-    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.tenantDb as ClientPrismaClient, req.mainDb!);
     const timeEntry = await timeEntryService.start({
       userId: req.user.sub,
       projectId,
@@ -136,14 +136,14 @@ router.post('/start', validate(startTimeEntrySchema), async (req: Request, res: 
  */
 router.post('/:id/stop', validate(stopTimeEntrySchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.tenantDb as ClientPrismaClient, req.mainDb!);
     const timeEntry = await timeEntryService.stop(id);
 
     res.json({
@@ -166,12 +166,12 @@ router.post('/:id/stop', validate(stopTimeEntrySchema), async (req: Request, res
  */
 router.get('/active', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
-    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.tenantDb as ClientPrismaClient, req.mainDb!);
     const activeEntry = await timeEntryService.findActiveByUserId(req.user.sub);
 
     res.json({
@@ -193,7 +193,7 @@ router.get('/active', async (req: Request, res: Response) => {
  */
 router.get('/', validate(listTimeEntriesSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -210,7 +210,7 @@ router.get('/', validate(listTimeEntriesSchema), async (req: Request, res: Respo
 
     const skip = (page - 1) * limit;
 
-    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.tenantDb as ClientPrismaClient, req.mainDb!);
     const [timeEntries, total] = await Promise.all([
       timeEntryService.list({
         skip,
@@ -249,14 +249,14 @@ router.get('/', validate(listTimeEntriesSchema), async (req: Request, res: Respo
  */
 router.get('/:id', validate(getTimeEntryByIdSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.tenantDb as ClientPrismaClient, req.mainDb!);
     const timeEntry = await timeEntryService.getById(id);
 
     if (!timeEntry) {
@@ -286,7 +286,7 @@ router.get('/:id', validate(getTimeEntryByIdSchema), async (req: Request, res: R
  */
 router.patch('/:id', validate(updateTimeEntrySchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -294,7 +294,7 @@ router.patch('/:id', validate(updateTimeEntrySchema), async (req: Request, res: 
     const { id } = req.params;
     const { description, startTime, endTime, duration } = req.body;
 
-    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.tenantDb as ClientPrismaClient, req.mainDb!);
 
     // Check if time entry exists
     const existing = await timeEntryService.getById(id);
@@ -351,7 +351,7 @@ router.patch('/:id', validate(updateTimeEntrySchema), async (req: Request, res: 
  */
 router.delete('/:id', validate(deleteTimeEntrySchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -359,7 +359,7 @@ router.delete('/:id', validate(deleteTimeEntrySchema), async (req: Request, res:
     const { id } = req.params;
     const permanent = req.query.permanent === 'true';
 
-    const timeEntryService = new TimeEntryService(req.clientDb as ClientPrismaClient, req.mainDb!);
+    const timeEntryService = new TimeEntryService(req.tenantDb as ClientPrismaClient, req.mainDb!);
 
     // Check if time entry exists
     const existing = await timeEntryService.getById(id);
@@ -403,7 +403,7 @@ router.post(
   validate(restoreTimeEntrySchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb) {
+      if (!req.tenantDb) {
         res.status(500).json({ status: 'error', message: 'Client database not available' });
         return;
       }
@@ -411,7 +411,7 @@ router.post(
       const { id } = req.params;
 
       const timeEntryService = new TimeEntryService(
-        req.clientDb as ClientPrismaClient,
+        req.tenantDb as ClientPrismaClient,
         req.mainDb!
       );
       const restored = await timeEntryService.restore(id);
@@ -440,7 +440,7 @@ router.get(
   validate(totalHoursReportSchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb || !req.user) {
+      if (!req.tenantDb || !req.user) {
         res.status(500).json({ status: 'error', message: 'Client database not available' });
         return;
       }
@@ -457,7 +457,7 @@ router.get(
       }
 
       const timeEntryService = new TimeEntryService(
-        req.clientDb as ClientPrismaClient,
+        req.tenantDb as ClientPrismaClient,
         req.mainDb!
       );
       const totalHours = await timeEntryService.getTotalHours(req.user.sub, startDate, endDate);
@@ -490,7 +490,7 @@ router.get(
   validate(overtimeSummarySchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb || !req.mainDb || !req.user) {
+      if (!req.tenantDb || !req.mainDb || !req.user) {
         res.status(500).json({ status: 'error', message: 'Database not available' });
         return;
       }
@@ -498,7 +498,7 @@ router.get(
       const startDate = new Date(req.query.startDate as string);
       const endDate = new Date(req.query.endDate as string);
 
-      const overtimeService = new OvertimeCalculationService(req.clientDb as ClientPrismaClient);
+      const overtimeService = new OvertimeCalculationService(req.tenantDb as ClientPrismaClient);
       const summary = await overtimeService.getOvertimeSummary(req.user.sub, startDate, endDate);
 
       res.json({
@@ -529,7 +529,7 @@ router.post(
   validate(recalculateWeekOvertimeSchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb || !req.mainDb || !req.user) {
+      if (!req.tenantDb || !req.mainDb || !req.user) {
         res.status(500).json({ status: 'error', message: 'Database not available' });
         return;
       }
@@ -562,7 +562,7 @@ router.post(
 
       const compensationType = user.compensationType || 'HOURLY';
 
-      const overtimeService = new OvertimeCalculationService(req.clientDb as ClientPrismaClient);
+      const overtimeService = new OvertimeCalculationService(req.tenantDb as ClientPrismaClient);
       const updatedCount = await overtimeService.recalculateWeekOvertime(
         userId,
         weekStart,
@@ -597,7 +597,7 @@ router.get(
   validate(billableHoursSummarySchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb || !req.mainDb || !req.user) {
+      if (!req.tenantDb || !req.mainDb || !req.user) {
         res.status(500).json({ status: 'error', message: 'Database not available' });
         return;
       }
@@ -608,7 +608,7 @@ router.get(
       const projectId = req.query.projectId as string;
 
       // Get time entries with billability information
-      const entries = await (req.clientDb as ClientPrismaClient).timeEntry.findMany({
+      const entries = await (req.tenantDb as ClientPrismaClient).timeEntry.findMany({
         where: {
           userId,
           ...(projectId && { projectId }),

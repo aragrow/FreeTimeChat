@@ -21,12 +21,12 @@ const router = Router();
  */
 router.get('/categories', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Tenant database not available' });
       return;
     }
 
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
     const includeInactive = req.query.includeInactive === 'true';
     const categories = await expenseService.listCategories(includeInactive);
 
@@ -46,7 +46,7 @@ router.get('/categories', async (req: Request, res: Response) => {
  */
 router.post('/categories', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Tenant database not available' });
       return;
     }
@@ -58,7 +58,7 @@ router.post('/categories', async (req: Request, res: Response) => {
       return;
     }
 
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
     const category = await expenseService.createCategory({
       name: name.trim(),
       description: description?.trim(),
@@ -83,7 +83,7 @@ router.post('/categories', async (req: Request, res: Response) => {
  */
 router.put('/categories/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Tenant database not available' });
       return;
     }
@@ -91,7 +91,7 @@ router.put('/categories/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, description, icon, color } = req.body;
 
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
     const category = await expenseService.updateCategory(id, {
       name: name?.trim(),
       description: description?.trim(),
@@ -116,13 +116,13 @@ router.put('/categories/:id', async (req: Request, res: Response) => {
  */
 router.delete('/categories/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Tenant database not available' });
       return;
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
 
     await expenseService.deleteCategory(id);
 
@@ -146,12 +146,12 @@ router.delete('/categories/:id', async (req: Request, res: Response) => {
  */
 router.post('/categories/seed', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Tenant database not available' });
       return;
     }
 
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
     await expenseService.seedCategories();
 
     res.status(200).json({
@@ -172,7 +172,7 @@ router.post('/categories/seed', async (req: Request, res: Response) => {
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Tenant database not available' });
       return;
     }
@@ -199,7 +199,7 @@ router.get('/', async (req: Request, res: Response) => {
     const orderBy = (req.query.orderBy as 'date' | 'amount' | 'created') || 'date';
     const orderDir = (req.query.orderDir as 'asc' | 'desc') || 'desc';
 
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
     const { expenses, total } = await expenseService.list({
       filter,
       skip,
@@ -232,7 +232,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/stats', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Tenant database not available' });
       return;
     }
@@ -243,7 +243,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     if (req.query.clientId) filter.clientId = req.query.clientId as string;
     if (req.query.projectId) filter.projectId = req.query.projectId as string;
 
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
     const stats = await expenseService.getStats(filter);
 
     res.status(200).json({
@@ -262,13 +262,13 @@ router.get('/stats', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Tenant database not available' });
       return;
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
     const expense = await expenseService.findById(id);
 
     if (!expense) {
@@ -292,7 +292,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Tenant database or user not available' });
       return;
     }
@@ -329,7 +329,7 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
     const expense = await expenseService.createExpense(
       {
         description: description.trim(),
@@ -368,13 +368,13 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Tenant database or user not available' });
       return;
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
 
     // Check if expense exists
     const existing = await expenseService.findById(id);
@@ -440,13 +440,13 @@ router.put('/:id', async (req: Request, res: Response) => {
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Tenant database not available' });
       return;
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
 
     const existing = await expenseService.findById(id);
     if (!existing) {
@@ -474,13 +474,13 @@ router.delete('/:id', async (req: Request, res: Response) => {
  */
 router.post('/:id/approve', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Tenant database or user not available' });
       return;
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
 
     const expense = await expenseService.approve(id, req.user.sub);
 
@@ -501,14 +501,14 @@ router.post('/:id/approve', async (req: Request, res: Response) => {
  */
 router.post('/:id/reject', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Tenant database or user not available' });
       return;
     }
 
     const { id } = req.params;
     const { reason } = req.body;
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
 
     const expense = await expenseService.reject(id, req.user.sub, reason);
 
@@ -529,13 +529,13 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
  */
 router.post('/:id/reimburse', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Tenant database or user not available' });
       return;
     }
 
     const { id } = req.params;
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
 
     const expense = await expenseService.markReimbursed(id, req.user.sub);
 
@@ -558,7 +558,7 @@ router.post('/:id/reimburse', async (req: Request, res: Response) => {
  */
 router.post('/:id/attachments', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Tenant database or user not available' });
       return;
     }
@@ -581,7 +581,7 @@ router.post('/:id/attachments', async (req: Request, res: Response) => {
       }
 
       const { id } = req.params;
-      const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+      const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
 
       // Verify expense exists
       const expense = await expenseService.findById(id);
@@ -631,13 +631,13 @@ router.post('/:id/attachments', async (req: Request, res: Response) => {
  */
 router.delete('/:id/attachments/:attachmentId', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Tenant database not available' });
       return;
     }
 
     const { attachmentId } = req.params;
-    const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+    const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
 
     // Get attachment to delete file
     const attachments = await expenseService.getAttachments(req.params.id);
@@ -669,7 +669,7 @@ router.delete('/:id/attachments/:attachmentId', async (req: Request, res: Respon
  */
 router.post('/parse-receipt', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Tenant database or user not available' });
       return;
     }
@@ -706,7 +706,7 @@ router.post('/parse-receipt', async (req: Request, res: Response) => {
 
         // Match category if found
         if (parsedData.category) {
-          const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+          const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
           const categories = await expenseService.listCategories();
           const categoryId = await receiptParser.matchCategory(parsedData.category, categories);
           if (categoryId) {
@@ -744,7 +744,7 @@ router.post('/parse-receipt', async (req: Request, res: Response) => {
  */
 router.post('/create-from-receipt', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Tenant database or user not available' });
       return;
     }
@@ -771,7 +771,7 @@ router.post('/create-from-receipt', async (req: Request, res: Response) => {
       }
 
       try {
-        const expenseService = getExpenseService(req.clientDb as ClientPrismaClient);
+        const expenseService = getExpenseService(req.tenantDb as ClientPrismaClient);
         const receiptParser = getReceiptParserService();
 
         // Parse receipt

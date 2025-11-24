@@ -2,15 +2,17 @@
 
 import Link from 'next/link';
 import type { LanguageCode } from '@/contexts/TranslationContext';
+import { PublicPageLanguageSelector } from '@/components/PublicPageLanguageSelector';
 import af from '@/locales/af.json';
 import de from '@/locales/de.json';
 import en from '@/locales/en.json';
 import es from '@/locales/es.json';
 import fr from '@/locales/fr.json';
+import hz from '@/locales/hz.json';
 import it from '@/locales/it.json';
 import nl from '@/locales/nl.json';
 
-const translations = { en, es, fr, de, nl, it, af };
+const translations = { en, es, fr, de, nl, it, af, hz };
 
 // Custom AfricAI Digital Books Logo SVG
 function AfricAILogo() {
@@ -81,6 +83,9 @@ export function LandingPage({ lang }: LandingPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Language Selector - Top Right */}
+      <PublicPageLanguageSelector />
+
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-16 md:py-24">
         <div className="flex flex-col items-center text-center">

@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
-import { attachClientDatabase } from '../middleware/client-database.middleware';
+import { attachTenantDatabase } from '../middleware/tenant-database.middleware';
 import { validate } from '../middleware/validation.middleware';
 import { ProjectMemberService } from '../services/project-member.service';
 import {
@@ -23,7 +23,7 @@ import type { PrismaClient as ClientPrismaClient } from '../generated/prisma-cli
 const router: Router = Router();
 
 // All routes require authentication and client database
-router.use(authenticateJWT, attachClientDatabase);
+router.use(authenticateJWT, attachTenantDatabase);
 
 /**
  * @route   POST /projects/:id/members
@@ -32,7 +32,7 @@ router.use(authenticateJWT, attachClientDatabase);
  */
 router.post('/:id/members', validate(assignUserToProjectSchema), async (req, res, next) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -40,7 +40,7 @@ router.post('/:id/members', validate(assignUserToProjectSchema), async (req, res
     const { id: projectId } = req.params;
     const { userId, isBillable } = req.body;
 
-    const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
+    const service = new ProjectMemberService(req.tenantDb as ClientPrismaClient);
     const member = await service.assignUserToProject({
       projectId,
       userId,
@@ -63,7 +63,7 @@ router.post('/:id/members', validate(assignUserToProjectSchema), async (req, res
  */
 router.post('/:id/members/bulk', validate(bulkAssignUsersSchema), async (req, res, next) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -71,7 +71,7 @@ router.post('/:id/members/bulk', validate(bulkAssignUsersSchema), async (req, re
     const { id: projectId } = req.params;
     const { userIds, isBillable } = req.body;
 
-    const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
+    const service = new ProjectMemberService(req.tenantDb as ClientPrismaClient);
     const count = await service.bulkAssignUsers(projectId, userIds, isBillable);
 
     res.status(201).json({
@@ -92,14 +92,14 @@ router.post('/:id/members/bulk', validate(bulkAssignUsersSchema), async (req, re
  */
 router.get('/:id/members', validate(getProjectMembersSchema), async (req, res, next) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
     const { id: projectId } = req.params;
 
-    const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
+    const service = new ProjectMemberService(req.tenantDb as ClientPrismaClient);
     const members = await service.getProjectMembers(projectId);
 
     res.json({
@@ -121,7 +121,7 @@ router.patch(
   validate(updateMemberBillabilitySchema),
   async (req, res, next) => {
     try {
-      if (!req.clientDb) {
+      if (!req.tenantDb) {
         res.status(500).json({ status: 'error', message: 'Client database not available' });
         return;
       }
@@ -129,7 +129,7 @@ router.patch(
       const { id: projectId, userId } = req.params;
       const { isBillable } = req.body;
 
-      const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
+      const service = new ProjectMemberService(req.tenantDb as ClientPrismaClient);
       const member = await service.setUserBillability(projectId, userId, { isBillable });
 
       res.json({
@@ -152,14 +152,14 @@ router.delete(
   validate(removeUserFromProjectSchema),
   async (req, res, next) => {
     try {
-      if (!req.clientDb) {
+      if (!req.tenantDb) {
         res.status(500).json({ status: 'error', message: 'Client database not available' });
         return;
       }
 
       const { id: projectId, userId } = req.params;
 
-      const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
+      const service = new ProjectMemberService(req.tenantDb as ClientPrismaClient);
       await service.removeUserFromProject(projectId, userId);
 
       res.status(204).send();
@@ -176,14 +176,14 @@ router.delete(
  */
 router.get('/users/:userId/projects', validate(getUserProjectsSchema), async (req, res, next) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
     const { userId } = req.params;
 
-    const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
+    const service = new ProjectMemberService(req.tenantDb as ClientPrismaClient);
     const projects = await service.getUserProjects(userId);
 
     res.json({
@@ -205,14 +205,14 @@ router.get(
   validate(getEffectiveBillabilitySchema),
   async (req, res, next) => {
     try {
-      if (!req.clientDb) {
+      if (!req.tenantDb) {
         res.status(500).json({ status: 'error', message: 'Client database not available' });
         return;
       }
 
       const { id: projectId, userId } = req.params;
 
-      const service = new ProjectMemberService(req.clientDb as ClientPrismaClient);
+      const service = new ProjectMemberService(req.tenantDb as ClientPrismaClient);
       const effectiveBillability = await service.getEffectiveBillability(projectId, userId);
 
       res.json({

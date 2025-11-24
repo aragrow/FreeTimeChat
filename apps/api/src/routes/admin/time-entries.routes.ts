@@ -17,7 +17,7 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -66,7 +66,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     const [entries, total] = await Promise.all([
-      (req.clientDb as ClientPrismaClient).timeEntry.findMany({
+      (req.tenantDb as ClientPrismaClient).timeEntry.findMany({
         where,
         include: {
           project: {
@@ -83,7 +83,7 @@ router.get('/', async (req: Request, res: Response) => {
         skip,
         take,
       }),
-      (req.clientDb as ClientPrismaClient).timeEntry.count({ where }),
+      (req.tenantDb as ClientPrismaClient).timeEntry.count({ where }),
     ]);
 
     res.status(200).json({
@@ -113,7 +113,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -123,7 +123,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     const { id } = req.params;
 
-    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.findUnique({
+    const entry = await (req.tenantDb as ClientPrismaClient).timeEntry.findUnique({
       where: { id },
       include: {
         project: {
@@ -184,7 +184,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -223,7 +223,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Verify project exists
-    const project = await (req.clientDb as ClientPrismaClient).project.findUnique({
+    const project = await (req.tenantDb as ClientPrismaClient).project.findUnique({
       where: { id: projectId },
     });
 
@@ -244,7 +244,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Create time entry
-    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.create({
+    const entry = await (req.tenantDb as ClientPrismaClient).timeEntry.create({
       data: {
         userId: entryUserId,
         projectId,
@@ -295,7 +295,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -317,7 +317,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     } = req.body;
 
     // Check if entry exists
-    const existingEntry = await (req.clientDb as ClientPrismaClient).timeEntry.findUnique({
+    const existingEntry = await (req.tenantDb as ClientPrismaClient).timeEntry.findUnique({
       where: { id },
     });
 
@@ -347,7 +347,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
     if (projectId !== undefined) {
       // Verify project exists
-      const project = await (req.clientDb as ClientPrismaClient).project.findUnique({
+      const project = await (req.tenantDb as ClientPrismaClient).project.findUnique({
         where: { id: projectId },
       });
       if (!project) {
@@ -384,7 +384,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (isBillable !== undefined) updateData.isBillable = isBillable;
 
     // Update time entry
-    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.update({
+    const entry = await (req.tenantDb as ClientPrismaClient).timeEntry.update({
       where: { id },
       data: updateData,
       include: {
@@ -418,7 +418,7 @@ router.put('/:id', async (req: Request, res: Response) => {
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -429,7 +429,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
 
     // Check if entry exists
-    const existingEntry = await (req.clientDb as ClientPrismaClient).timeEntry.findUnique({
+    const existingEntry = await (req.tenantDb as ClientPrismaClient).timeEntry.findUnique({
       where: { id },
     });
 
@@ -463,7 +463,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     // Soft delete entry
-    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.update({
+    const entry = await (req.tenantDb as ClientPrismaClient).timeEntry.update({
       where: { id },
       data: {
         deletedAt: new Date(),
@@ -490,7 +490,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
  */
 router.post('/:id/start', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -509,7 +509,7 @@ router.post('/:id/start', async (req: Request, res: Response) => {
     }
 
     // Verify project exists
-    const project = await (req.clientDb as ClientPrismaClient).project.findUnique({
+    const project = await (req.tenantDb as ClientPrismaClient).project.findUnique({
       where: { id: projectId },
     });
 
@@ -522,7 +522,7 @@ router.post('/:id/start', async (req: Request, res: Response) => {
     }
 
     // Create time entry with start time only
-    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.create({
+    const entry = await (req.tenantDb as ClientPrismaClient).timeEntry.create({
       data: {
         userId: req.user.sub,
         projectId,
@@ -561,7 +561,7 @@ router.post('/:id/start', async (req: Request, res: Response) => {
  */
 router.post('/:id/stop', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -572,7 +572,7 @@ router.post('/:id/stop', async (req: Request, res: Response) => {
     const { id } = req.params;
 
     // Check if entry exists
-    const existingEntry = await (req.clientDb as ClientPrismaClient).timeEntry.findUnique({
+    const existingEntry = await (req.tenantDb as ClientPrismaClient).timeEntry.findUnique({
       where: { id },
     });
 
@@ -614,7 +614,7 @@ router.post('/:id/stop', async (req: Request, res: Response) => {
     const overtimeHours = Math.max(0, totalHours - 8);
 
     // Update time entry
-    const entry = await (req.clientDb as ClientPrismaClient).timeEntry.update({
+    const entry = await (req.tenantDb as ClientPrismaClient).timeEntry.update({
       where: { id },
       data: {
         endTime,

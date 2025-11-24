@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Currency {
@@ -143,6 +144,7 @@ const getAllItemIds = () => {
 
 export default function TenantSettingsPage() {
   const { fetchWithAuth } = useAuth();
+  const { updateTenantSettings } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -298,8 +300,14 @@ export default function TenantSettingsPage() {
         setSettings(data.data);
         setMessage({
           type: 'success',
-          text: 'Tenant settings updated successfully',
+          text: 'Tenant settings updated successfully. Changes will take full effect on next login.',
         });
+
+        // Update translation settings immediately without full page refresh
+        updateTenantSettings(language as any, dateFormat, timeZone);
+
+        // Note: We don't call refreshUser() here to avoid blank screen issues
+        // The new settings will be loaded from the database on next page refresh or login
       } else {
         const errorData = await response.json();
         setMessage({ type: 'error', text: errorData.message || 'Failed to update settings' });

@@ -9,6 +9,7 @@ import de from '@/locales/de.json';
 import en from '@/locales/en.json';
 import es from '@/locales/es.json';
 import fr from '@/locales/fr.json';
+import hz from '@/locales/hz.json';
 import it from '@/locales/it.json';
 import nl from '@/locales/nl.json';
 
@@ -21,6 +22,7 @@ export const SUPPORTED_LANGUAGES = {
   nl: { name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
   it: { name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
   af: { name: 'Afrikaans', nativeName: 'Afrikaans', flag: '🇿🇦' },
+  hz: { name: 'Otjiherero', nativeName: 'Otjiherero', flag: '🇳🇦' },
 } as const;
 
 export type LanguageCode = keyof typeof SUPPORTED_LANGUAGES;
@@ -34,12 +36,14 @@ const translations: Record<LanguageCode, typeof en> = {
   nl,
   it,
   af,
+  hz,
 };
 
 // Define the context type
 interface TranslationContextType {
   language: LanguageCode;
   setLanguage: (lang: LanguageCode) => void;
+  updateTenantSettings: (language: LanguageCode, dateFormat: string, timeZone: string) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
   languages: typeof SUPPORTED_LANGUAGES;
   dateFormat: string;
@@ -117,35 +121,46 @@ export function TranslationProvider({
   const [language, setLanguageState] = useState<LanguageCode>(defaultLanguage);
   const [dateFormat, setDateFormat] = useState<string>('MM/DD/YYYY');
   const [timeZone, setTimeZone] = useState<string>('America/New_York');
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load tenant settings or saved language preference on mount
+  // Initialize language settings when auth loads
   useEffect(() => {
+    // Wait for auth context to be available
+    if (!authContext) {
+      return;
+    }
+
+    // If auth is still loading, wait
+    if (authContext.isLoading) {
+      return;
+    }
+
     // Priority 1: Use tenant settings if authenticated
-    if (authContext?.user?.tenant) {
+    if (authContext.user?.tenant) {
       const tenantLang = authContext.user.tenant.language as LanguageCode;
       if (tenantLang in SUPPORTED_LANGUAGES) {
         setLanguageState(tenantLang);
         setDateFormat(authContext.user.tenant.dateFormat);
         setTimeZone(authContext.user.tenant.timeZone);
-        setIsInitialized(true);
-        return;
+        document.documentElement.lang = tenantLang;
       }
+      return;
     }
 
-    // Priority 2: Use saved preference from localStorage
+    // Priority 2: Use saved preference from localStorage (only if no tenant)
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode | null;
     if (savedLanguage && savedLanguage in SUPPORTED_LANGUAGES) {
       setLanguageState(savedLanguage);
-    } else {
-      // Priority 3: Try to detect browser language
-      const browserLang = navigator.language.split('-')[0] as LanguageCode;
-      if (browserLang in SUPPORTED_LANGUAGES) {
-        setLanguageState(browserLang);
-      }
+      document.documentElement.lang = savedLanguage;
+      return;
     }
-    setIsInitialized(true);
-  }, [authContext?.user]);
+
+    // Priority 3: Try to detect browser language
+    const browserLang = navigator.language.split('-')[0] as LanguageCode;
+    if (browserLang in SUPPORTED_LANGUAGES) {
+      setLanguageState(browserLang);
+      document.documentElement.lang = browserLang;
+    }
+  }, [authContext]);
 
   // Save language preference when it changes
   const setLanguage = (lang: LanguageCode) => {
@@ -154,6 +169,20 @@ export function TranslationProvider({
       localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
       // Update document lang attribute
       document.documentElement.lang = lang;
+    }
+  };
+
+  // Update tenant settings directly (called after saving tenant settings to avoid full refresh)
+  const updateTenantSettings = (
+    newLanguage: LanguageCode,
+    newDateFormat: string,
+    newTimeZone: string
+  ) => {
+    if (newLanguage in SUPPORTED_LANGUAGES) {
+      setLanguageState(newLanguage);
+      setDateFormat(newDateFormat);
+      setTimeZone(newTimeZone);
+      document.documentElement.lang = newLanguage;
     }
   };
 
@@ -184,16 +213,12 @@ export function TranslationProvider({
     return formatDateString(dateObj, formatToUse, timeZone);
   };
 
-  // Don't render children until language is initialized to prevent hydration mismatch
-  if (!isInitialized) {
-    return null;
-  }
-
   return (
     <TranslationContext.Provider
       value={{
         language,
         setLanguage,
+        updateTenantSettings,
         t,
         languages: SUPPORTED_LANGUAGES,
         dateFormat,

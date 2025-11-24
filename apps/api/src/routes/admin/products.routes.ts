@@ -17,7 +17,7 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -61,7 +61,7 @@ router.get('/', async (req: Request, res: Response) => {
       where.isActive = true;
     }
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     // Get products with pagination
     const [products, total] = await Promise.all([
       clientDb.product.findMany({
@@ -110,7 +110,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -119,7 +119,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     const product = await clientDb.product.findUnique({
       where: { id },
@@ -160,7 +160,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -179,7 +179,7 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     // Check if client exists if clientId provided
     if (clientId) {
       const client = await clientDb.client.findUnique({
@@ -242,7 +242,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -253,7 +253,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, description, sku, clientId, imageUrl, rate, unit, isActive } = req.body;
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     // Check if product exists
     const existingProduct = await clientDb.product.findUnique({
       where: { id },
@@ -330,7 +330,7 @@ router.put('/:id', async (req: Request, res: Response) => {
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -339,7 +339,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     // Check if product exists
     const existingProduct = await clientDb.product.findUnique({

@@ -13,7 +13,7 @@ const router = Router();
 // GET /api/v1/admin/coupons - List all coupons
 router.get('/', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -37,7 +37,7 @@ router.get('/', (async (req: AuthenticatedRequest, res: Response) => {
 // GET /api/v1/admin/coupons/:id - Get coupon by ID
 router.get('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -59,7 +59,7 @@ router.get('/:id', (async (req: AuthenticatedRequest, res: Response) => {
 // GET /api/v1/admin/coupons/:id/stats - Get coupon statistics
 router.get('/:id/stats', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -78,7 +78,7 @@ router.get('/:id/stats', (async (req: AuthenticatedRequest, res: Response) => {
 // POST /api/v1/admin/coupons - Create coupon
 router.post('/', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -146,7 +146,7 @@ router.post('/', (async (req: AuthenticatedRequest, res: Response) => {
 // POST /api/v1/admin/coupons/validate - Validate coupon code
 router.post('/validate', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -182,7 +182,7 @@ router.post('/validate', (async (req: AuthenticatedRequest, res: Response) => {
 // PUT /api/v1/admin/coupons/:id - Update coupon
 router.put('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -206,7 +206,7 @@ router.put('/:id', (async (req: AuthenticatedRequest, res: Response) => {
 // DELETE /api/v1/admin/coupons/:id - Delete coupon
 router.delete('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }

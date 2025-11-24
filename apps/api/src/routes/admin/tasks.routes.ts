@@ -17,7 +17,7 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -39,7 +39,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (assignedToUserId) where.assignedToUserId = assignedToUserId as string;
 
     const [tasks, total] = await Promise.all([
-      (req.clientDb as ClientPrismaClient).task.findMany({
+      (req.tenantDb as ClientPrismaClient).task.findMany({
         where,
         include: {
           project: {
@@ -60,7 +60,7 @@ router.get('/', async (req: Request, res: Response) => {
         skip,
         take,
       }),
-      (req.clientDb as ClientPrismaClient).task.count({ where }),
+      (req.tenantDb as ClientPrismaClient).task.count({ where }),
     ]);
 
     res.status(200).json({
@@ -90,7 +90,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -100,7 +100,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     const { id } = req.params;
 
-    const task = await (req.clientDb as ClientPrismaClient).task.findUnique({
+    const task = await (req.tenantDb as ClientPrismaClient).task.findUnique({
       where: { id },
       include: {
         project: {
@@ -147,7 +147,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.get('/project/:projectId', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -157,7 +157,7 @@ router.get('/project/:projectId', async (req: Request, res: Response) => {
 
     const { projectId } = req.params;
 
-    const tasks = await (req.clientDb as ClientPrismaClient).task.findMany({
+    const tasks = await (req.tenantDb as ClientPrismaClient).task.findMany({
       where: { projectId },
       orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }, { createdAt: 'desc' }],
     });
@@ -181,7 +181,7 @@ router.get('/project/:projectId', async (req: Request, res: Response) => {
  */
 router.get('/user/:userId', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -191,7 +191,7 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
 
     const { userId } = req.params;
 
-    const tasks = await (req.clientDb as ClientPrismaClient).task.findMany({
+    const tasks = await (req.tenantDb as ClientPrismaClient).task.findMany({
       where: { assignedToUserId: userId },
       include: {
         project: {
@@ -230,7 +230,7 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -258,7 +258,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Verify project exists
-    const project = await (req.clientDb as ClientPrismaClient).project.findUnique({
+    const project = await (req.tenantDb as ClientPrismaClient).project.findUnique({
       where: { id: projectId },
     });
 
@@ -271,7 +271,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Create task
-    const task = await (req.clientDb as ClientPrismaClient).task.create({
+    const task = await (req.tenantDb as ClientPrismaClient).task.create({
       data: {
         projectId,
         title: title.trim(),
@@ -318,7 +318,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -330,7 +330,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     const { title, description, status, priority, assignedToUserId, dueDate } = req.body;
 
     // Check if task exists
-    const existingTask = await (req.clientDb as ClientPrismaClient).task.findUnique({
+    const existingTask = await (req.tenantDb as ClientPrismaClient).task.findUnique({
       where: { id },
     });
 
@@ -360,7 +360,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     // Update task
-    const task = await (req.clientDb as ClientPrismaClient).task.update({
+    const task = await (req.tenantDb as ClientPrismaClient).task.update({
       where: { id },
       data: updateData,
       include: {
@@ -393,7 +393,7 @@ router.put('/:id', async (req: Request, res: Response) => {
  */
 router.patch('/:id/status', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -413,7 +413,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
     }
 
     // Check if task exists
-    const existingTask = await (req.clientDb as ClientPrismaClient).task.findUnique({
+    const existingTask = await (req.tenantDb as ClientPrismaClient).task.findUnique({
       where: { id },
     });
 
@@ -434,7 +434,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
       updateData.completedAt = null;
     }
 
-    const task = await (req.clientDb as ClientPrismaClient).task.update({
+    const task = await (req.tenantDb as ClientPrismaClient).task.update({
       where: { id },
       data: updateData,
     });
@@ -459,7 +459,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
  */
 router.patch('/:id/priority', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -479,7 +479,7 @@ router.patch('/:id/priority', async (req: Request, res: Response) => {
     }
 
     // Check if task exists
-    const existingTask = await (req.clientDb as ClientPrismaClient).task.findUnique({
+    const existingTask = await (req.tenantDb as ClientPrismaClient).task.findUnique({
       where: { id },
     });
 
@@ -491,7 +491,7 @@ router.patch('/:id/priority', async (req: Request, res: Response) => {
       return;
     }
 
-    const task = await (req.clientDb as ClientPrismaClient).task.update({
+    const task = await (req.tenantDb as ClientPrismaClient).task.update({
       where: { id },
       data: { priority },
     });
@@ -516,7 +516,7 @@ router.patch('/:id/priority', async (req: Request, res: Response) => {
  */
 router.patch('/:id/assign', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -528,7 +528,7 @@ router.patch('/:id/assign', async (req: Request, res: Response) => {
     const { userId } = req.body;
 
     // Check if task exists
-    const existingTask = await (req.clientDb as ClientPrismaClient).task.findUnique({
+    const existingTask = await (req.tenantDb as ClientPrismaClient).task.findUnique({
       where: { id },
     });
 
@@ -540,7 +540,7 @@ router.patch('/:id/assign', async (req: Request, res: Response) => {
       return;
     }
 
-    const task = await (req.clientDb as ClientPrismaClient).task.update({
+    const task = await (req.tenantDb as ClientPrismaClient).task.update({
       where: { id },
       data: { assignedToUserId: userId || null },
     });
@@ -565,7 +565,7 @@ router.patch('/:id/assign', async (req: Request, res: Response) => {
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -576,7 +576,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
 
     // Check if task exists
-    const existingTask = await (req.clientDb as ClientPrismaClient).task.findUnique({
+    const existingTask = await (req.tenantDb as ClientPrismaClient).task.findUnique({
       where: { id },
     });
 
@@ -589,7 +589,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     // Hard delete task
-    await (req.clientDb as ClientPrismaClient).task.delete({
+    await (req.tenantDb as ClientPrismaClient).task.delete({
       where: { id },
     });
 
@@ -612,7 +612,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
  */
 router.get('/stats/summary', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -633,16 +633,16 @@ router.get('/stats/summary', async (req: Request, res: Response) => {
       highPriorityCount,
       overdueCount,
     ] = await Promise.all([
-      (req.clientDb as ClientPrismaClient).task.count({ where }),
-      (req.clientDb as ClientPrismaClient).task.count({ where: { ...where, status: 'TODO' } }),
-      (req.clientDb as ClientPrismaClient).task.count({
+      (req.tenantDb as ClientPrismaClient).task.count({ where }),
+      (req.tenantDb as ClientPrismaClient).task.count({ where: { ...where, status: 'TODO' } }),
+      (req.tenantDb as ClientPrismaClient).task.count({
         where: { ...where, status: 'IN_PROGRESS' },
       }),
-      (req.clientDb as ClientPrismaClient).task.count({ where: { ...where, status: 'REVIEW' } }),
-      (req.clientDb as ClientPrismaClient).task.count({ where: { ...where, status: 'DONE' } }),
-      (req.clientDb as ClientPrismaClient).task.count({ where: { ...where, status: 'CANCELLED' } }),
-      (req.clientDb as ClientPrismaClient).task.count({ where: { ...where, priority: 'URGENT' } }),
-      (req.clientDb as ClientPrismaClient).task.count({
+      (req.tenantDb as ClientPrismaClient).task.count({ where: { ...where, status: 'REVIEW' } }),
+      (req.tenantDb as ClientPrismaClient).task.count({ where: { ...where, status: 'DONE' } }),
+      (req.tenantDb as ClientPrismaClient).task.count({ where: { ...where, status: 'CANCELLED' } }),
+      (req.tenantDb as ClientPrismaClient).task.count({ where: { ...where, priority: 'URGENT' } }),
+      (req.tenantDb as ClientPrismaClient).task.count({
         where: {
           ...where,
           dueDate: { lt: new Date() },

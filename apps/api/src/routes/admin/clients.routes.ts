@@ -1,8 +1,16 @@
 /**
- * Business Client Routes
+ * Tenant Business Clients Routes
  *
- * Manages the tenant's business clients (stored in tenant database)
- * These are different from the "clients" in the main DB (which are actually tenants)
+ * IMPORTANT: This file manages a tenant's business clients (their customers).
+ * These clients are stored in the TENANT database (req.tenantDb), NOT the main database.
+ *
+ * Architecture:
+ * - Main Database: Contains tenants, users, roles (freetimechat_main)
+ * - Tenant Database: Contains each tenant's business data including their clients,
+ *   projects, invoices, time entries, etc. (e.g., freetimechat_aragrow_llc)
+ *
+ * Note: Don't confuse "tenant's clients" with the "Client" table in main DB,
+ * which is actually the tenants themselves (legacy naming).
  */
 
 import { Router } from 'express';
@@ -12,12 +20,12 @@ import type { Request, Response } from 'express';
 const router = Router();
 
 /**
- * GET /api/v1/admin/business-clients
+ * GET /api/v1/admin/clients
  * List all business clients for the current tenant
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -52,7 +60,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     // Get clients with pagination
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     const [clients, total] = await Promise.all([
       clientDb.client.findMany({
         where,
@@ -92,7 +100,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -101,7 +109,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     const client = await clientDb.client.findUnique({
       where: { id },
@@ -144,7 +152,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -227,7 +235,7 @@ router.post('/', async (req: Request, res: Response) => {
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '');
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     // Create client (map form fields to schema fields)
     const client = await clientDb.client.create({
       data: {
@@ -284,7 +292,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.post('/validate-prefix', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -337,7 +345,7 @@ router.post('/validate-prefix', async (req: Request, res: Response) => {
       return;
     }
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     // Build where clause for uniqueness check
     const where: any = {
@@ -394,7 +402,7 @@ router.post('/validate-prefix', async (req: Request, res: Response) => {
  */
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -439,7 +447,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       isActive,
     } = req.body;
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     // Check if client exists
     const existingClient = await clientDb.client.findUnique({
       where: { id },
@@ -569,7 +577,7 @@ router.put('/:id', async (req: Request, res: Response) => {
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -578,7 +586,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     // Check if client exists
     const existingClient = await clientDb.client.findUnique({
@@ -630,7 +638,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
  */
 router.post('/:id/reactivate', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -639,7 +647,7 @@ router.post('/:id/reactivate', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     // Check if client exists
     const existingClient = await clientDb.client.findUnique({
@@ -692,7 +700,7 @@ router.post('/:id/reactivate', async (req: Request, res: Response) => {
  */
 router.get('/:id/stats', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -701,7 +709,7 @@ router.get('/:id/stats', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     // Check if client exists
     const existingClient = await clientDb.client.findUnique({

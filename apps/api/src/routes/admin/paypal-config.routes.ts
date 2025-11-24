@@ -19,7 +19,7 @@ const mainDb = new MainPrismaClient();
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -27,7 +27,7 @@ router.get('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     const configs = await clientDb.payPalTenantConfig.findMany({
       orderBy: { createdAt: 'desc' },
     });
@@ -107,7 +107,7 @@ router.get('/available-integrations', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -173,7 +173,7 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     // Check if config already exists
     const existing = await clientDb.payPalTenantConfig.findFirst({
       where: { paypalIntegrationId },
@@ -245,7 +245,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -254,7 +254,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     const existing = await clientDb.payPalTenantConfig.findUnique({
       where: { id },

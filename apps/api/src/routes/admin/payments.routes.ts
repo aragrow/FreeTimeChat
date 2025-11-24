@@ -13,7 +13,7 @@ const router = Router();
 // GET /api/v1/admin/payments - List all payments
 router.get('/', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -58,7 +58,7 @@ router.get('/', (async (req: AuthenticatedRequest, res: Response) => {
 // GET /api/v1/admin/payments/stats - Get payment statistics
 router.get('/stats', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -82,7 +82,7 @@ router.get('/stats', (async (req: AuthenticatedRequest, res: Response) => {
 // GET /api/v1/admin/payments/:id - Get payment by ID
 router.get('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -104,7 +104,7 @@ router.get('/:id', (async (req: AuthenticatedRequest, res: Response) => {
 // POST /api/v1/admin/payments - Create payment
 router.post('/', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -153,7 +153,7 @@ router.post('/', (async (req: AuthenticatedRequest, res: Response) => {
 // POST /api/v1/admin/payments/:id/refund - Process refund
 router.post('/:id/refund', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -178,7 +178,7 @@ router.post('/:id/refund', (async (req: AuthenticatedRequest, res: Response) => 
 // PUT /api/v1/admin/payments/:id - Update payment
 router.put('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }
@@ -200,7 +200,7 @@ router.put('/:id', (async (req: AuthenticatedRequest, res: Response) => {
 // DELETE /api/v1/admin/payments/:id - Delete payment
 router.delete('/:id', (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const prisma = req.clientDb as ClientPrismaClient;
+    const prisma = req.tenantDb as ClientPrismaClient;
     if (!prisma) {
       return res.status(400).json({ status: 'error', message: 'Client database not connected' });
     }

@@ -34,14 +34,14 @@ router.use(authenticateJWT, attachChatDatabase);
  */
 router.post('/', validate(createConversationSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
 
     const { title } = req.body;
 
-    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
+    const conversationService = new ConversationService(req.tenantDb as ClientPrismaClient);
     const conversation = await conversationService.startConversation({
       userId: req.user.sub,
       title,
@@ -67,7 +67,7 @@ router.post('/', validate(createConversationSchema), async (req: Request, res: R
  */
 router.get('/', validate(listConversationsSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
@@ -78,7 +78,7 @@ router.get('/', validate(listConversationsSchema), async (req: Request, res: Res
 
     const skip = (page - 1) * limit;
 
-    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
+    const conversationService = new ConversationService(req.tenantDb as ClientPrismaClient);
     const [conversations, total] = await Promise.all([
       conversationService.listConversations({
         skip,
@@ -114,12 +114,12 @@ router.get('/', validate(listConversationsSchema), async (req: Request, res: Res
  */
 router.get('/active', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
 
-    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
+    const conversationService = new ConversationService(req.tenantDb as ClientPrismaClient);
     const conversation = await conversationService.getActiveConversation(req.user.sub);
 
     res.json({
@@ -141,12 +141,12 @@ router.get('/active', async (req: Request, res: Response) => {
  */
 router.get('/stats', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
 
-    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
+    const conversationService = new ConversationService(req.tenantDb as ClientPrismaClient);
     const stats = await conversationService.getUserStats(req.user.sub);
 
     res.json({
@@ -168,14 +168,14 @@ router.get('/stats', async (req: Request, res: Response) => {
  */
 router.get('/:id', validate(getConversationByIdSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
+    const conversationService = new ConversationService(req.tenantDb as ClientPrismaClient);
     const conversation = await conversationService.getConversation(id);
 
     if (!conversation) {
@@ -205,7 +205,7 @@ router.get('/:id', validate(getConversationByIdSchema), async (req: Request, res
  */
 router.patch('/:id', validate(updateConversationSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
@@ -213,7 +213,7 @@ router.patch('/:id', validate(updateConversationSchema), async (req: Request, re
     const { id } = req.params;
     const { title, isActive } = req.body;
 
-    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
+    const conversationService = new ConversationService(req.tenantDb as ClientPrismaClient);
     const conversation = await conversationService.updateConversation(id, {
       title,
       isActive,
@@ -239,14 +239,14 @@ router.patch('/:id', validate(updateConversationSchema), async (req: Request, re
  */
 router.delete('/:id', validate(deleteConversationSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
+    const conversationService = new ConversationService(req.tenantDb as ClientPrismaClient);
     await conversationService.deleteConversation(id);
 
     res.json({
@@ -268,14 +268,14 @@ router.delete('/:id', validate(deleteConversationSchema), async (req: Request, r
  */
 router.post('/:id/archive', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
+    const conversationService = new ConversationService(req.tenantDb as ClientPrismaClient);
     const conversation = await conversationService.archiveConversation(id);
 
     res.json({
@@ -298,14 +298,14 @@ router.post('/:id/archive', async (req: Request, res: Response) => {
  */
 router.post('/:id/restore', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const conversationService = new ConversationService(req.clientDb as ClientPrismaClient);
+    const conversationService = new ConversationService(req.tenantDb as ClientPrismaClient);
     const conversation = await conversationService.restoreConversation(id);
 
     res.json({
@@ -328,7 +328,7 @@ router.post('/:id/restore', async (req: Request, res: Response) => {
  */
 router.post('/:id/messages', validate(addMessageSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
@@ -336,7 +336,7 @@ router.post('/:id/messages', validate(addMessageSchema), async (req: Request, re
     const { id: conversationId } = req.params;
     const { content, role = 'USER', metadata } = req.body;
 
-    const messageService = new MessageService(req.clientDb as ClientPrismaClient);
+    const messageService = new MessageService(req.tenantDb as ClientPrismaClient);
     const message = await messageService.addMessage({
       conversationId,
       content,
@@ -364,7 +364,7 @@ router.post('/:id/messages', validate(addMessageSchema), async (req: Request, re
  */
 router.get('/:id/messages', validate(getMessagesSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
@@ -378,7 +378,7 @@ router.get('/:id/messages', validate(getMessagesSchema), async (req: Request, re
 
     const skip = (page - 1) * limit;
 
-    const messageService = new MessageService(req.clientDb as ClientPrismaClient);
+    const messageService = new MessageService(req.tenantDb as ClientPrismaClient);
     const [messages, total] = await Promise.all([
       messageService.getMessages(conversationId, {
         skip,
@@ -418,7 +418,7 @@ router.get(
   validate(searchMessagesSchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb) {
+      if (!req.tenantDb) {
         res.status(500).json({ status: 'error', message: 'Database not available' });
         return;
       }
@@ -430,7 +430,7 @@ router.get(
 
       const skip = (page - 1) * limit;
 
-      const messageService = new MessageService(req.clientDb as ClientPrismaClient);
+      const messageService = new MessageService(req.tenantDb as ClientPrismaClient);
       const messages = await messageService.searchMessages(conversationId, query, {
         skip,
         take: limit,

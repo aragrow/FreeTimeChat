@@ -196,6 +196,9 @@ export default function TenantsPage() {
           billingZip: '',
           billingCountry: 'USA',
           billingEmail: '',
+          language: 'en',
+          dateFormat: 'MM/DD/YYYY',
+          timeZone: 'America/New_York',
           adminUsername: '',
         });
         fetchTenants();
@@ -1082,6 +1085,9 @@ export default function TenantsPage() {
                       billingZip: '',
                       billingCountry: 'USA',
                       billingEmail: '',
+                      language: 'en',
+                      dateFormat: 'MM/DD/YYYY',
+                      timeZone: 'America/New_York',
                       adminUsername: '',
                     });
                   }}

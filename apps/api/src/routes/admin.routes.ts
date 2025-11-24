@@ -7,8 +7,8 @@
 
 import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
-import { attachClientDatabase } from '../middleware/client-database.middleware';
 import { requireAnyRole } from '../middleware/permission.middleware';
+import { attachTenantDatabase } from '../middleware/tenant-database.middleware';
 import accountRequestsRoutes from './admin/account-requests.routes';
 import billsRoutes from './admin/bills.routes';
 import capabilitiesRoutes from './admin/capabilities.routes';
@@ -59,24 +59,24 @@ router.use('/tenant-settings', tenantSettingsRoutes);
 router.use('/system-settings', systemSettingsRoutes);
 
 // Mount admin sub-routes that NEED tenant database (attach middleware first)
-router.use('/clients', attachClientDatabase, clientsRoutes);
-router.use('/expenses', attachClientDatabase, expensesRoutes);
-router.use('/invoices', attachClientDatabase, invoicesRoutes);
-router.use('/paypal-config', attachClientDatabase, paypalConfigRoutes);
-router.use('/projects', attachClientDatabase, projectsRoutes);
-router.use('/project-members', attachClientDatabase, projectMembersRoutes);
-router.use('/reports', attachClientDatabase, reportsRoutes);
-router.use('/tasks', attachClientDatabase, tasksRoutes);
-router.use('/time-entries', attachClientDatabase, timeEntriesRoutes);
+router.use('/clients', attachTenantDatabase, clientsRoutes);
+router.use('/expenses', attachTenantDatabase, expensesRoutes);
+router.use('/invoices', attachTenantDatabase, invoicesRoutes);
+router.use('/paypal-config', attachTenantDatabase, paypalConfigRoutes);
+router.use('/projects', attachTenantDatabase, projectsRoutes);
+router.use('/project-members', attachTenantDatabase, projectMembersRoutes);
+router.use('/reports', attachTenantDatabase, reportsRoutes);
+router.use('/tasks', attachTenantDatabase, tasksRoutes);
+router.use('/time-entries', attachTenantDatabase, timeEntriesRoutes);
 
 // Accounting routes (need tenant database)
-router.use('/coupons', attachClientDatabase, couponsRoutes);
-router.use('/discounts', attachClientDatabase, discountsRoutes);
-router.use('/payments', attachClientDatabase, paymentsRoutes);
-router.use('/payment-terms', attachClientDatabase, paymentTermsRoutes);
-router.use('/products', attachClientDatabase, productsRoutes);
-router.use('/vendors', attachClientDatabase, vendorsRoutes);
-router.use('/bills', attachClientDatabase, billsRoutes);
+router.use('/coupons', attachTenantDatabase, couponsRoutes);
+router.use('/discounts', attachTenantDatabase, discountsRoutes);
+router.use('/payments', attachTenantDatabase, paymentsRoutes);
+router.use('/payment-terms', attachTenantDatabase, paymentTermsRoutes);
+router.use('/products', attachTenantDatabase, productsRoutes);
+router.use('/vendors', attachTenantDatabase, vendorsRoutes);
+router.use('/bills', attachTenantDatabase, billsRoutes);
 
 // Admin dashboard root endpoint
 router.get('/', (_req, res) => {

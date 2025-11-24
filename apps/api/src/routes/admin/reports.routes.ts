@@ -17,7 +17,7 @@ const router = Router();
  */
 router.get('/time-summary', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -42,7 +42,7 @@ router.get('/time-summary', async (req: Request, res: Response) => {
     if (userId) where.userId = userId as string;
 
     // Fetch all matching time entries
-    const entries = await (req.clientDb as ClientPrismaClient).timeEntry.findMany({
+    const entries = await (req.tenantDb as ClientPrismaClient).timeEntry.findMany({
       where,
       include: {
         project: {
@@ -221,7 +221,7 @@ router.get('/time-summary', async (req: Request, res: Response) => {
  */
 router.get('/project-analytics', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -243,7 +243,7 @@ router.get('/project-analytics', async (req: Request, res: Response) => {
     }
 
     // Fetch all projects with their time entries
-    const projects = await (req.clientDb as ClientPrismaClient).project.findMany({
+    const projects = await (req.tenantDb as ClientPrismaClient).project.findMany({
       where: {
         deletedAt: null,
       },
@@ -412,7 +412,7 @@ router.get('/project-analytics', async (req: Request, res: Response) => {
  */
 router.get('/user-productivity', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -434,7 +434,7 @@ router.get('/user-productivity', async (req: Request, res: Response) => {
     }
 
     // Fetch all time entries
-    const timeEntries = await (req.clientDb as ClientPrismaClient).timeEntry.findMany({
+    const timeEntries = await (req.tenantDb as ClientPrismaClient).timeEntry.findMany({
       where,
       include: {
         project: {
@@ -490,7 +490,7 @@ router.get('/user-productivity', async (req: Request, res: Response) => {
       taskWhere.createdAt = { gte: new Date(startDate as string) };
     }
 
-    const tasks = await (req.clientDb as ClientPrismaClient).task.findMany({
+    const tasks = await (req.tenantDb as ClientPrismaClient).task.findMany({
       where: taskWhere,
     });
 
@@ -564,7 +564,7 @@ router.get('/user-productivity', async (req: Request, res: Response) => {
  */
 router.get('/revenue-forecast', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -589,7 +589,7 @@ router.get('/revenue-forecast', async (req: Request, res: Response) => {
     if (projectId) where.projectId = projectId as string;
 
     // Fetch billable time entries
-    const entries = await (req.clientDb as ClientPrismaClient).timeEntry.findMany({
+    const entries = await (req.tenantDb as ClientPrismaClient).timeEntry.findMany({
       where,
       include: {
         project: {
@@ -703,7 +703,7 @@ router.get('/revenue-forecast', async (req: Request, res: Response) => {
  */
 router.post('/export/csv', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -728,7 +728,7 @@ router.post('/export/csv', async (req: Request, res: Response) => {
     if (userId) where.userId = userId;
 
     // Fetch time entries
-    const entries = await (req.clientDb as ClientPrismaClient).timeEntry.findMany({
+    const entries = await (req.tenantDb as ClientPrismaClient).timeEntry.findMany({
       where,
       include: {
         project: {

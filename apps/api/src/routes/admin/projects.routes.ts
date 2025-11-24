@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { attachClientDatabase } from '../../middleware/client-database.middleware';
+import { attachTenantDatabase } from '../../middleware/tenant-database.middleware';
 import { validate } from '../../middleware/validation.middleware';
 import { ProjectService } from '../../services/project.service';
 import {
@@ -22,7 +22,7 @@ import type { Request, Response } from 'express';
 const router = Router();
 
 // All routes require client database
-router.use(attachClientDatabase);
+router.use(attachTenantDatabase);
 
 /**
  * POST /api/v1/admin/projects
@@ -30,7 +30,7 @@ router.use(attachClientDatabase);
  */
 router.post('/', validate(createProjectSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.user) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -42,7 +42,7 @@ router.post('/', validate(createProjectSchema), async (req: Request, res: Respon
       return;
     }
 
-    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
+    const projectService = new ProjectService(req.tenantDb as ClientPrismaClient);
     const project = await projectService.create({
       name,
       description,
@@ -71,7 +71,7 @@ router.post('/', validate(createProjectSchema), async (req: Request, res: Respon
  */
 router.get('/', validate(listProjectsSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -83,7 +83,7 @@ router.get('/', validate(listProjectsSchema), async (req: Request, res: Response
 
     const skip = (page - 1) * take;
 
-    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
+    const projectService = new ProjectService(req.tenantDb as ClientPrismaClient);
     const projects = await projectService.list({
       skip,
       take,
@@ -117,14 +117,14 @@ router.get('/', validate(listProjectsSchema), async (req: Request, res: Response
  */
 router.get('/:id', validate(getProjectByIdSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
+    const projectService = new ProjectService(req.tenantDb as ClientPrismaClient);
     const project = await projectService.getById(id);
 
     if (!project) {
@@ -148,7 +148,7 @@ router.get('/:id', validate(getProjectByIdSchema), async (req: Request, res: Res
  */
 router.put('/:id', validate(updateProjectSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
@@ -156,7 +156,7 @@ router.put('/:id', validate(updateProjectSchema), async (req: Request, res: Resp
     const { id } = req.params;
     const { name, description, isActive, isBillableProject, defaultBillable } = req.body;
 
-    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
+    const projectService = new ProjectService(req.tenantDb as ClientPrismaClient);
 
     // Check if project exists
     const existing = await projectService.getById(id);
@@ -190,14 +190,14 @@ router.put('/:id', validate(updateProjectSchema), async (req: Request, res: Resp
  */
 router.delete('/:id', validate(deleteProjectSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
     const { id } = req.params;
 
-    const projectService = new ProjectService(req.clientDb as ClientPrismaClient);
+    const projectService = new ProjectService(req.tenantDb as ClientPrismaClient);
 
     // Check if project exists
     const existing = await projectService.getById(id);

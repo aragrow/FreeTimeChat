@@ -34,14 +34,14 @@ router.use(authenticateJWT, attachChatDatabase);
  */
 router.post('/', validate(sendMessageSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.mainDb || !req.user) {
+    if (!req.tenantDb || !req.mainDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
 
     const { message, conversationId, includeContext, debugMode, confirmQuery } = req.body;
 
-    const chatService = new ChatService(req.clientDb, req.mainDb);
+    const chatService = new ChatService(req.tenantDb, req.mainDb);
 
     const response = await chatService.processMessage({
       userId: req.user.sub,
@@ -93,14 +93,14 @@ router.get(
   validate(getConversationContextSchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb || !req.mainDb || !req.user) {
+      if (!req.tenantDb || !req.mainDb || !req.user) {
         res.status(500).json({ status: 'error', message: 'Database not available' });
         return;
       }
 
       const { id: conversationId } = req.params;
 
-      const chatService = new ChatService(req.clientDb, req.mainDb);
+      const chatService = new ChatService(req.tenantDb, req.mainDb);
 
       const context = await chatService.getConversationContext(conversationId, req.user.sub);
 
@@ -132,14 +132,14 @@ router.get(
  */
 router.post('/:id/end', validate(endConversationSchema), async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb || !req.mainDb || !req.user) {
+    if (!req.tenantDb || !req.mainDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Database not available' });
       return;
     }
 
     const { id: conversationId } = req.params;
 
-    const chatService = new ChatService(req.clientDb, req.mainDb);
+    const chatService = new ChatService(req.tenantDb, req.mainDb);
 
     const success = await chatService.endConversation(conversationId, req.user.sub);
 
@@ -173,7 +173,7 @@ router.post(
   validate(createRatingSchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb || !req.user) {
+      if (!req.tenantDb || !req.user) {
         res.status(500).json({ status: 'error', message: 'Database not available' });
         return;
       }
@@ -181,7 +181,7 @@ router.post(
       const { messageId } = req.params;
       const { ratingType, rating, feedback, metadata } = req.body;
 
-      const ratingService = new RatingService(req.clientDb as ClientPrismaClient);
+      const ratingService = new RatingService(req.tenantDb as ClientPrismaClient);
 
       // Use getOrCreateRating to prevent duplicates and allow updates
       const result = await ratingService.getOrCreateRating({
@@ -220,13 +220,13 @@ router.get(
   validate(getRatingsSchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb || !req.user) {
+      if (!req.tenantDb || !req.user) {
         res.status(500).json({ status: 'error', message: 'Database not available' });
         return;
       }
 
       const { messageId } = req.params;
-      const ratingService = new RatingService(req.clientDb as ClientPrismaClient);
+      const ratingService = new RatingService(req.tenantDb as ClientPrismaClient);
 
       const ratings = await ratingService.getRatingsByMessage(messageId);
 
@@ -256,12 +256,12 @@ router.get(
   validate(getRatingAnalyticsSchema),
   async (req: Request, res: Response) => {
     try {
-      if (!req.clientDb || !req.user) {
+      if (!req.tenantDb || !req.user) {
         res.status(500).json({ status: 'error', message: 'Database not available' });
         return;
       }
 
-      const ratingService = new RatingService(req.clientDb as ClientPrismaClient);
+      const ratingService = new RatingService(req.tenantDb as ClientPrismaClient);
       const analytics = await ratingService.getRatingAnalytics();
 
       res.json({

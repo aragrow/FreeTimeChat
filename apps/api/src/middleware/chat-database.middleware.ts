@@ -46,7 +46,7 @@ export async function attachChatDatabase(
 
       // If admin doesn't specify a tenant, use main database
       if (!tenantId) {
-        req.clientDb = mainDb; // Set clientDb to mainDb for compatibility
+        req.tenantDb = mainDb; // Set clientDb to mainDb for compatibility
         req.useTenantDb = false;
         next();
         return;
@@ -67,7 +67,7 @@ export async function attachChatDatabase(
     // Get tenant database connection
     try {
       const clientDb = await databaseService.getTenantDatabase(tenantId);
-      req.clientDb = clientDb;
+      req.tenantDb = clientDb;
       req.useTenantDb = true;
       next();
     } catch (error) {

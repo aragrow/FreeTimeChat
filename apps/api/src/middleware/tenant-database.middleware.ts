@@ -1,18 +1,21 @@
 /**
- * Client Database Middleware
+ * Tenant Database Middleware
  *
- * Attaches the appropriate client database connection to each request
+ * Attaches the appropriate tenant database connection to each request
  * based on the authenticated user's tenantId
+ *
+ * Note: Each tenant has their own database where their business data is stored
+ * (projects, time entries, tasks, clients, invoices, etc.)
  */
 
 import { getDatabaseService } from '../services/database.service';
 import type { NextFunction, Request, Response } from 'express';
 
 /**
- * Middleware to attach client database to request
+ * Middleware to attach tenant database to request
  * Requires authentication middleware to run first
  */
-export async function attachClientDatabase(
+export async function attachTenantDatabase(
   req: Request,
   res: Response,
   next: NextFunction
@@ -45,7 +48,7 @@ export async function attachClientDatabase(
     // Get database service
     const databaseService = getDatabaseService();
 
-    // Skip client database attachment for system admins without a specific tenant
+    // Skip tenant database attachment for system admins without a specific tenant
     if (!tenantId || tenantId === 'system') {
       // Attach only main database for admin operations
       req.mainDb = databaseService.getMainDatabase();
@@ -53,22 +56,22 @@ export async function attachClientDatabase(
       return;
     }
 
-    // Get client database connection
+    // Get tenant database connection
     try {
-      const clientDb = await databaseService.getTenantDatabase(tenantId);
+      const tenantDb = await databaseService.getTenantDatabase(tenantId);
       const mainDb = databaseService.getMainDatabase();
 
       // Attach to request
-      req.clientDb = clientDb;
+      req.tenantDb = tenantDb;
       req.mainDb = mainDb;
 
       next();
     } catch (error) {
-      console.error('Failed to connect to client database:', error);
+      console.error('Failed to connect to tenant database:', error);
 
       res.status(500).json({
         status: 'error',
-        message: 'Failed to connect to client database',
+        message: 'Failed to connect to tenant database',
         details:
           process.env.NODE_ENV === 'development'
             ? error instanceof Error
@@ -78,7 +81,7 @@ export async function attachClientDatabase(
       });
     }
   } catch (error) {
-    console.error('Client database middleware error:', error);
+    console.error('Tenant database middleware error:', error);
 
     res.status(500).json({
       status: 'error',
@@ -88,10 +91,10 @@ export async function attachClientDatabase(
 }
 
 /**
- * Optional middleware that attaches client database only if user is authenticated
+ * Optional middleware that attaches tenant database only if user is authenticated
  * Does not fail if user is not authenticated, just skips attaching database
  */
-export async function attachClientDatabaseOptional(
+export async function attachTenantDatabaseOptional(
   req: Request,
   _res: Response,
   next: NextFunction
@@ -102,20 +105,20 @@ export async function attachClientDatabaseOptional(
       const databaseService = getDatabaseService();
 
       try {
-        const clientDb = await databaseService.getTenantDatabase(req.user.tenantId);
+        const tenantDb = await databaseService.getTenantDatabase(req.user.tenantId);
         const mainDb = databaseService.getMainDatabase();
-        req.clientDb = clientDb;
+        req.tenantDb = tenantDb;
         req.mainDb = mainDb;
       } catch (error) {
-        console.error('Failed to connect to client database:', error);
-        // Continue without client database
+        console.error('Failed to connect to tenant database:', error);
+        // Continue without tenant database
       }
     }
 
     next();
   } catch (error) {
-    console.error('Client database middleware error:', error);
-    // Continue without client database
+    console.error('Tenant database middleware error:', error);
+    // Continue without tenant database
     next();
   }
 }

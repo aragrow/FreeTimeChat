@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { GoogleLogo } from '@/components/icons/GoogleLogo';
+import { PublicPageLanguageSelector } from '@/components/PublicPageLanguageSelector';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -195,6 +196,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      {/* Language Selector */}
+      <PublicPageLanguageSelector />
+
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">

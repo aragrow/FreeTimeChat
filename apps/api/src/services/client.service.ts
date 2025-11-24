@@ -1,8 +1,13 @@
 /**
  * Client Service
  *
- * Handles client management for a customer (their clients)
- * Operates on the customer's database (not main database)
+ * Handles business client management for a tenant.
+ * A tenant's "clients" are their customers/business clients.
+ * Operates on the TENANT database (not main database).
+ *
+ * Architecture:
+ * - Main Database: Contains tenants, users, roles
+ * - Tenant Database: Contains tenant's business data (clients, projects, invoices, etc.)
  */
 
 import crypto from 'crypto';
@@ -43,7 +48,7 @@ export class ClientService {
   }
 
   /**
-   * Create a new client (customer's client for billing)
+   * Create a new business client (tenant's customer for billing)
    */
   async createClient(data: CreateClientRequest): Promise<CreateClientResponse> {
     const {
@@ -72,7 +77,7 @@ export class ClientService {
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '');
 
-    // Create client record in customer database
+    // Create client record in tenant database
     const client = await this.prisma.client.create({
       data: {
         id: clientId,
@@ -252,9 +257,9 @@ export class ClientService {
 }
 
 /**
- * Create ClientService instance for a specific customer database
- * Note: This service should be instantiated per-request with the customer's database connection
+ * Create ClientService instance for a specific tenant database
+ * Note: This service should be instantiated per-request with the tenant's database connection
  */
-export function getClientService(customerPrisma: ClientPrismaClient): ClientService {
-  return new ClientService(customerPrisma);
+export function getClientService(tenantPrisma: ClientPrismaClient): ClientService {
+  return new ClientService(tenantPrisma);
 }

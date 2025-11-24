@@ -43,7 +43,7 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -60,7 +60,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (status) where.status = status as string;
     if (clientId) where.clientId = clientId as string;
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     const [invoices, total] = await Promise.all([
       clientDb.invoice.findMany({
         where,
@@ -108,7 +108,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -117,7 +117,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     const invoice = await clientDb.invoice.findUnique({
       where: { id },
@@ -157,7 +157,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.post('/preview', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -167,7 +167,7 @@ router.post('/preview', async (req: Request, res: Response) => {
 
     const { clientId, projectIds, dateFrom, dateTo } = req.body;
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     // Build time entry filter
     const timeEntryWhere: Record<string, unknown> = {
@@ -341,7 +341,7 @@ router.post('/preview', async (req: Request, res: Response) => {
  */
 router.post('/generate', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -352,7 +352,7 @@ router.post('/generate', async (req: Request, res: Response) => {
     const currentUser = req.user as JWTPayload;
     const { clientId, projectIds, dateFrom, dateTo, taxRate = 0, note } = req.body;
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     // Get tenant settings for fallback invoice numbering
     const tenant = await mainDb.tenant.findUnique({
@@ -606,7 +606,7 @@ router.post('/generate', async (req: Request, res: Response) => {
  */
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -618,7 +618,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     const { items, issueDate, dueDate, taxRate, discountAmount, note, termsAndConditions } =
       req.body;
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     // Get existing invoice
     const invoice = await clientDb.invoice.findUnique({
@@ -730,7 +730,7 @@ router.put('/:id', async (req: Request, res: Response) => {
  */
 router.patch('/:id/status', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -750,7 +750,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
       return;
     }
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     // Get existing invoice
     const invoice = await clientDb.invoice.findUnique({
@@ -820,7 +820,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -848,7 +848,7 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     // Verify client exists
     const client = await clientDb.client.findUnique({
       where: { id: clientId },
@@ -949,7 +949,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.post('/:id/send-paypal', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -958,7 +958,7 @@ router.post('/:id/send-paypal', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
 
     const invoice = await clientDb.invoice.findUnique({
       where: { id },
@@ -1196,7 +1196,7 @@ router.post('/:id/send-paypal', async (req: Request, res: Response) => {
  */
 router.post('/:id/record-payment', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -1215,7 +1215,7 @@ router.post('/:id/record-payment', async (req: Request, res: Response) => {
       return;
     }
 
-    const clientDb = req.clientDb as ClientPrismaClient;
+    const clientDb = req.tenantDb as ClientPrismaClient;
     const invoice = await clientDb.invoice.findUnique({
       where: { id },
       include: { payments: true },

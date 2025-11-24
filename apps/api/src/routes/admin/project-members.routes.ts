@@ -17,7 +17,7 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -37,7 +37,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (userId) where.userId = userId as string;
 
     const [members, total] = await Promise.all([
-      (req.clientDb as ClientPrismaClient).projectMember.findMany({
+      (req.tenantDb as ClientPrismaClient).projectMember.findMany({
         where,
         include: {
           project: {
@@ -52,7 +52,7 @@ router.get('/', async (req: Request, res: Response) => {
         skip,
         take,
       }),
-      (req.clientDb as ClientPrismaClient).projectMember.count({ where }),
+      (req.tenantDb as ClientPrismaClient).projectMember.count({ where }),
     ]);
 
     res.status(200).json({
@@ -82,7 +82,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/project/:projectId', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -92,7 +92,7 @@ router.get('/project/:projectId', async (req: Request, res: Response) => {
 
     const { projectId } = req.params;
 
-    const members = await (req.clientDb as ClientPrismaClient).projectMember.findMany({
+    const members = await (req.tenantDb as ClientPrismaClient).projectMember.findMany({
       where: { projectId },
       include: {
         project: {
@@ -125,7 +125,7 @@ router.get('/project/:projectId', async (req: Request, res: Response) => {
  */
 router.get('/user/:userId', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -135,7 +135,7 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
 
     const { userId } = req.params;
 
-    const members = await (req.clientDb as ClientPrismaClient).projectMember.findMany({
+    const members = await (req.tenantDb as ClientPrismaClient).projectMember.findMany({
       where: { userId },
       include: {
         project: {
@@ -176,7 +176,7 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -196,7 +196,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Verify project exists
-    const project = await (req.clientDb as ClientPrismaClient).project.findUnique({
+    const project = await (req.tenantDb as ClientPrismaClient).project.findUnique({
       where: { id: projectId },
     });
 
@@ -209,7 +209,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Check if user is already a member
-    const existingMember = await (req.clientDb as ClientPrismaClient).projectMember.findUnique({
+    const existingMember = await (req.tenantDb as ClientPrismaClient).projectMember.findUnique({
       where: {
         projectId_userId: {
           projectId,
@@ -227,7 +227,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Create project member
-    const member = await (req.clientDb as ClientPrismaClient).projectMember.create({
+    const member = await (req.tenantDb as ClientPrismaClient).projectMember.create({
       data: {
         projectId,
         userId,
@@ -271,7 +271,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -283,7 +283,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     const { isBillable } = req.body;
 
     // Check if member exists
-    const existingMember = await (req.clientDb as ClientPrismaClient).projectMember.findUnique({
+    const existingMember = await (req.tenantDb as ClientPrismaClient).projectMember.findUnique({
       where: { id },
     });
 
@@ -296,7 +296,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     // Update project member
-    const member = await (req.clientDb as ClientPrismaClient).projectMember.update({
+    const member = await (req.tenantDb as ClientPrismaClient).projectMember.update({
       where: { id },
       data: {
         isBillable: isBillable !== undefined ? isBillable : undefined,
@@ -332,7 +332,7 @@ router.put('/:id', async (req: Request, res: Response) => {
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -343,7 +343,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
 
     // Check if member exists
-    const existingMember = await (req.clientDb as ClientPrismaClient).projectMember.findUnique({
+    const existingMember = await (req.tenantDb as ClientPrismaClient).projectMember.findUnique({
       where: { id },
     });
 
@@ -356,7 +356,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     // Delete project member
-    await (req.clientDb as ClientPrismaClient).projectMember.delete({
+    await (req.tenantDb as ClientPrismaClient).projectMember.delete({
       where: { id },
     });
 
@@ -379,7 +379,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
  */
 router.post('/bulk', async (req: Request, res: Response) => {
   try {
-    if (!req.clientDb) {
+    if (!req.tenantDb) {
       res.status(500).json({
         status: 'error',
         message: 'Tenant database not available',
@@ -399,7 +399,7 @@ router.post('/bulk', async (req: Request, res: Response) => {
     }
 
     // Verify project exists
-    const project = await (req.clientDb as ClientPrismaClient).project.findUnique({
+    const project = await (req.tenantDb as ClientPrismaClient).project.findUnique({
       where: { id: projectId },
     });
 
@@ -412,7 +412,7 @@ router.post('/bulk', async (req: Request, res: Response) => {
     }
 
     // Get existing members to avoid duplicates
-    const existingMembers = await (req.clientDb as ClientPrismaClient).projectMember.findMany({
+    const existingMembers = await (req.tenantDb as ClientPrismaClient).projectMember.findMany({
       where: {
         projectId,
         userId: { in: userIds },
@@ -442,7 +442,7 @@ router.post('/bulk', async (req: Request, res: Response) => {
       isBillable: isBillable !== undefined ? isBillable : project.defaultBillable,
     }));
 
-    await (req.clientDb as ClientPrismaClient).projectMember.createMany({
+    await (req.tenantDb as ClientPrismaClient).projectMember.createMany({
       data: membersData,
     });
 
