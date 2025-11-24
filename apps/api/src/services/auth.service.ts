@@ -32,12 +32,19 @@ export class AuthService {
 
   /**
    * Calculate 2FA grace period based on user roles
-   * Admin and TenantAdmin: 2 hours
-   * Regular users: 10 days
+   * Development: 100 days for all users
+   * Production - Admin and TenantAdmin: 2 hours
+   * Production - Regular users: 10 days
    */
   private calculateRoleBasedGracePeriod(roles: string[]): Date {
     const now = new Date();
 
+    // Development: 100 days grace period for all users
+    if (process.env.NODE_ENV === 'development') {
+      return new Date(now.getTime() + 100 * 24 * 60 * 60 * 1000);
+    }
+
+    // Production: Role-based grace periods
     // Check if user has admin or tenantadmin role
     const hasAdminRole = roles.some(
       (role) => role.toLowerCase() === 'admin' || role.toLowerCase() === 'tenantadmin'

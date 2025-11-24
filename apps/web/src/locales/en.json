@@ -1,5 +1,6 @@
 {
   "common": {
+    "and": "and",
     "loading": "Loading...",
     "save": "Save",
     "saveChanges": "Save Changes",
@@ -131,6 +132,11 @@
     "userManagement": "User Management"
   },
   "auth": {
+    "appTitle": "AfricAI Digital Books",
+    "signInTitle": "Sign in to your account",
+    "or": "or",
+    "optionalForAdmins": "optional for admins",
+    "emailAddress": "Email address",
     "signIn": "Sign in",
     "signOut": "Sign out",
     "signUp": "Sign up",

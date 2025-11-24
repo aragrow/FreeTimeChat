@@ -19,7 +19,7 @@ import { SUPPORTED_LANGUAGES, useTranslation } from '@/contexts/TranslationConte
 export function PublicPageLanguageSelector() {
   const router = useRouter();
   const pathname = usePathname();
-  const { language } = useTranslation();
+  const { language, setLanguage } = useTranslation();
 
   // Determine current language from pathname
   const getCurrentLang = (): LanguageCode => {
@@ -55,16 +55,19 @@ export function PublicPageLanguageSelector() {
   const basePath = getBasePath();
 
   const handleLanguageChange = (newLang: LanguageCode) => {
-    // Save language preference to localStorage
-    localStorage.setItem('africai-language', newLang);
+    // Update language in context (also saves to localStorage)
+    setLanguage(newLang);
 
-    if (newLang === 'en') {
-      // English goes to root path
-      router.push(basePath === '/' ? '/' : basePath);
-    } else {
-      // Other languages get prefixed
-      router.push(basePath === '/' ? `/${newLang}` : `/${newLang}${basePath}`);
+    // Only route for landing page, which has language-specific versions
+    // Other pages like /login, /register use TranslationContext for language
+    if (basePath === '/') {
+      if (newLang === 'en') {
+        router.push('/');
+      } else {
+        router.push(`/${newLang}`);
+      }
     }
+    // For non-landing pages, language change is handled by context without routing
   };
 
   return (

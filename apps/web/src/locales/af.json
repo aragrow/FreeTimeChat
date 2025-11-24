@@ -1,5 +1,6 @@
 {
   "common": {
+    "and": "and",
     "loading": "Laai...",
     "save": "Stoor",
     "saveChanges": "Stoor Veranderinge",
@@ -131,6 +132,11 @@
     "userManagement": "Gebruikersbestuur"
   },
   "auth": {
+    "appTitle": "AfricAI Digital Books",
+    "signInTitle": "Sign in to your account",
+    "or": "or",
+    "optionalForAdmins": "optional for admins",
+    "emailAddress": "Email address",
     "signIn": "Teken In",
     "signOut": "Teken Uit",
     "signUp": "Registreer",
