@@ -30,7 +30,7 @@ interface Client extends Record<string, unknown> {
 }
 
 export default function ClientsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, isLoading: authLoading } = useAuth();
   const { t } = useTranslation();
 
   const [clients, setClients] = useState<Client[]>([]);
@@ -41,9 +41,12 @@ export default function ClientsPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    fetchClients();
+    // Wait for auth to be ready before fetching
+    if (!authLoading) {
+      fetchClients();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, statusFilter]);
+  }, [currentPage, statusFilter, authLoading]);
 
   const fetchClients = async () => {
     try {

@@ -36,7 +36,7 @@ interface Project extends Record<string, unknown> {
 }
 
 export default function ProjectsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, isLoading: authLoading } = useAuth();
   const { t } = useTranslation();
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -48,9 +48,12 @@ export default function ProjectsPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    fetchProjects();
+    // Wait for auth to be ready before fetching
+    if (!authLoading) {
+      fetchProjects();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, statusFilter]);
+  }, [currentPage, statusFilter, authLoading]);
 
   const fetchProjects = async () => {
     try {
