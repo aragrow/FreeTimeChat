@@ -13,7 +13,6 @@ import {
   createProjectSchema,
   deleteProjectSchema,
   getProjectByIdSchema,
-  listProjectsSchema,
   restoreProjectSchema,
   updateProjectSchema,
 } from '../validation/project.validation';
@@ -68,43 +67,77 @@ router.post('/', validate(createProjectSchema), async (req: Request, res: Respon
 
 /**
  * GET /api/v1/projects
- * List all projects with pagination
+ * Get projects where the authenticated user is a member, with total time tracked
  */
-router.get('/', validate(listProjectsSchema), async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.tenantDb) {
+    if (!req.tenantDb || !req.user) {
       res.status(500).json({ status: 'error', message: 'Client database not available' });
       return;
     }
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const clientId = req.query.clientId as string;
-    const isActive =
-      req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined;
-    const includeDeleted = req.query.includeDeleted === 'true';
+    const userId = req.user.sub; // User ID from JWT
+    const tenantDb = req.tenantDb as ClientPrismaClient;
 
-    const skip = (page - 1) * limit;
+    // Get projects where user is a member
+    const projectMembers = await tenantDb.projectMember.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        project: {
+          include: {
+            client: true,
+            timeEntries: {
+              where: {
+                userId, // Only count this user's time entries
+                deletedAt: null,
+              },
+            },
+          },
+        },
+      },
+    });
 
-    const projectService = new ProjectService(req.tenantDb as ClientPrismaClient);
-    const [projects, total] = await Promise.all([
-      projectService.list({ skip, take: limit, clientId, isActive, includeDeleted }),
-      projectService.count(isActive, includeDeleted, clientId),
-    ]);
+    // Map to projects with total hours
+    const projectsWithTime = projectMembers
+      .filter((pm) => pm.project.deletedAt === null) // Filter out deleted projects
+      .map((pm) => {
+        const project = pm.project;
+        // Calculate total hours from time entries
+        const totalMinutes = project.timeEntries.reduce((sum, entry) => {
+          return sum + (entry.duration || 0);
+        }, 0);
+
+        const totalHours = totalMinutes / 60;
+
+        return {
+          id: project.id,
+          name: project.name,
+          description: project.description,
+          clientId: project.clientId,
+          client: project.client,
+          isActive: project.isActive,
+          startDate: project.startDate,
+          endDate: project.endDate,
+          isBillable: project.isBillableProject,
+          hourlyRate: project.hourlyRate,
+          allocatedHours: project.allocatedHours,
+          createdAt: project.createdAt,
+          updatedAt: project.updatedAt,
+          // Add time tracking data
+          totalHours: Math.round(totalHours * 100) / 100, // Round to 2 decimals
+          totalTimeEntries: project.timeEntries.length,
+        };
+      });
 
     res.json({
       status: 'success',
-      data: projects,
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      data: projectsWithTime,
     });
   } catch (error) {
-    console.error('Failed to list projects:', error);
-    res.status(500).json({ status: 'error', message: 'Failed to list projects' });
+    console.error('Failed to list user projects:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to list user projects' });
   }
 });
 

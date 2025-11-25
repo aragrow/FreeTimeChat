@@ -31,6 +31,8 @@ interface Project extends Record<string, unknown> {
   allocatedHours?: number;
   isActive: boolean;
   createdAt: string;
+  totalHours?: number;
+  totalTimeEntries?: number;
 }
 
 export default function ProjectsPage() {
@@ -104,18 +106,18 @@ export default function ProjectsPage() {
 
   const buildColumns = (): TableColumn<Project>[] => [
     {
+      key: 'client',
       header: 'Client',
-      accessor: 'client',
-      cell: (project) => (
+      render: (project) => (
         <div>
           <div className="font-medium text-gray-900">{project.client?.name || 'No Client'}</div>
         </div>
       ),
     },
     {
+      key: 'name',
       header: 'Project',
-      accessor: 'name',
-      cell: (project) => (
+      render: (project) => (
         <div>
           <div className="font-medium text-gray-900">{project.name}</div>
           {project.description && (
@@ -125,9 +127,23 @@ export default function ProjectsPage() {
       ),
     },
     {
+      key: 'totalHours',
+      header: 'Your Hours',
+      render: (project) => (
+        <div className="text-gray-700">
+          <div className="font-medium">{project.totalHours || 0}h</div>
+          {project.totalTimeEntries !== undefined && (
+            <div className="text-xs text-gray-500">
+              {project.totalTimeEntries} {project.totalTimeEntries === 1 ? 'entry' : 'entries'}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'isBillable',
       header: 'Billable',
-      accessor: 'isBillable',
-      cell: (project) => (
+      render: (project) => (
         <div className="flex items-center gap-2">
           {project.isBillable ? (
             <Badge variant="success" size="sm">
@@ -142,27 +158,27 @@ export default function ProjectsPage() {
       ),
     },
     {
+      key: 'hourlyRate',
       header: 'Hourly Rate',
-      accessor: 'hourlyRate',
-      cell: (project) => (
+      render: (project) => (
         <div className="text-gray-700">
           {project.isBillable && project.hourlyRate ? `$${project.hourlyRate.toFixed(2)}` : '-'}
         </div>
       ),
     },
     {
+      key: 'allocatedHours',
       header: 'Allocated Hours',
-      accessor: 'allocatedHours',
-      cell: (project) => (
+      render: (project) => (
         <div className="text-gray-700">
           {project.allocatedHours ? `${project.allocatedHours}h` : 'Unlimited'}
         </div>
       ),
     },
     {
+      key: 'isActive',
       header: 'Status',
-      accessor: 'isActive',
-      cell: (project) => (
+      render: (project) => (
         <Badge variant={project.isActive ? 'success' : 'error'} size="sm">
           {project.isActive ? 'Active' : 'Inactive'}
         </Badge>
@@ -176,7 +192,7 @@ export default function ProjectsPage() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('nav.projects')}</h1>
-          <p className="text-gray-600 mt-1">View all projects and their details</p>
+          <p className="text-gray-600 mt-1">View your projects with time tracking</p>
         </div>
 
         {/* Filters */}
