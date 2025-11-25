@@ -30,9 +30,9 @@ export default function Verify2FAPage() {
       setSkipInDev(shouldSkip);
 
       if (shouldSkip) {
-        // Auto-redirect to chat after a brief delay to show the skip message
+        // Auto-redirect to dashboard after a brief delay to show the skip message
         setTimeout(() => {
-          router.push('/chat');
+          router.push('/dashboard');
         }, 1500);
       }
     }
@@ -74,7 +74,7 @@ export default function Verify2FAPage() {
         }
 
         // Successful verification
-        router.push('/chat');
+        router.push('/dashboard');
       } else {
         // For regular 2FA, use AuthContext
         const result = await verify2FA(verificationCode);
@@ -85,7 +85,7 @@ export default function Verify2FAPage() {
         }
 
         // Successful verification
-        router.push('/chat');
+        router.push('/dashboard');
       }
     } catch (err) {
       console.error('2FA verification error:', err);
@@ -185,7 +185,7 @@ export default function Verify2FAPage() {
                     setSkipInDev(checked);
                     localStorage.setItem('skipTwoFactorInDev', checked.toString());
                     if (checked) {
-                      setTimeout(() => router.push('/chat'), 500);
+                      setTimeout(() => router.push('/dashboard'), 500);
                     }
                   }}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"

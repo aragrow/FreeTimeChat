@@ -157,3 +157,4 @@ docs/.vitepress/cache
 docker/volumes/
 *.sql
 !docker/postgres/init/*.sql
+/apps/api/scripts

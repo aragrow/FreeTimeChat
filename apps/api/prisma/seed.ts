@@ -151,6 +151,28 @@ async function main() {
     { name: 'security.settings.read', description: 'View security settings' },
     { name: 'security.settings.write', description: 'Update security settings' },
     { name: 'security.settings.read.all', description: 'View all customer security settings' },
+
+    // Time Tracking Authority
+    { name: 'time-tracking:manage', description: 'Full time tracking management' },
+    { name: 'time-tracking:reports', description: 'View and export time tracking reports' },
+    { name: 'time-tracking:approve', description: 'Approve time entries' },
+
+    // Account Payables Authority
+    { name: 'payables:read', description: 'View payables and bills' },
+    { name: 'payables:create', description: 'Create bills and expenses' },
+    { name: 'payables:update', description: 'Update bills and expenses' },
+    { name: 'payables:delete', description: 'Delete bills and expenses' },
+    { name: 'payables:approve', description: 'Approve payments' },
+    { name: 'payables:process', description: 'Process vendor payments' },
+    { name: 'payables:reports', description: 'View account payables reports' },
+
+    // Account Receivables Authority
+    { name: 'receivables:read', description: 'View invoices and receivables' },
+    { name: 'receivables:create', description: 'Create customer invoices' },
+    { name: 'receivables:update', description: 'Update customer invoices' },
+    { name: 'receivables:delete', description: 'Delete customer invoices' },
+    { name: 'receivables:record-payments', description: 'Record customer payments' },
+    { name: 'receivables:reports', description: 'View account receivables reports' },
   ];
 
   await prismaMain.capability.createMany({
@@ -198,7 +220,49 @@ async function main() {
     },
   });
 
-  console.log(`✓ Admin role created: ${adminRole.name} (ID: ${adminRole.id})\n`);
+  console.log(`✓ Admin role created: ${adminRole.name} (ID: ${adminRole.id})`);
+
+  // Create "timetrackingmanager" role
+  const timeTrackingRole = await prismaMain.role.create({
+    data: {
+      id: '00000000-0000-0000-0000-000000000013',
+      name: 'timetrackingmanager',
+      description: 'Time tracking manager with full time entry and reporting permissions',
+      isSeeded: true,
+    },
+  });
+
+  console.log(
+    `✓ Time Tracking Manager role created: ${timeTrackingRole.name} (ID: ${timeTrackingRole.id})`
+  );
+
+  // Create "payablesmanager" role
+  const payablesRole = await prismaMain.role.create({
+    data: {
+      id: '00000000-0000-0000-0000-000000000014',
+      name: 'payablesmanager',
+      description: 'Accounts payable manager with vendor payment and bill management permissions',
+      isSeeded: true,
+    },
+  });
+
+  console.log(
+    `✓ Accounts Payable Manager role created: ${payablesRole.name} (ID: ${payablesRole.id})`
+  );
+
+  // Create "receivablesmanager" role
+  const receivablesRole = await prismaMain.role.create({
+    data: {
+      id: '00000000-0000-0000-0000-000000000015',
+      name: 'receivablesmanager',
+      description: 'Accounts receivable manager with invoice and payment collection permissions',
+      isSeeded: true,
+    },
+  });
+
+  console.log(
+    `✓ Accounts Receivable Manager role created: ${receivablesRole.name} (ID: ${receivablesRole.id})\n`
+  );
 
   // ============================================================================
   // Step 4: Assign Capabilities to Roles
@@ -279,7 +343,115 @@ async function main() {
     data: adminRoleCapabilities,
   });
 
-  console.log(`✓ Assigned ${adminRoleCapabilities.length} capabilities to admin role\n`);
+  console.log(`✓ Assigned ${adminRoleCapabilities.length} capabilities to admin role`);
+
+  // Assign capabilities to "timetrackingmanager" role
+  const timeTrackingCapabilities = [
+    // Time entry management
+    'time-entries:read',
+    'time-entries:create',
+    'time-entries:update',
+    'time-entries:delete',
+    // Time tracking authority
+    'time-tracking:manage',
+    'time-tracking:reports',
+    'time-tracking:approve',
+    // Project read access (to see what projects exist)
+    'projects:read',
+    // Reports
+    'reports:read',
+    'reports:export',
+    // Conversations
+    'conversations:read',
+    'conversations:create',
+    'conversations:delete',
+  ];
+
+  const timeTrackingRoleCapabilities = allCapabilities
+    .filter((c) => timeTrackingCapabilities.includes(c.name))
+    .map((c) => ({
+      roleId: timeTrackingRole.id,
+      capabilityId: c.id,
+      isAllowed: true,
+      isSeeded: true,
+    }));
+
+  await prismaMain.roleCapability.createMany({
+    data: timeTrackingRoleCapabilities,
+  });
+
+  console.log(
+    `✓ Assigned ${timeTrackingRoleCapabilities.length} capabilities to timetrackingmanager role`
+  );
+
+  // Assign capabilities to "payablesmanager" role
+  const payablesCapabilities = [
+    // Accounts payable management
+    'payables:read',
+    'payables:create',
+    'payables:update',
+    'payables:delete',
+    'payables:approve',
+    'payables:process',
+    'payables:reports',
+    // Reports
+    'reports:read',
+    'reports:export',
+    // Conversations
+    'conversations:read',
+    'conversations:create',
+    'conversations:delete',
+  ];
+
+  const payablesRoleCapabilities = allCapabilities
+    .filter((c) => payablesCapabilities.includes(c.name))
+    .map((c) => ({
+      roleId: payablesRole.id,
+      capabilityId: c.id,
+      isAllowed: true,
+      isSeeded: true,
+    }));
+
+  await prismaMain.roleCapability.createMany({
+    data: payablesRoleCapabilities,
+  });
+
+  console.log(`✓ Assigned ${payablesRoleCapabilities.length} capabilities to payablesmanager role`);
+
+  // Assign capabilities to "receivablesmanager" role
+  const receivablesCapabilities = [
+    // Accounts receivable management
+    'receivables:read',
+    'receivables:create',
+    'receivables:update',
+    'receivables:delete',
+    'receivables:record-payments',
+    'receivables:reports',
+    // Reports
+    'reports:read',
+    'reports:export',
+    // Conversations
+    'conversations:read',
+    'conversations:create',
+    'conversations:delete',
+  ];
+
+  const receivablesRoleCapabilities = allCapabilities
+    .filter((c) => receivablesCapabilities.includes(c.name))
+    .map((c) => ({
+      roleId: receivablesRole.id,
+      capabilityId: c.id,
+      isAllowed: true,
+      isSeeded: true,
+    }));
+
+  await prismaMain.roleCapability.createMany({
+    data: receivablesRoleCapabilities,
+  });
+
+  console.log(
+    `✓ Assigned ${receivablesRoleCapabilities.length} capabilities to receivablesmanager role\n`
+  );
 
   // ============================================================================
   // Step 5: Assign Admin Role to User
@@ -479,6 +651,9 @@ async function main() {
   console.log(`     - user (${userRoleCapabilities.length} capabilities)`);
   console.log(`     - tenantadmin (${tenantAdminRoleCapabilities.length} capabilities)`);
   console.log(`     - admin (${adminRoleCapabilities.length} capabilities)`);
+  console.log(`     - timetrackingmanager (${timeTrackingRoleCapabilities.length} capabilities)`);
+  console.log(`     - payablesmanager (${payablesRoleCapabilities.length} capabilities)`);
+  console.log(`     - receivablesmanager (${receivablesRoleCapabilities.length} capabilities)`);
   console.log(`   • Total Capabilities: ${allCapabilities.length}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   console.log('🚀 You can now login at: http://localhost:3000/login');

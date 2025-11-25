@@ -85,8 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         () => {
           refreshTokenFunc();
         },
-        14 * 60 * 1000
-      ); // Refresh every 14 minutes (before 15-minute expiry)
+        105 * 60 * 1000
+      ); // Refresh every 105 minutes (before 2-hour expiry)
 
       return () => clearInterval(interval);
     }

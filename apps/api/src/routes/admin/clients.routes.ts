@@ -204,8 +204,8 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    // Validate hourlyRate if provided
-    if (hourlyRate !== undefined && hourlyRate !== null) {
+    // Validate hourlyRate if provided (skip if empty string)
+    if (hourlyRate !== undefined && hourlyRate !== null && hourlyRate !== '') {
       const rate = parseFloat(hourlyRate);
       if (isNaN(rate) || rate < 0) {
         res.status(400).json({
@@ -216,13 +216,45 @@ router.post('/', async (req: Request, res: Response) => {
       }
     }
 
-    // Validate discountPercentage if provided
-    if (discountPercentage !== undefined && discountPercentage !== null) {
+    // Validate discountPercentage if provided (skip if empty string)
+    if (
+      discountPercentage !== undefined &&
+      discountPercentage !== null &&
+      discountPercentage !== ''
+    ) {
       const discount = parseFloat(discountPercentage);
       if (isNaN(discount) || discount < 0 || discount > 100) {
         res.status(400).json({
           status: 'error',
           message: 'Discount percentage must be between 0 and 100',
+        });
+        return;
+      }
+    }
+
+    // Validate invoiceNextNumber if provided (skip if empty string)
+    if (invoiceNextNumber !== undefined && invoiceNextNumber !== null && invoiceNextNumber !== '') {
+      const nextNum = parseInt(invoiceNextNumber);
+      if (isNaN(nextNum) || nextNum < 1) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Invoice next number must be a positive integer',
+        });
+        return;
+      }
+    }
+
+    // Validate invoiceNumberPadding if provided (skip if empty string)
+    if (
+      invoiceNumberPadding !== undefined &&
+      invoiceNumberPadding !== null &&
+      invoiceNumberPadding !== ''
+    ) {
+      const padding = parseInt(invoiceNumberPadding);
+      if (isNaN(padding) || padding < 1 || padding > 10) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Invoice number padding must be between 1 and 10',
         });
         return;
       }
@@ -258,8 +290,8 @@ router.post('/', async (req: Request, res: Response) => {
         billingContactEmail: billingContactEmail?.trim() || null,
         billingContactPhone: billingContactPhone?.trim() || null,
         invoicePrefix: invoicePrefix?.trim() || null,
-        invoiceNextNumber: invoiceNextNumber || 1,
-        invoiceNumberPadding: invoiceNumberPadding || 5,
+        invoiceNextNumber: invoiceNextNumber ? parseInt(invoiceNextNumber) : 1,
+        invoiceNumberPadding: invoiceNumberPadding ? parseInt(invoiceNumberPadding) : 5,
         preferredPaymentMethod: preferredPaymentMethod || null,
         isActive: true,
       },
@@ -461,8 +493,8 @@ router.put('/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    // Validate hourlyRate if provided
-    if (hourlyRate !== undefined && hourlyRate !== null) {
+    // Validate hourlyRate if provided (skip if empty string)
+    if (hourlyRate !== undefined && hourlyRate !== null && hourlyRate !== '') {
       const rate = parseFloat(hourlyRate);
       if (isNaN(rate) || rate < 0) {
         res.status(400).json({
@@ -473,13 +505,45 @@ router.put('/:id', async (req: Request, res: Response) => {
       }
     }
 
-    // Validate discountPercentage if provided
-    if (discountPercentage !== undefined && discountPercentage !== null) {
+    // Validate discountPercentage if provided (skip if empty string)
+    if (
+      discountPercentage !== undefined &&
+      discountPercentage !== null &&
+      discountPercentage !== ''
+    ) {
       const discount = parseFloat(discountPercentage);
       if (isNaN(discount) || discount < 0 || discount > 100) {
         res.status(400).json({
           status: 'error',
           message: 'Discount percentage must be between 0 and 100',
+        });
+        return;
+      }
+    }
+
+    // Validate invoiceNextNumber if provided (skip if empty string)
+    if (invoiceNextNumber !== undefined && invoiceNextNumber !== null && invoiceNextNumber !== '') {
+      const nextNum = parseInt(invoiceNextNumber);
+      if (isNaN(nextNum) || nextNum < 1) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Invoice next number must be a positive integer',
+        });
+        return;
+      }
+    }
+
+    // Validate invoiceNumberPadding if provided (skip if empty string)
+    if (
+      invoiceNumberPadding !== undefined &&
+      invoiceNumberPadding !== null &&
+      invoiceNumberPadding !== ''
+    ) {
+      const padding = parseInt(invoiceNumberPadding);
+      if (isNaN(padding) || padding < 1 || padding > 10) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Invoice number padding must be between 1 and 10',
         });
         return;
       }
@@ -545,8 +609,10 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (billingContactPhone !== undefined)
       updateData.billingContactPhone = billingContactPhone?.trim() || null;
     if (invoicePrefix !== undefined) updateData.invoicePrefix = invoicePrefix?.trim() || null;
-    if (invoiceNextNumber !== undefined) updateData.invoiceNextNumber = invoiceNextNumber;
-    if (invoiceNumberPadding !== undefined) updateData.invoiceNumberPadding = invoiceNumberPadding;
+    if (invoiceNextNumber !== undefined)
+      updateData.invoiceNextNumber = invoiceNextNumber ? parseInt(invoiceNextNumber) : 1;
+    if (invoiceNumberPadding !== undefined)
+      updateData.invoiceNumberPadding = invoiceNumberPadding ? parseInt(invoiceNumberPadding) : 5;
     if (preferredPaymentMethod !== undefined)
       updateData.preferredPaymentMethod = preferredPaymentMethod || null;
     if (isActive !== undefined) updateData.isActive = isActive;

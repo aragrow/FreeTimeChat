@@ -35,6 +35,13 @@ interface Project {
   id: string;
   name: string;
   isBillableProject: boolean;
+  clientId?: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  companyName?: string;
 }
 
 export default function NewTimeEntryPage() {
@@ -55,11 +62,13 @@ export default function NewTimeEntryPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<string>('');
   const [users, setUsers] = useState<User[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
 
   // Form state
   const [formData, setFormData] = useState({
     userId: '',
+    clientId: '',
     projectId: '',
     description: '',
     date: '', // Just date, not datetime
@@ -77,7 +86,7 @@ export default function NewTimeEntryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
 
-  // Fetch users and projects when tenant is selected
+  // Fetch users and clients when tenant is selected
   useEffect(() => {
     // Don't fetch if user is not loaded yet
     if (!user) {
@@ -94,9 +103,24 @@ export default function NewTimeEntryPage() {
       fetchUsers();
     }
 
-    fetchProjects();
+    fetchClients();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTenant, isAdmin, isTenantAdmin, user]);
+
+  // Fetch projects when client is selected
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    if (isAdmin && !selectedTenant) {
+      return;
+    }
+
+    // Fetch projects when clientId changes
+    fetchProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.clientId, selectedTenant, isAdmin, isTenantAdmin, user]);
 
   const fetchTenants = async () => {
     try {
@@ -140,18 +164,49 @@ export default function NewTimeEntryPage() {
     }
   };
 
-  const fetchProjects = async () => {
+  const fetchClients = async () => {
     try {
       // Use different endpoint based on user role
       const endpoint =
         isAdmin || isTenantAdmin
-          ? `${process.env.NEXT_PUBLIC_API_URL}/admin/projects?take=1000`
-          : `${process.env.NEXT_PUBLIC_API_URL}/projects?limit=1000`;
+          ? `${process.env.NEXT_PUBLIC_API_URL}/admin/clients?take=1000`
+          : `${process.env.NEXT_PUBLIC_API_URL}/clients?limit=1000`;
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Handle different response structures
+        const clientsList = isAdmin || isTenantAdmin ? data.data.clients || [] : data.data || [];
+        setClients(clientsList);
+      }
+    } catch (error) {
+      console.error('Failed to fetch clients:', error);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      // If no client selected, clear projects
+      if (!formData.clientId) {
+        setProjects([]);
+        return;
+      }
+
+      // Use different endpoint based on user role - filter by client
+      const endpoint =
+        isAdmin || isTenantAdmin
+          ? `${process.env.NEXT_PUBLIC_API_URL}/admin/projects?take=1000&clientId=${formData.clientId}`
+          : `${process.env.NEXT_PUBLIC_API_URL}/projects?limit=1000&clientId=${formData.clientId}`;
 
       console.log('Fetching projects:', {
         isAdmin,
         isTenantAdmin,
         endpoint,
+        clientId: formData.clientId,
         userRoles: user?.roles,
       });
 
@@ -187,10 +242,19 @@ export default function NewTimeEntryPage() {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    // If client changes, clear the project selection
+    if (name === 'clientId') {
+      setFormData((prev) => ({
+        ...prev,
+        clientId: value,
+        projectId: '', // Clear project when client changes
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      }));
+    }
 
     // Clear error when user types
     if (errors[name]) {
@@ -204,6 +268,10 @@ export default function NewTimeEntryPage() {
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
+
+    if (!formData.clientId) {
+      newErrors.clientId = 'Client is required';
+    }
 
     if (!formData.projectId) {
       newErrors.projectId = 'Project is required';
@@ -394,6 +462,31 @@ export default function NewTimeEntryPage() {
                     </div>
                   )}
 
+                  {/* Client Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Client <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="clientId"
+                      value={formData.clientId}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.clientId ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">-- Select Client --</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.clientId && (
+                      <p className="mt-1 text-sm text-red-600">{errors.clientId}</p>
+                    )}
+                  </div>
+
                   {/* Project Selection */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -403,11 +496,18 @@ export default function NewTimeEntryPage() {
                       name="projectId"
                       value={formData.projectId}
                       onChange={handleInputChange}
+                      disabled={!formData.clientId}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                         errors.projectId ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      } ${!formData.clientId ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
-                      <option value="">-- Select Project --</option>
+                      <option value="">
+                        {!formData.clientId
+                          ? '-- Select Client First --'
+                          : projects.length === 0
+                            ? '-- No Projects for This Client --'
+                            : '-- Select Project --'}
+                      </option>
                       {projects.map((project) => (
                         <option key={project.id} value={project.id}>
                           {project.name}

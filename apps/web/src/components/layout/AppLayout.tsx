@@ -267,7 +267,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                       </button>
                       {!isSectionCollapsed('business') && isNavItemEnabled('clients') && (
                         <a
-                          href="/admin/clients"
+                          href="/clients"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <svg
@@ -288,7 +288,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                       )}
                       {!isSectionCollapsed('business') && isNavItemEnabled('projects') && (
                         <a
-                          href="/admin/projects"
+                          href="/projects"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <svg

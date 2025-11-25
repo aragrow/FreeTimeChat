@@ -848,9 +848,12 @@ export default function ClientsPage() {
 
             {/* Billing Information */}
             <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-                Billing Information
-              </h3>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                  Billing Information (Optional)
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Leave empty to use tenant defaults</p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -892,9 +895,12 @@ export default function ClientsPage() {
 
             {/* Invoice Settings */}
             <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-                Invoice Settings
-              </h3>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                  Invoice Settings (Optional)
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Leave empty to use tenant defaults</p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1207,9 +1213,12 @@ export default function ClientsPage() {
 
             {/* Billing Information */}
             <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-                Billing Information
-              </h3>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                  Billing Information (Optional)
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Leave empty to use tenant defaults</p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1251,9 +1260,12 @@ export default function ClientsPage() {
 
             {/* Invoice Settings */}
             <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-                Invoice Settings
-              </h3>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                  Invoice Settings (Optional)
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Leave empty to use tenant defaults</p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

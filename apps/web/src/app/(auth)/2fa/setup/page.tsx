@@ -116,7 +116,7 @@ export default function Setup2FAPage() {
   };
 
   const handleComplete = () => {
-    router.push('/chat');
+    router.push('/dashboard');
   };
 
   if (isLoading) {

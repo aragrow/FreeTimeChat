@@ -117,7 +117,7 @@ export default function LoginPage() {
       }
 
       // Successful login
-      router.push('/chat');
+      router.push('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
       setGeneralError(t('errors.unexpectedError'));
