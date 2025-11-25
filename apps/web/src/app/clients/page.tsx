@@ -30,7 +30,7 @@ interface Client extends Record<string, unknown> {
 }
 
 export default function ClientsPage() {
-  const { fetchWithAuth, isLoading: authLoading } = useAuth();
+  const { fetchWithAuth, isLoading: authLoading, user } = useAuth();
   const { t } = useTranslation();
 
   const [clients, setClients] = useState<Client[]>([]);
@@ -40,13 +40,17 @@ export default function ClientsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Determine user role
+  const isAdmin = user?.roles?.includes('admin');
+  const isTenantAdmin = user?.roles?.includes('tenantadmin');
+
   useEffect(() => {
     // Wait for auth to be ready before fetching
     if (!authLoading) {
       fetchClients();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, statusFilter, authLoading]);
+  }, [currentPage, statusFilter, authLoading, user]);
 
   const fetchClients = async () => {
     try {
@@ -62,9 +66,13 @@ export default function ClientsPage() {
         params.append('search', searchTerm);
       }
 
-      const response = await fetchWithAuth(
-        `${process.env.NEXT_PUBLIC_API_URL}/clients?${params.toString()}`
-      );
+      // Use admin endpoint for admin/tenantadmin users
+      const endpoint =
+        isAdmin || isTenantAdmin
+          ? `${process.env.NEXT_PUBLIC_API_URL}/admin/clients`
+          : `${process.env.NEXT_PUBLIC_API_URL}/clients`;
+
+      const response = await fetchWithAuth(`${endpoint}?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch clients');
@@ -73,8 +81,14 @@ export default function ClientsPage() {
       const data = await response.json();
 
       if (data.status === 'success') {
-        setClients(data.data || []);
-        setTotalPages(data.meta?.totalPages || 1);
+        // Handle different response structures
+        const clientsList = isAdmin || isTenantAdmin ? data.data.clients || [] : data.data || [];
+        setClients(clientsList);
+        const totalPages =
+          isAdmin || isTenantAdmin
+            ? data.data.pagination?.totalPages || 1
+            : data.meta?.totalPages || 1;
+        setTotalPages(totalPages);
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -92,9 +106,9 @@ export default function ClientsPage() {
 
   const buildColumns = (): TableColumn<Client>[] => [
     {
+      key: 'name',
       header: 'Client Name',
-      accessor: 'name',
-      cell: (client) => (
+      render: (client) => (
         <div>
           <div className="font-medium text-gray-900">{client.name}</div>
           <div className="text-sm text-gray-500">{client.slug}</div>
@@ -102,9 +116,9 @@ export default function ClientsPage() {
       ),
     },
     {
+      key: 'email',
       header: 'Contact',
-      accessor: 'email',
-      cell: (client) => (
+      render: (client) => (
         <div>
           {client.email && <div className="text-gray-700">{client.email}</div>}
           {client.phone && <div className="text-sm text-gray-500">{client.phone}</div>}
@@ -112,9 +126,9 @@ export default function ClientsPage() {
       ),
     },
     {
+      key: 'website',
       header: 'Website',
-      accessor: 'website',
-      cell: (client) =>
+      render: (client) =>
         client.website ? (
           <a
             href={client.website}
@@ -129,9 +143,9 @@ export default function ClientsPage() {
         ),
     },
     {
+      key: 'isActive',
       header: 'Status',
-      accessor: 'isActive',
-      cell: (client) => (
+      render: (client) => (
         <Badge variant={client.isActive ? 'success' : 'error'} size="sm">
           {client.isActive ? 'Active' : 'Inactive'}
         </Badge>

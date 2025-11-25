@@ -36,7 +36,7 @@ interface Project extends Record<string, unknown> {
 }
 
 export default function ProjectsPage() {
-  const { fetchWithAuth, isLoading: authLoading } = useAuth();
+  const { fetchWithAuth, isLoading: authLoading, user } = useAuth();
   const { t } = useTranslation();
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -47,13 +47,17 @@ export default function ProjectsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Determine user role
+  const isAdmin = user?.roles?.includes('admin');
+  const isTenantAdmin = user?.roles?.includes('tenantadmin');
+
   useEffect(() => {
     // Wait for auth to be ready before fetching
     if (!authLoading) {
       fetchProjects();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, statusFilter, authLoading]);
+  }, [currentPage, statusFilter, authLoading, user]);
 
   const fetchProjects = async () => {
     try {
@@ -65,9 +69,13 @@ export default function ProjectsPage() {
         ...(statusFilter !== 'all' && { isActive: (statusFilter === 'active').toString() }),
       });
 
-      const response = await fetchWithAuth(
-        `${process.env.NEXT_PUBLIC_API_URL}/projects?${params.toString()}`
-      );
+      // Use admin endpoint for admin/tenantadmin users
+      const endpoint =
+        isAdmin || isTenantAdmin
+          ? `${process.env.NEXT_PUBLIC_API_URL}/admin/projects`
+          : `${process.env.NEXT_PUBLIC_API_URL}/projects`;
+
+      const response = await fetchWithAuth(`${endpoint}?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch projects');
@@ -76,8 +84,14 @@ export default function ProjectsPage() {
       const data = await response.json();
 
       if (data.status === 'success') {
-        setProjects(data.data || []);
-        setTotalPages(data.meta?.totalPages || 1);
+        // Handle different response structures
+        const projectsList = isAdmin || isTenantAdmin ? data.data.projects || [] : data.data || [];
+        setProjects(projectsList);
+        const totalPages =
+          isAdmin || isTenantAdmin
+            ? data.data.pagination?.totalPages || 1
+            : data.meta?.totalPages || 1;
+        setTotalPages(totalPages);
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
