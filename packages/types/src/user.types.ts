@@ -23,6 +23,7 @@ export interface User {
   trackingMode?: 'CLOCK' | 'MANUAL';
   naturalHoursPerWeek?: number; // Default 10
   highlyCompensated?: number; // 0 = no, 1 = yes
+  overtimePolicy?: 'ALLOW' | 'AUTO_SPLIT' | 'BLOCK'; // Default ALLOW
   createdAt: Date;
   updatedAt: Date;
   roles?: UserRole[];

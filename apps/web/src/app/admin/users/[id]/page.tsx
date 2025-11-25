@@ -25,6 +25,7 @@ interface UserDetail {
   trackingMode?: string;
   naturalHoursPerWeek?: number;
   highlyCompensated?: number;
+  overtimePolicy?: string;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
@@ -85,6 +86,7 @@ export default function UserDetailPage() {
     trackingMode: 'CLOCK' as 'CLOCK' | 'TIME',
     naturalHoursPerWeek: 10,
     highlyCompensated: 0,
+    overtimePolicy: 'ALLOW' as 'ALLOW' | 'AUTO_SPLIT' | 'BLOCK',
     roleIds: [] as string[],
     projectIds: [] as string[],
   });
@@ -128,6 +130,7 @@ export default function UserDetailPage() {
           trackingMode: data.data.trackingMode || 'CLOCK',
           naturalHoursPerWeek: data.data.naturalHoursPerWeek || 10,
           highlyCompensated: data.data.highlyCompensated || 0,
+          overtimePolicy: data.data.overtimePolicy || 'ALLOW',
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           roleIds: data.data.roles.map((ur: any) => ur.role.id),
           projectIds: [], // Will be set by fetchUserProjects
@@ -231,6 +234,7 @@ export default function UserDetailPage() {
             trackingMode: formData.trackingMode,
             naturalHoursPerWeek: formData.naturalHoursPerWeek,
             highlyCompensated: formData.highlyCompensated,
+            overtimePolicy: formData.overtimePolicy,
             roleIds: formData.roleIds,
           }),
         }
@@ -506,6 +510,34 @@ export default function UserDetailPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Two-Factor Authentication
+              </label>
+              <div className="flex items-center justify-between">
+                <span
+                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    user.isTwoFactorEnabled
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {user.isTwoFactorEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+                {canUpdate && !isEditing && (
+                  <Button size="sm" variant="outline" onClick={handleToggle2FA}>
+                    {user.isTwoFactorEnabled ? 'Disable' : 'Enable'} 2FA
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Time Tracking & Compensation */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Time Tracking & Compensation</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Time Tracking Mode
               </label>
               {isEditing ? (
@@ -583,71 +615,42 @@ export default function UserDetailPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Two-Factor Authentication
+                Overtime Policy
               </label>
-              <div className="flex items-center justify-between">
+              {isEditing ? (
+                <select
+                  value={formData.overtimePolicy}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      overtimePolicy: e.target.value as 'ALLOW' | 'AUTO_SPLIT' | 'BLOCK',
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="ALLOW">Allow - No restrictions</option>
+                  <option value="AUTO_SPLIT">
+                    Auto Split - Split hours into regular + overtime
+                  </option>
+                  <option value="BLOCK">Block - Hard limit at natural hours</option>
+                </select>
+              ) : (
                 <span
                   className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    user.isTwoFactorEnabled
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
+                    user.overtimePolicy === 'BLOCK'
+                      ? 'bg-red-100 text-red-800'
+                      : user.overtimePolicy === 'AUTO_SPLIT'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-green-100 text-green-800'
                   }`}
                 >
-                  {user.isTwoFactorEnabled ? 'Enabled' : 'Disabled'}
+                  {user.overtimePolicy === 'BLOCK'
+                    ? 'Block'
+                    : user.overtimePolicy === 'AUTO_SPLIT'
+                      ? 'Auto Split'
+                      : 'Allow'}
                 </span>
-                {canUpdate && !isEditing && (
-                  <Button size="sm" variant="outline" onClick={handleToggle2FA}>
-                    {user.isTwoFactorEnabled ? 'Disable' : 'Enable'} 2FA
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Activity Information */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Activity</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Created At</label>
-              <p className="text-gray-900">{new Date(user.createdAt).toLocaleString()}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated</label>
-              <p className="text-gray-900">{new Date(user.updatedAt).toLocaleString()}</p>
-            </div>
-
-            {user.lastLoginAt && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Login</label>
-                <p className="text-gray-900">{new Date(user.lastLoginAt).toLocaleString()}</p>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
-              <p className="text-gray-600 font-mono text-sm">{user.id}</p>
-            </div>
-
-            {/* Impersonate Action */}
-            <div className="pt-4 border-t">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Impersonation</label>
-              <Button size="sm" variant="outline" onClick={handleImpersonate}>
-                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                  />
-                </svg>
-                Impersonate User
-              </Button>
-              <p className="text-xs text-gray-500 mt-2">
-                Login as this user to see their view of the application
-              </p>
+              )}
             </div>
           </div>
         </Card>
@@ -775,6 +778,53 @@ export default function UserDetailPage() {
             )}
           </div>
         )}
+      </Card>
+
+      {/* Activity Information */}
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Activity</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Created At</label>
+            <p className="text-gray-900">{new Date(user.createdAt).toLocaleString()}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated</label>
+            <p className="text-gray-900">{new Date(user.updatedAt).toLocaleString()}</p>
+          </div>
+
+          {user.lastLoginAt && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Last Login</label>
+              <p className="text-gray-900">{new Date(user.lastLoginAt).toLocaleString()}</p>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+            <p className="text-gray-600 font-mono text-sm">{user.id}</p>
+          </div>
+
+          {/* Impersonate Action */}
+          <div className="pt-4 border-t">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Impersonation</label>
+            <Button size="sm" variant="outline" onClick={handleImpersonate}>
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                />
+              </svg>
+              Impersonate User
+            </Button>
+            <p className="text-xs text-gray-500 mt-2">
+              Login as this user to see their view of the application
+            </p>
+          </div>
+        </div>
       </Card>
 
       {/* Danger Zone */}

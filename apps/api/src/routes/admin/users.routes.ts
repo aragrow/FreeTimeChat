@@ -314,6 +314,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       trackingMode,
       naturalHoursPerWeek,
       highlyCompensated,
+      overtimePolicy,
       roleIds,
     } = req.body;
 
@@ -335,6 +336,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (trackingMode !== undefined) updateData.trackingMode = trackingMode;
     if (naturalHoursPerWeek !== undefined) updateData.naturalHoursPerWeek = naturalHoursPerWeek;
     if (highlyCompensated !== undefined) updateData.highlyCompensated = highlyCompensated;
+    if (overtimePolicy !== undefined) updateData.overtimePolicy = overtimePolicy;
 
     // Hash password if provided
     if (password) {

@@ -27,7 +27,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
   const { isNavItemEnabled } = useNavigation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
-    new Set(['main', 'business', 'ar', 'ap', 'users', 'access', 'config', 'monitoring'])
+    new Set(['main', 'time', 'ar', 'ap', 'users', 'access', 'config', 'monitoring'])
   );
 
   // Toggle section collapse
@@ -243,16 +243,16 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                     </a>
                   </div>
 
-                  {/* Business */}
+                  {/* Time & Projects */}
                   {(isNavItemEnabled('clients') || isNavItemEnabled('projects')) && (
                     <div className="mb-4">
                       <button
-                        onClick={() => toggleSectionCollapse('business')}
+                        onClick={() => toggleSectionCollapse('time')}
                         className="w-full px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between hover:text-gray-700"
                       >
-                        {t('nav.business')}
+                        {t('nav.time')}
                         <svg
-                          className={`w-4 h-4 transition-transform ${isSectionCollapsed('business') ? '' : 'rotate-180'}`}
+                          className={`w-4 h-4 transition-transform ${isSectionCollapsed('time') ? '' : 'rotate-180'}`}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -265,7 +265,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           />
                         </svg>
                       </button>
-                      {!isSectionCollapsed('business') && isNavItemEnabled('clients') && (
+                      {!isSectionCollapsed('time') && isNavItemEnabled('clients') && (
                         <a
                           href="/clients"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -286,7 +286,7 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                           {t('nav.clients')}
                         </a>
                       )}
-                      {!isSectionCollapsed('business') && isNavItemEnabled('projects') && (
+                      {!isSectionCollapsed('time') && isNavItemEnabled('projects') && (
                         <a
                           href="/projects"
                           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"

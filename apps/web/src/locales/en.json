@@ -115,7 +115,7 @@
     "integrations": "Integrations",
     "llmSettings": "LLM Settings",
     "auditLog": "Audit Log",
-    "business": "Business",
+    "time": "Time & Projects",
     "accountReceivables": "Account Receivables",
     "accountPayables": "Account Payables",
     "accessControl": "Access Control",
@@ -129,7 +129,9 @@
     "logout": "Logout",
     "main": "Main",
     "overview": "Overview",
-    "userManagement": "User Management"
+    "userManagement": "User Management",
+    "paymentTerms": "Payment Terms",
+    "expenses": "Expenses"
   },
   "auth": {
     "appTitle": "AfricAI Digital Books",
