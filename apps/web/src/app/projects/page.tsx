@@ -36,7 +36,7 @@ interface Project extends Record<string, unknown> {
 }
 
 export default function ProjectsPage() {
-  const { getAuthHeaders, isLoading: authLoading } = useAuth();
+  const { fetchWithAuth, isLoading: authLoading } = useAuth();
   const { t } = useTranslation();
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -65,11 +65,8 @@ export default function ProjectsPage() {
         ...(statusFilter !== 'all' && { isActive: (statusFilter === 'active').toString() }),
       });
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/projects?${params.toString()}`,
-        {
-          headers: getAuthHeaders(),
-        }
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/projects?${params.toString()}`
       );
 
       if (!response.ok) {

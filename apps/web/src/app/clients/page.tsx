@@ -30,7 +30,7 @@ interface Client extends Record<string, unknown> {
 }
 
 export default function ClientsPage() {
-  const { getAuthHeaders, isLoading: authLoading } = useAuth();
+  const { fetchWithAuth, isLoading: authLoading } = useAuth();
   const { t } = useTranslation();
 
   const [clients, setClients] = useState<Client[]>([]);
@@ -62,11 +62,8 @@ export default function ClientsPage() {
         params.append('search', searchTerm);
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/clients?${params.toString()}`,
-        {
-          headers: getAuthHeaders(),
-        }
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/clients?${params.toString()}`
       );
 
       if (!response.ok) {
