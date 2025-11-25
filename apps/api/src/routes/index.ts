@@ -9,6 +9,7 @@ import accountRequestRoutes from './account-request.routes';
 import adminRoutes from './admin.routes';
 import authRoutes from './auth.routes';
 import chatRoutes from './chat.routes';
+import clientsRoutes from './clients.routes';
 import compensationRoutes from './compensation.routes';
 import conversationRoutes from './conversation.routes';
 import healthRoutes from './health.routes';
@@ -51,6 +52,7 @@ v1Router.use('/admin/security-settings', securitySettingsRoutes);
 v1Router.use('/impersonate', impersonationRoutes);
 
 // Application routes
+v1Router.use('/clients', clientsRoutes);
 v1Router.use('/projects', projectRoutes);
 v1Router.use('/projects', projectMemberRoutes);
 v1Router.use('/time-entries', timeEntryRoutes);

@@ -30,6 +30,7 @@ export interface UpdateProjectData {
 export interface ListProjectsOptions {
   skip?: number;
   take?: number;
+  clientId?: string;
   isActive?: boolean;
   includeDeleted?: boolean;
 }
@@ -95,10 +96,11 @@ export class ProjectService {
    * List projects with pagination and filters
    */
   async list(options: ListProjectsOptions = {}): Promise<any[]> {
-    const { skip = 0, take = 20, isActive, includeDeleted = false } = options;
+    const { skip = 0, take = 20, clientId, isActive, includeDeleted = false } = options;
 
     const projects = await this.prisma.project.findMany({
       where: {
+        ...(clientId && { clientId }),
         ...(isActive !== undefined && { isActive }),
         ...(!includeDeleted && { deletedAt: null }),
       },
@@ -146,9 +148,14 @@ export class ProjectService {
   /**
    * Count projects
    */
-  async count(isActive?: boolean, includeDeleted: boolean = false): Promise<number> {
+  async count(
+    isActive?: boolean,
+    includeDeleted: boolean = false,
+    clientId?: string
+  ): Promise<number> {
     return this.prisma.project.count({
       where: {
+        ...(clientId && { clientId }),
         ...(isActive !== undefined && { isActive }),
         ...(!includeDeleted && { deletedAt: null }),
       },

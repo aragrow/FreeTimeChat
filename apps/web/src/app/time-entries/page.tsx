@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
 import { useToast } from '@/components/ui/Toast';
+import { useNavigation } from '@/contexts/NavigationContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -35,6 +36,7 @@ interface TimeEntry extends Record<string, unknown> {
   userEmail?: string;
   projectId: string;
   projectName?: string;
+  clientName?: string;
   isBillable?: boolean;
   createdAt: string;
 }
@@ -57,6 +59,7 @@ export default function TimeEntriesPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const { t } = useTranslation();
+  const { isNavItemEnabled } = useNavigation();
 
   // Determine user role
   const isAdmin = user?.roles?.includes('admin');
@@ -67,6 +70,7 @@ export default function TimeEntriesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'running' | 'stopped'>('all');
+  const [billableFilter, setbillableFilter] = useState<'all' | 'billable' | 'non-billable'>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -196,7 +200,7 @@ export default function TimeEntriesPage() {
             duration?: number;
             userId: string;
             projectId: string;
-            project?: { name?: string };
+            project?: { name?: string; client?: { name?: string } };
             isBillable?: boolean;
             createdAt: string;
           }) => ({
@@ -211,6 +215,7 @@ export default function TimeEntriesPage() {
             userEmail: entry.userId, // Placeholder
             projectId: entry.projectId,
             projectName: entry.project?.name || 'No Project',
+            clientName: entry.project?.client?.name || null,
             isBillable: entry.isBillable,
             createdAt: entry.createdAt,
           })
@@ -240,6 +245,7 @@ export default function TimeEntriesPage() {
       searchTerm === '' ||
       entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (entry.projectName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (entry.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
       (entry.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
 
     const matchesStatus =
@@ -247,7 +253,12 @@ export default function TimeEntriesPage() {
       (statusFilter === 'running' && entry.isRunning) ||
       (statusFilter === 'stopped' && !entry.isRunning);
 
-    return matchesSearch && matchesStatus;
+    const matchesBillable =
+      billableFilter === 'all' ||
+      (billableFilter === 'billable' && entry.isBillable === true) ||
+      (billableFilter === 'non-billable' && entry.isBillable === false);
+
+    return matchesSearch && matchesStatus && matchesBillable;
   });
 
   const formatDuration = (minutes?: number) => {
@@ -338,14 +349,23 @@ export default function TimeEntriesPage() {
       sortable: true,
       render: (entry) => (
         <div>
-          <span className="text-sm font-medium text-gray-900">
-            {entry.projectName || t('projects.noClient')}
-          </span>
-          {entry.isBillable && (
-            <Badge variant="success" size="sm" className="ml-2">
-              {t('timeEntries.billable')}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-900">
+              {entry.clientName ? `${entry.clientName} - ` : ''}
+              {entry.projectName || t('projects.noClient')}
+            </span>
+          </div>
+          <div className="mt-1">
+            {entry.isBillable ? (
+              <Badge variant="success" size="sm">
+                {t('timeEntries.billable')}
+              </Badge>
+            ) : (
+              <Badge variant="warning" size="sm">
+                Non-Billable
+              </Badge>
+            )}
+          </div>
         </div>
       ),
     });
@@ -467,22 +487,25 @@ export default function TimeEntriesPage() {
                 <p className="text-gray-600 mt-1">{getPageDescription()}</p>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="secondary" onClick={() => router.push('/chat')}>
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                    />
-                  </svg>
-                  {t('nav.chat')}
-                </Button>
+                {/* Chat Button - Only show if tenant has chat enabled */}
+                {isNavItemEnabled('chat') && (
+                  <Button variant="secondary" onClick={() => router.push('/chat')}>
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                      />
+                    </svg>
+                    {t('nav.chat')}
+                  </Button>
+                )}
 
                 {/* Tracking Mode Based Buttons - Only show for regular users (not admins) */}
                 {!isAdmin && !isTenantAdmin && (
@@ -702,16 +725,15 @@ export default function TimeEntriesPage() {
 
                 {/* Filters */}
                 <Card className="p-4">
-                  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
-                      <div className="md:col-span-1">
-                        <Input
-                          type="text"
-                          placeholder={t('timeEntries.searchPlaceholder')}
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </div>
+                  <div className="space-y-4">
+                    {/* First Row: Search and Dropdowns */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Input
+                        type="text"
+                        placeholder={t('timeEntries.searchPlaceholder')}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
 
                       {/* User Filter (Admin and Tenant Admin only) */}
                       {(isAdmin || isTenantAdmin) && (
@@ -739,45 +761,32 @@ export default function TimeEntriesPage() {
                         <option value="stopped">{t('timeEntries.stop')}</option>
                       </select>
 
-                      <div className="flex gap-2">
-                        <Input
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                          placeholder="Start Date"
-                        />
-                        <Input
-                          type="date"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                          placeholder="End Date"
-                        />
-                      </div>
+                      <select
+                        value={billableFilter}
+                        onChange={(e) => setbillableFilter(e.target.value as typeof billableFilter)}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="all">All Billability</option>
+                        <option value="billable">Billable Only</option>
+                        <option value="non-billable">Non-Billable Only</option>
+                      </select>
                     </div>
 
-                    {/* Add Time Entry Button - Only for admins/tenant admins or users with TIME mode */}
-                    {((isAdmin || isTenantAdmin) && (!isAdmin || selectedTenant)) ||
-                    (!isAdmin && !isTenantAdmin && canUseManual) ? (
-                      <Button
-                        onClick={() => router.push('/time-entries/new')}
-                        className="whitespace-nowrap w-full md:w-auto"
-                      >
-                        <svg
-                          className="w-5 h-5 mr-2"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 4v16m8-8H4"
-                          />
-                        </svg>
-                        {t('timeEntries.addEntry')}
-                      </Button>
-                    ) : null}
+                    {/* Second Row: Date Filters */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        placeholder="Start Date"
+                      />
+                      <Input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        placeholder="End Date"
+                      />
+                    </div>
                   </div>
                 </Card>
 
@@ -792,10 +801,14 @@ export default function TimeEntriesPage() {
                         label: t('timeEntries.addEntry'),
                         onClick: () => router.push('/time-entries/new'),
                       }}
-                      secondaryAction={{
-                        label: t('nav.chat'),
-                        onClick: () => router.push('/chat'),
-                      }}
+                      secondaryAction={
+                        isNavItemEnabled('chat')
+                          ? {
+                              label: t('nav.chat'),
+                              onClick: () => router.push('/chat'),
+                            }
+                          : undefined
+                      }
                     />
                   </Card>
                 ) : (

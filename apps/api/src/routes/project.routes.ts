@@ -79,6 +79,7 @@ router.get('/', validate(listProjectsSchema), async (req: Request, res: Response
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const clientId = req.query.clientId as string;
     const isActive =
       req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined;
     const includeDeleted = req.query.includeDeleted === 'true';
@@ -87,8 +88,8 @@ router.get('/', validate(listProjectsSchema), async (req: Request, res: Response
 
     const projectService = new ProjectService(req.tenantDb as ClientPrismaClient);
     const [projects, total] = await Promise.all([
-      projectService.list({ skip, take: limit, isActive, includeDeleted }),
-      projectService.count(isActive, includeDeleted),
+      projectService.list({ skip, take: limit, clientId, isActive, includeDeleted }),
+      projectService.count(isActive, includeDeleted, clientId),
     ]);
 
     res.json({

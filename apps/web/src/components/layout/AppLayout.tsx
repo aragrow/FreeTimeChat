@@ -7,15 +7,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { useNavigation } from '@/contexts/NavigationContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuth } from '@/hooks/useAuth';
-
-interface NavigationConfig {
-  enabledItems: string[];
-}
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -25,10 +22,10 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, title, showHeader = true }: AppLayoutProps) {
   const router = useRouter();
-  const { user, logout, fetchWithAuth } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useTranslation();
+  const { isNavItemEnabled } = useNavigation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [navConfig, setNavConfig] = useState<NavigationConfig | null>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     new Set(['main', 'business', 'ar', 'ap', 'users', 'access', 'config', 'monitoring'])
   );
@@ -48,38 +45,6 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
 
   // Check if section is collapsed
   const isSectionCollapsed = (sectionId: string) => collapsedSections.has(sectionId);
-
-  // Fetch navigation config on mount
-  useEffect(() => {
-    const fetchNavConfig = async () => {
-      try {
-        const response = await fetchWithAuth(
-          `${process.env.NEXT_PUBLIC_API_URL}/admin/tenant-settings`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          if (data.data?.navigationConfig) {
-            setNavConfig(data.data.navigationConfig);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch navigation config:', error);
-      }
-    };
-
-    if (user) {
-      fetchNavConfig();
-    }
-  }, [user, fetchWithAuth]);
-
-  // Check if a navigation item is enabled
-  const isNavItemEnabled = (itemId: string) => {
-    // If no config or no enabledItems, show all (default behavior)
-    if (!navConfig || !navConfig.enabledItems) {
-      return true;
-    }
-    return navConfig.enabledItems.includes(itemId);
-  };
 
   // Determine user role
   const hasAdminAccess =
@@ -161,6 +126,27 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                       />
                     </svg>
                   </button>
+                  {!isSectionCollapsed('main') && (
+                    <a
+                      href="/dashboard"
+                      className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                        />
+                      </svg>
+                      {t('nav.dashboard')}
+                    </a>
+                  )}
                   {!isSectionCollapsed('main') && isNavItemEnabled('chat') && (
                     <a
                       href="/chat"
@@ -203,8 +189,8 @@ export function AppLayout({ children, title, showHeader = true }: AppLayoutProps
                       {t('nav.timeEntries')}
                     </a>
                   )}
-                  {/* Reports - Admin/TenantAdmin Only */}
-                  {!isSectionCollapsed('main') && hasAdminAccess && isNavItemEnabled('reports') && (
+                  {/* Reports */}
+                  {!isSectionCollapsed('main') && isNavItemEnabled('reports') && (
                     <a
                       href="/admin/reports"
                       className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"

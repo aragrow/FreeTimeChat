@@ -105,7 +105,11 @@ export class TimeEntryService {
         isBillable,
       },
       include: {
-        project: true,
+        project: {
+          include: {
+            client: true,
+          },
+        },
       },
     });
 
@@ -192,7 +196,11 @@ export class TimeEntryService {
     return this.prisma.timeEntry.findUniqueOrThrow({
       where: { id },
       include: {
-        project: true,
+        project: {
+          include: {
+            client: true,
+          },
+        },
       },
     });
   }
@@ -204,7 +212,11 @@ export class TimeEntryService {
     return this.prisma.timeEntry.findUnique({
       where: { id },
       include: {
-        project: true,
+        project: {
+          include: {
+            client: true,
+          },
+        },
       },
     });
   }
@@ -220,7 +232,11 @@ export class TimeEntryService {
         deletedAt: null,
       },
       include: {
-        project: true,
+        project: {
+          include: {
+            client: true,
+          },
+        },
       },
     });
   }
@@ -251,7 +267,11 @@ export class TimeEntryService {
       take,
       orderBy: { startTime: 'desc' },
       include: {
-        project: true,
+        project: {
+          include: {
+            client: true,
+          },
+        },
       },
     });
   }
@@ -347,7 +367,11 @@ export class TimeEntryService {
     return this.prisma.timeEntry.findUniqueOrThrow({
       where: { id },
       include: {
-        project: true,
+        project: {
+          include: {
+            client: true,
+          },
+        },
       },
     });
   }
@@ -367,7 +391,11 @@ export class TimeEntryService {
         deletedAt: new Date(),
       },
       include: {
-        project: true,
+        project: {
+          include: {
+            client: true,
+          },
+        },
       },
     });
 
@@ -396,7 +424,13 @@ export class TimeEntryService {
   async restore(id: string): Promise<TimeEntry> {
     const entry = await this.prisma.timeEntry.findUnique({
       where: { id },
-      include: { project: true },
+      include: {
+        project: {
+          include: {
+            client: true,
+          },
+        },
+      },
     });
 
     if (!entry) {
@@ -409,7 +443,11 @@ export class TimeEntryService {
         deletedAt: null,
       },
       include: {
-        project: true,
+        project: {
+          include: {
+            client: true,
+          },
+        },
       },
     });
 
