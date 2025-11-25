@@ -52,7 +52,7 @@ interface ProjectMember {
 }
 
 export default function ProjectsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const { t } = useTranslation();
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -98,10 +98,7 @@ export default function ProjectsPage() {
         ...(statusFilter !== 'all' && { isActive: (statusFilter === 'active').toString() }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects?${params}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -117,10 +114,7 @@ export default function ProjectsPage() {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`);
 
       if (response.ok) {
         const result = await response.json();
@@ -138,10 +132,7 @@ export default function ProjectsPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users?limit=1000`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/users?limit=1000`);
 
       if (response.ok) {
         const result = await response.json();
@@ -160,13 +151,7 @@ export default function ProjectsPage() {
 
   const fetchProjectMembers = async (projectId: string) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/project/${projectId}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/project/${projectId}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -192,9 +177,7 @@ export default function ProjectsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           name: formData.name,
@@ -214,9 +197,7 @@ export default function ProjectsPage() {
         if (formData.userIds.length > 0) {
           await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/bulk`, {
             method: 'POST',
-            headers: {
-              ...getAuthHeaders(),
-              'Content-Type': 'application/json',
+            headers: { 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
               projectId: newProjectId,
@@ -255,9 +236,7 @@ export default function ProjectsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/projects/${editingProject.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             name: formData.name,
@@ -285,19 +264,14 @@ export default function ProjectsPage() {
 
         // Remove users
         for (const member of usersToRemove) {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/${member.id}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders(),
-          });
+          await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/${member.id}`, { method: 'DELETE' });
         }
 
         // Add users
         if (userIdsToAdd.length > 0) {
           await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/project-members/bulk`, {
             method: 'POST',
-            headers: {
-              ...getAuthHeaders(),
-              'Content-Type': 'application/json',
+            headers: { 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
               projectId: editingProject.id,
@@ -334,9 +308,7 @@ export default function ProjectsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/projects/${projectId}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({ isActive: !isActive }),
         }
@@ -361,13 +333,7 @@ export default function ProjectsPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/projects/${projectId}`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects/${projectId}`, { method: 'DELETE' });
 
       if (response.ok) {
         fetchProjects();

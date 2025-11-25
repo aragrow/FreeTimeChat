@@ -52,7 +52,7 @@ interface CreateUserData {
 }
 
 export default function UsersPage() {
-  const { getAuthHeaders, user: currentUser } = useAuth();
+  const { fetchWithAuth, user: currentUser } = useAuth();
   const router = useRouter();
   const { hasCapability } = useCapabilities();
   const { t } = useTranslation();
@@ -126,10 +126,7 @@ export default function UsersPage() {
         ...(statusFilter !== 'all' && { status: statusFilter }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/users?${params}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -145,10 +142,7 @@ export default function UsersPage() {
 
   const fetchRoles = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles?limit=100`);
 
       if (response.ok) {
         const data = await response.json();
@@ -165,13 +159,7 @@ export default function UsersPage() {
 
   const fetchTenants = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/tenants?limit=100&isActive=true`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants?limit=100&isActive=true`);
 
       if (response.ok) {
         const data = await response.json();
@@ -188,10 +176,7 @@ export default function UsersPage() {
 
   const fetchCurrentTenant = async (tenantId: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${tenantId}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${tenantId}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -259,9 +244,7 @@ export default function UsersPage() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       });
@@ -312,13 +295,7 @@ export default function UsersPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userToDelete.id}`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userToDelete.id}`, { method: 'DELETE' });
 
       if (response.ok) {
         setShowDeleteModal(false);
@@ -342,13 +319,7 @@ export default function UsersPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}/impersonate`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}/impersonate`, { method: 'POST' });
 
       if (response.ok) {
         const data = await response.json();

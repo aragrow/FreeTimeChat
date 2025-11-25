@@ -25,7 +25,7 @@ interface PaymentTerm {
 }
 
 export default function PaymentTermsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,13 +56,7 @@ export default function PaymentTermsPage() {
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms?${params}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms?${params}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -77,10 +71,7 @@ export default function PaymentTermsPage() {
 
   const seedDefaults = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms/seed`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms/seed`, { method: 'POST' });
 
       if (response.ok) {
         fetchPaymentTerms();
@@ -103,9 +94,7 @@ export default function PaymentTermsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           name: formData.name,
@@ -139,9 +128,7 @@ export default function PaymentTermsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms/${editingTerm.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             name: formData.name,
@@ -174,13 +161,7 @@ export default function PaymentTermsPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms/${termId}`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms/${termId}`, { method: 'DELETE' });
 
       if (response.ok) {
         fetchPaymentTerms();
@@ -195,13 +176,7 @@ export default function PaymentTermsPage() {
 
   const handleSetDefault = async (termId: string) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms/${termId}/default`,
-        {
-          method: 'PUT',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms/${termId}/default`, { method: 'PUT' });
 
       if (response.ok) {
         fetchPaymentTerms();

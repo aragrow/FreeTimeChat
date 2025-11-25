@@ -75,7 +75,7 @@ interface SummaryStats {
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
 
 export default function ReportsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [reportType, setReportType] = useState<'user' | 'project' | 'date'>('user');
 
   const [startDate, setStartDate] = useState('');
@@ -121,13 +121,7 @@ export default function ReportsPage() {
       });
 
       // Fetch summary stats
-      const summaryResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/reports/summary?${params}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const summaryResponse = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/reports/summary?${params}`);
 
       if (summaryResponse.ok) {
         const data = await summaryResponse.json();
@@ -148,13 +142,7 @@ export default function ReportsPage() {
           break;
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/reports/${endpoint}?${params}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/reports/${endpoint}?${params}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -204,13 +192,7 @@ export default function ReportsPage() {
           break;
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/reports/${endpoint}?${params}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/reports/${endpoint}?${params}`);
 
       if (response.ok) {
         const blob = await response.blob();

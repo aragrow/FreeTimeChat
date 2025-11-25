@@ -51,7 +51,7 @@ interface ReviewModalData {
 }
 
 export default function AccountRequestsPage() {
-  const { getAuthHeaders, user } = useAuth();
+  const { fetchWithAuth, user } = useAuth();
   const { hasCapability } = useCapabilities();
   const router = useRouter();
 
@@ -117,13 +117,7 @@ export default function AccountRequestsPage() {
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/account-requests?${params}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/account-requests?${params}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -139,13 +133,7 @@ export default function AccountRequestsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/account-requests/stats`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/account-requests/stats`);
 
       if (response.ok) {
         const data = await response.json();
@@ -191,9 +179,7 @@ export default function AccountRequestsPage() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           reviewNotes: reviewNotes.trim() || undefined,

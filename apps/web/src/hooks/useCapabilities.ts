@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
 
 export function useCapabilities() {
-  const { user, getAuthHeaders } = useAuth();
+  const { user, fetchWithAuth } = useAuth();
   const [capabilities, setCapabilities] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,10 +26,7 @@ export function useCapabilities() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`);
 
       if (response.ok) {
         const data = await response.json();

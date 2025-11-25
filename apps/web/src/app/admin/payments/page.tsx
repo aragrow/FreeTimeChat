@@ -48,7 +48,7 @@ interface PaymentStats {
 }
 
 export default function PaymentsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -113,10 +113,7 @@ export default function PaymentsPage() {
         ...(filterMethod && { paymentMethod: filterMethod }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/payments?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/payments?${params}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -132,10 +129,7 @@ export default function PaymentsPage() {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`);
 
       if (response.ok) {
         const result = await response.json();
@@ -148,13 +142,7 @@ export default function PaymentsPage() {
 
   const fetchInvoices = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/invoices?limit=100&status=SENT`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/invoices?limit=100&status=SENT`);
 
       if (response.ok) {
         const result = await response.json();
@@ -167,10 +155,7 @@ export default function PaymentsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/payments/stats`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/payments/stats`);
 
       if (response.ok) {
         const result = await response.json();
@@ -191,9 +176,7 @@ export default function PaymentsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/payments`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           invoiceId: formData.invoiceId || null,
@@ -230,9 +213,7 @@ export default function PaymentsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/payments/${editingPayment.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             invoiceId: formData.invoiceId || null,
@@ -273,9 +254,7 @@ export default function PaymentsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/payments/${refundingPayment.id}/refund`,
         {
           method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             amount: parseFloat(refundAmount),
@@ -306,13 +285,7 @@ export default function PaymentsPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/payments/${paymentId}`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/payments/${paymentId}`, { method: 'DELETE' });
 
       if (response.ok) {
         fetchPayments();

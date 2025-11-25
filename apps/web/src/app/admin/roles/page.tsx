@@ -30,7 +30,7 @@ interface CreateRoleData {
 }
 
 export default function RolesPage() {
-  const { getAuthHeaders, user } = useAuth();
+  const { fetchWithAuth, user } = useAuth();
   const router = useRouter();
 
   const [roles, setRoles] = useState<Role[]>([]);
@@ -89,10 +89,7 @@ export default function RolesPage() {
         take: '20',
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles?${params}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -112,9 +109,7 @@ export default function RolesPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify(createFormData),
       });
@@ -143,9 +138,7 @@ export default function RolesPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/roles/${editingRole.id}`,
         {
           method: 'PATCH',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify(editFormData),
         }
@@ -182,13 +175,7 @@ export default function RolesPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/roles/${roleToDelete.id}`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles/${roleToDelete.id}`, { method: 'DELETE' });
 
       if (response.ok) {
         setShowDeleteModal(false);

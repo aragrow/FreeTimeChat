@@ -118,7 +118,7 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
 };
 
 export default function InvoicesPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -195,10 +195,7 @@ export default function InvoicesPage() {
         ...(filterClientId && { clientId: filterClientId }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/invoices?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/invoices?${params}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -214,10 +211,7 @@ export default function InvoicesPage() {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`);
 
       if (response.ok) {
         const result = await response.json();
@@ -230,10 +224,7 @@ export default function InvoicesPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects?limit=100`);
 
       if (response.ok) {
         const result = await response.json();
@@ -246,13 +237,7 @@ export default function InvoicesPage() {
 
   const fetchDiscounts = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/discounts?isActive=true`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/discounts?isActive=true`);
 
       if (response.ok) {
         const result = await response.json();
@@ -265,13 +250,7 @@ export default function InvoicesPage() {
 
   const fetchCoupons = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/coupons?isActive=true&validNow=true`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/coupons?isActive=true&validNow=true`);
 
       if (response.ok) {
         const result = await response.json();
@@ -284,13 +263,7 @@ export default function InvoicesPage() {
 
   const fetchPaymentTerms = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms?isActive=true`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/payment-terms?isActive=true`);
 
       if (response.ok) {
         const result = await response.json();
@@ -394,9 +367,7 @@ export default function InvoicesPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/coupons/validate`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           code: couponCode.toUpperCase(),
@@ -442,9 +413,7 @@ export default function InvoicesPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/invoices`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           clientId: formData.clientId,
@@ -492,9 +461,7 @@ export default function InvoicesPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/invoices/${recordingPayment.id}/record-payment`,
         {
           method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             amount: parseFloat(paymentForm.amount),
@@ -530,13 +497,7 @@ export default function InvoicesPage() {
     if (!confirm('Send this invoice via PayPal?')) return;
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/invoices/${invoiceId}/send-paypal`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/invoices/${invoiceId}/send-paypal`, { method: 'POST' });
 
       if (response.ok) {
         fetchInvoices();
@@ -615,9 +576,7 @@ export default function InvoicesPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/invoices/${changingStatus.id}/status`,
         {
           method: 'PATCH',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({ status: newStatus }),
         }
@@ -647,9 +606,7 @@ export default function InvoicesPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/invoices/${editingInvoice.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             items: lineItems

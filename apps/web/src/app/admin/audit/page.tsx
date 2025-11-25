@@ -32,7 +32,7 @@ interface AuditLog extends Record<string, unknown> {
 }
 
 export default function AuditLogsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const router = useRouter();
 
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -70,13 +70,7 @@ export default function AuditLogsPage() {
         ...(endDate && { endDate }),
       });
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs?${params}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs?${params}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -188,13 +182,7 @@ export default function AuditLogsPage() {
         ...(endDate && { endDate }),
       });
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs/export?${params}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs/export?${params}`);
 
       if (response.ok) {
         const blob = await response.blob();

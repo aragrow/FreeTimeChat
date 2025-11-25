@@ -40,7 +40,7 @@ interface Vendor {
 }
 
 export default function VendorsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -91,10 +91,7 @@ export default function VendorsPage() {
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/vendors?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/vendors?${params}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -141,9 +138,7 @@ export default function VendorsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/vendors`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...formData,
@@ -173,9 +168,7 @@ export default function VendorsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/vendors/${editingVendor.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             ...formData,
@@ -202,9 +195,7 @@ export default function VendorsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/vendors/${vendorId}`, {
         method: 'PUT',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({ isActive: !isActive }),
       });
@@ -228,10 +219,7 @@ export default function VendorsPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/vendors/${vendorId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/vendors/${vendorId}`, { method: 'DELETE' });
 
       if (response.ok) {
         fetchVendors();

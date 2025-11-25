@@ -32,7 +32,7 @@ export function useChatContext() {
 }
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout, getAuthHeaders } = useAuth();
+  const { user, logout, fetchWithAuth } = useAuth();
   const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -48,10 +48,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
   const fetchConversations = async () => {
     try {
       setIsLoadingConversations(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/conversations?take=50`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/conversations?take=50`);
 
       if (response.ok) {
         const data = await response.json();
@@ -77,13 +74,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
 
   const handleArchiveConversation = async (id: string) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/conversations/${id}/archive`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/conversations/${id}/archive`, { method: 'POST' });
 
       if (response.ok) {
         await fetchConversations();

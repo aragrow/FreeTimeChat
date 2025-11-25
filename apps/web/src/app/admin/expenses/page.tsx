@@ -89,7 +89,7 @@ interface ParsedReceiptData {
 }
 
 export default function ExpensesPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -147,10 +147,7 @@ export default function ExpensesPage() {
         ...(filterCategoryId && { categoryId: filterCategoryId }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses?${params}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -166,10 +163,7 @@ export default function ExpensesPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/categories`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/categories`);
 
       if (response.ok) {
         const result = await response.json();
@@ -182,10 +176,7 @@ export default function ExpensesPage() {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`);
 
       if (response.ok) {
         const result = await response.json();
@@ -198,10 +189,7 @@ export default function ExpensesPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects?limit=100`);
 
       if (response.ok) {
         const result = await response.json();
@@ -214,10 +202,7 @@ export default function ExpensesPage() {
 
   const seedCategories = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/categories/seed`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/categories/seed`, { method: 'POST' });
 
       if (response.ok) {
         fetchCategories();
@@ -237,9 +222,7 @@ export default function ExpensesPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...formData,
@@ -271,9 +254,7 @@ export default function ExpensesPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/${editingExpense.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             ...formData,
@@ -304,13 +285,7 @@ export default function ExpensesPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/${expenseId}`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/${expenseId}`, { method: 'DELETE' });
 
       if (response.ok) {
         fetchExpenses();
@@ -325,13 +300,7 @@ export default function ExpensesPage() {
 
   const handleApprove = async (expenseId: string) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/${expenseId}/approve`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/${expenseId}/approve`, { method: 'POST' });
 
       if (response.ok) {
         fetchExpenses();
@@ -352,9 +321,7 @@ export default function ExpensesPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/${expenseId}/reject`,
         {
           method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({ reason }),
         }
@@ -382,12 +349,7 @@ export default function ExpensesPage() {
       const formDataUpload = new FormData();
       formDataUpload.append('receipt', file);
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/parse-receipt`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: formDataUpload,
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/parse-receipt`, { method: 'POST', body: formDataUpload,
         }
       );
 
@@ -434,12 +396,7 @@ export default function ExpensesPage() {
       const formDataUpload = new FormData();
       formDataUpload.append('receipt', file);
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/create-from-receipt`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: formDataUpload,
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/expenses/create-from-receipt`, { method: 'POST', body: formDataUpload,
         }
       );
 

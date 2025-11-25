@@ -37,7 +37,7 @@ interface Discount {
 }
 
 export default function DiscountsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,10 +81,7 @@ export default function DiscountsPage() {
         ...(filterType && { discountType: filterType }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/discounts?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/discounts?${params}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -99,10 +96,7 @@ export default function DiscountsPage() {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`);
 
       if (response.ok) {
         const result = await response.json();
@@ -122,9 +116,7 @@ export default function DiscountsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/discounts`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           name: formData.name,
@@ -165,9 +157,7 @@ export default function DiscountsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/discounts/${editingDiscount.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             name: formData.name,
@@ -207,13 +197,7 @@ export default function DiscountsPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/discounts/${discountId}`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/discounts/${discountId}`, { method: 'DELETE' });
 
       if (response.ok) {
         fetchDiscounts();

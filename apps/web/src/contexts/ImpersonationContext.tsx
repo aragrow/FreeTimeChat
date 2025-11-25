@@ -32,7 +32,7 @@ export function useImpersonation() {
 }
 
 export function ImpersonationProvider({ children }: { children: React.ReactNode }) {
-  const { user, refreshUser, getAuthHeaders, logout } = useAuth();
+  const { user, refreshUser, fetchWithAuth, logout } = useAuth();
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [targetUser, setTargetUser] = useState<ImpersonationContextType['targetUser']>(null);
 
@@ -55,13 +55,7 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
 
   const startImpersonation = async (targetUserId: string): Promise<boolean> => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${targetUserId}/impersonate`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${targetUserId}/impersonate`, { method: 'POST' });
 
       if (response.ok) {
         const data = await response.json();
@@ -88,13 +82,7 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
 
   const endImpersonation = async (): Promise<void> => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/impersonate/stop`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/impersonate/stop`, { method: 'POST' });
 
       if (response.ok) {
         // eslint-disable-next-line no-console

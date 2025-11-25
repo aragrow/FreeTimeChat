@@ -84,7 +84,7 @@ interface EditTenantData {
 }
 
 export default function TenantsPage() {
-  const { getAuthHeaders, user } = useAuth();
+  const { fetchWithAuth, user } = useAuth();
   const router = useRouter();
 
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -149,10 +149,7 @@ export default function TenantsPage() {
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants?${params}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -172,9 +169,7 @@ export default function TenantsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify(createFormData),
       });
@@ -222,9 +217,7 @@ export default function TenantsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${editingTenant.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify(editFormData),
         }
@@ -251,9 +244,7 @@ export default function TenantsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${tenantId}/status`,
         {
           method: 'PATCH',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({ isActive: !currentStatus }),
         }
@@ -281,10 +272,7 @@ export default function TenantsPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${tenantId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${tenantId}`, { method: 'DELETE' });
 
       if (response.ok) {
         fetchTenants();

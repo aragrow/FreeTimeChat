@@ -84,7 +84,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function BillsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [bills, setBills] = useState<Bill[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -143,10 +143,7 @@ export default function BillsPage() {
         ...(vendorFilter && { vendorId: vendorFilter }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/bills?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/bills?${params}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -162,10 +159,7 @@ export default function BillsPage() {
 
   const fetchVendors = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/vendors?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/vendors?limit=100`);
 
       if (response.ok) {
         const result = await response.json();
@@ -231,9 +225,7 @@ export default function BillsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/bills`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...formData,
@@ -263,9 +255,7 @@ export default function BillsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/bills/${editingBill.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             ...formData,
@@ -301,9 +291,7 @@ export default function BillsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/bills/${payingBill.id}/payments`,
         {
           method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify(paymentData),
         }
@@ -335,13 +323,7 @@ export default function BillsPage() {
     if (!confirm('Approve this bill for payment?')) return;
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/bills/${billId}/approve`,
-        {
-          method: 'PUT',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/bills/${billId}/approve`, { method: 'PUT' });
 
       if (response.ok) {
         fetchBills();
@@ -358,10 +340,7 @@ export default function BillsPage() {
     if (!confirm(`Delete bill "${billNumber}"? This cannot be undone.`)) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/bills/${billId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/bills/${billId}`, { method: 'DELETE' });
 
       if (response.ok) {
         fetchBills();
@@ -377,10 +356,7 @@ export default function BillsPage() {
   const openEditModal = async (bill: Bill) => {
     // Fetch full bill details
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/bills/${bill.id}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/bills/${bill.id}`);
 
       if (response.ok) {
         const result = await response.json();

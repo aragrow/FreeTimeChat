@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function SecuritySettingsPage() {
-  const { user, getAuthHeaders } = useAuth();
+  const { user, fetchWithAuth } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -47,10 +47,7 @@ export default function SecuritySettingsPage() {
 
   const fetchSecuritySettings = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/security/settings`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/user/security/settings`);
 
       if (response.ok) {
         const data = await response.json();
@@ -80,9 +77,7 @@ export default function SecuritySettingsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/password/change`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           currentPassword: passwordData.currentPassword,
@@ -122,9 +117,7 @@ export default function SecuritySettingsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/enable`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({ password: twoFactorPassword }),
       });
@@ -159,9 +152,7 @@ export default function SecuritySettingsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({ token: verificationCode }),
       });
@@ -193,10 +184,7 @@ export default function SecuritySettingsPage() {
     setMessage(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/disable`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/2fa/disable`, { method: 'POST' });
 
       if (response.ok) {
         setMessage({ type: 'success', text: '2FA disabled successfully' });

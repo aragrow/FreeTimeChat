@@ -37,7 +37,7 @@ interface Category {
 }
 
 export default function AdminDashboard() {
-  const { user, getAuthHeaders } = useAuth();
+  const { user, fetchWithAuth } = useAuth();
   const { t } = useTranslation();
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,10 +76,7 @@ export default function AdminDashboard() {
 
   const fetchDashboardConfig = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard-config`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard-config`);
 
       if (response.ok) {
         const data = await response.json();
@@ -94,10 +91,7 @@ export default function AdminDashboard() {
 
   const fetchTenants = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`);
 
       if (response.ok) {
         const data = await response.json();
@@ -117,13 +111,7 @@ export default function AdminDashboard() {
         params.append('tenantId', selectedTenantId);
       }
 
-      const statsResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/stats?${params}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const statsResponse = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats?${params}`);
 
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
@@ -138,13 +126,7 @@ export default function AdminDashboard() {
 
   const fetchAccountRequestData = async () => {
     try {
-      const statsResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/account-requests/stats`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const statsResponse = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/account-requests/stats`);
 
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
@@ -160,9 +142,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard-config`, {
         method: 'PUT',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({ kpis: newKpis }),
       });
@@ -180,13 +160,7 @@ export default function AdminDashboard() {
   const resetDashboardConfig = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard-config/reset`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard-config/reset`, { method: 'POST' });
 
       if (response.ok) {
         const data = await response.json();

@@ -42,7 +42,7 @@ interface CouponStats {
 }
 
 export default function CouponsPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -87,10 +87,7 @@ export default function CouponsPage() {
         ...(filterValidNow && { validNow: 'true' }),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/coupons?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/coupons?${params}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -105,13 +102,7 @@ export default function CouponsPage() {
 
   const fetchCouponStats = async (coupon: Coupon) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/coupons/${coupon.id}/stats`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/coupons/${coupon.id}/stats`);
 
       if (response.ok) {
         const result = await response.json();
@@ -137,9 +128,7 @@ export default function CouponsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/coupons`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           code: formData.code.toUpperCase(),
@@ -182,9 +171,7 @@ export default function CouponsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/coupons/${editingCoupon.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             code: formData.code.toUpperCase(),
@@ -226,10 +213,7 @@ export default function CouponsPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/coupons/${couponId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/coupons/${couponId}`, { method: 'DELETE' });
 
       if (response.ok) {
         fetchCoupons();

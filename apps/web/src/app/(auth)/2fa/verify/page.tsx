@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function Verify2FAPage() {
   const router = useRouter();
-  const { verify2FA, getAuthHeaders } = useAuth();
+  const { verify2FA, fetchWithAuth } = useAuth();
   const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -57,11 +57,9 @@ export default function Verify2FAPage() {
     try {
       if (useBackupCode) {
         // For backup codes, make direct API call
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify-backup`, {
+        const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify-backup`, {
           method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({ code: verificationCode }),
         });

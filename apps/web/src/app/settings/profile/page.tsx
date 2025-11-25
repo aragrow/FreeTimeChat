@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfileSettingsPage() {
-  const { user, getAuthHeaders } = useAuth();
+  const { user, fetchWithAuth } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -33,10 +33,7 @@ export default function ProfileSettingsPage() {
 
   const fetchProfileSettings = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/profile/settings`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/user/profile/settings`);
 
       if (response.ok) {
         const data = await response.json();
@@ -60,9 +57,7 @@ export default function ProfileSettingsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/profile/settings`, {
         method: 'PUT',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
       });

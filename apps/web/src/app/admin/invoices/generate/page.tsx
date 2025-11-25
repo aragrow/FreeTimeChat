@@ -64,7 +64,7 @@ interface GeneratedInvoice {
 }
 
 export default function GenerateInvoicesPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const router = useRouter();
 
   const [clients, setClients] = useState<Client[]>([]);
@@ -100,10 +100,7 @@ export default function GenerateInvoicesPage() {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients?limit=100`);
 
       if (response.ok) {
         const result = await response.json();
@@ -116,13 +113,7 @@ export default function GenerateInvoicesPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/projects?limit=100&isBillable=true`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/projects?limit=100&isBillable=true`);
 
       if (response.ok) {
         const result = await response.json();
@@ -168,9 +159,7 @@ export default function GenerateInvoicesPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/invoices/preview`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           clientId: selectedClientId || undefined,
@@ -213,9 +202,7 @@ export default function GenerateInvoicesPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/invoices/generate`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           clientId: selectedClientId || undefined,

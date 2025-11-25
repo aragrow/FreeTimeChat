@@ -43,7 +43,7 @@ interface AllCapability {
 export default function RoleDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { getAuthHeaders, user } = useAuth();
+  const { fetchWithAuth, user } = useAuth();
   const roleId = params?.id as string;
 
   const [role, setRole] = useState<Role | null>(null);
@@ -81,9 +81,7 @@ export default function RoleDetailPage() {
 
   const fetchRole = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles/${roleId}`, {
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles/${roleId}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -110,9 +108,7 @@ export default function RoleDetailPage() {
 
   const fetchAllCapabilities = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/capabilities`, {
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/capabilities`);
 
       if (response.ok) {
         const result = await response.json();
@@ -143,9 +139,7 @@ export default function RoleDetailPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles/${roleId}`, {
         method: 'PUT',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           name: role?.isSeeded ? undefined : name.trim(), // Can't change seeded role names
@@ -194,10 +188,7 @@ export default function RoleDetailPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles/${roleId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/roles/${roleId}`, { method: 'DELETE' });
 
       if (response.ok) {
         alert('Role deleted successfully');

@@ -19,7 +19,7 @@ interface BackupCode {
 
 export default function Setup2FAPage() {
   const router = useRouter();
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [qrCode, setQrCode] = useState('');
   const [secret, setSecret] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -38,12 +38,9 @@ export default function Setup2FAPage() {
     setError('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/enable`, {
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/2fa/enable`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const data = await response.json();
@@ -75,11 +72,9 @@ export default function Setup2FAPage() {
     setIsVerifying(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify`, {
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify({ code: verificationCode }),
       });

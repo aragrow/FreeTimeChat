@@ -64,7 +64,7 @@ interface TenantSettings {
 }
 
 export default function ClientsPage() {
-  const { getAuthHeaders, user } = useAuth();
+  const { fetchWithAuth, user } = useAuth();
   const { t } = useTranslation();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -137,10 +137,7 @@ export default function ClientsPage() {
 
   const fetchTenantSettings = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenant-settings`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenant-settings`);
 
       if (response.ok) {
         const result = await response.json();
@@ -166,13 +163,7 @@ export default function ClientsPage() {
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}?${params}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}?${params}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -188,10 +179,7 @@ export default function ClientsPage() {
 
   const fetchTenants = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants?limit=100`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants?limit=100`);
 
       if (response.ok) {
         const result = await response.json();
@@ -222,9 +210,7 @@ export default function ClientsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/clients/validate-prefix`,
         {
           method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             prefix: prefix.trim(),
@@ -273,9 +259,7 @@ export default function ClientsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
       });
@@ -323,9 +307,7 @@ export default function ClientsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}/${editingClient.id}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify(formData),
         }
@@ -372,9 +354,7 @@ export default function ClientsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}/${clientId}`,
         {
           method: 'PUT',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify({ isActive: !isActive }),
         }
@@ -399,13 +379,7 @@ export default function ClientsPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}/${clientId}`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/${apiEndpoint}/${clientId}`, { method: 'DELETE' });
 
       if (response.ok) {
         fetchClients();

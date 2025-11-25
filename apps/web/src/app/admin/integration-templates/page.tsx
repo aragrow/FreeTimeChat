@@ -45,7 +45,7 @@ const CATEGORIES = [
 const FIELD_TYPES = ['string', 'number', 'boolean', 'password', 'url', 'email'];
 
 export default function IntegrationTemplatesPage() {
-  const { getAuthHeaders } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [templates, setTemplates] = useState<IntegrationTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -72,12 +72,7 @@ export default function IntegrationTemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/integration-templates`,
-        {
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/integration-templates`);
       const data = await response.json();
       setTemplates(data.data || []);
     } catch (error) {
@@ -136,9 +131,7 @@ export default function IntegrationTemplatesPage() {
 
       const response = await fetch(url, {
         method,
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       });
@@ -201,13 +194,7 @@ export default function IntegrationTemplatesPage() {
     if (!confirm('Are you sure you want to delete this template?')) return;
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/integration-templates/${id}`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/integration-templates/${id}`, { method: 'DELETE' });
 
       if (!response.ok) {
         throw new Error('Failed to delete template');

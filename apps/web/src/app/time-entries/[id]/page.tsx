@@ -35,7 +35,7 @@ interface TimeEntry {
 export default function TimeEntryDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { getAuthHeaders, user } = useAuth();
+  const { fetchWithAuth, user } = useAuth();
   const { showToast } = useToast();
 
   const [entry, setEntry] = useState<TimeEntry | null>(null);
@@ -68,10 +68,7 @@ export default function TimeEntryDetailPage() {
           ? `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries/${entryId}`
           : `${process.env.NEXT_PUBLIC_API_URL}/time-entries/${entryId}`;
 
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(endpoint);
 
       if (response.ok) {
         const data = await response.json();
@@ -104,10 +101,7 @@ export default function TimeEntryDetailPage() {
           ? `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries/${entryId}`
           : `${process.env.NEXT_PUBLIC_API_URL}/time-entries/${entryId}`;
 
-      const response = await fetch(endpoint, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(endpoint, { method: 'DELETE' });
 
       if (response.ok) {
         showToast('success', 'Time entry deleted successfully');

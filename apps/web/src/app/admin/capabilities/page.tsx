@@ -29,7 +29,7 @@ interface CreateCapabilityData {
 }
 
 export default function CapabilitiesPage() {
-  const { getAuthHeaders, user } = useAuth();
+  const { fetchWithAuth, user } = useAuth();
   const router = useRouter();
 
   const [capabilities, setCapabilities] = useState<Capability[]>([]);
@@ -79,10 +79,7 @@ export default function CapabilitiesPage() {
     try {
       setIsLoading(true);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/capabilities`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/capabilities`);
 
       if (response.ok) {
         const result = await response.json();
@@ -101,9 +98,7 @@ export default function CapabilitiesPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/capabilities`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json',
         },
         body: JSON.stringify(createFormData),
       });
@@ -132,9 +127,7 @@ export default function CapabilitiesPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/capabilities/${editingCapability.id}`,
         {
           method: 'PATCH',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
+          headers: { 'Content-Type': 'application/json',
           },
           body: JSON.stringify(editFormData),
         }
@@ -173,13 +166,7 @@ export default function CapabilitiesPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/capabilities/${capabilityToDelete.id}`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/capabilities/${capabilityToDelete.id}`, { method: 'DELETE' });
 
       if (response.ok) {
         setShowDeleteModal(false);
