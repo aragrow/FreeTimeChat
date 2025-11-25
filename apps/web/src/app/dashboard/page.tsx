@@ -51,7 +51,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { getAuthHeaders, user } = useAuth();
+  const { fetchWithAuth, user } = useAuth();
   const router = useRouter();
 
   const [stats, setStats] = useState<DashboardStats>({
@@ -105,10 +105,9 @@ export default function DashboardPage() {
 
   const fetchProjectCount = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/projects?limit=1000`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/projects?limit=1000`
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -131,10 +130,7 @@ export default function DashboardPage() {
 
   const fetchTasksCount = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tasks?limit=1000`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/tasks?limit=1000`);
 
       if (response.ok) {
         const data = await response.json();
@@ -170,12 +166,8 @@ export default function DashboardPage() {
 
       // Fetch all pages
       while (hasMore) {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/time-entries?limit=${limit}&page=${page}`,
-          {
-            method: 'GET',
-            headers: getAuthHeaders(),
-          }
+        const response = await fetchWithAuth(
+          `${process.env.NEXT_PUBLIC_API_URL}/time-entries?limit=${limit}&page=${page}`
         );
 
         if (!response.ok) {
@@ -223,10 +215,9 @@ export default function DashboardPage() {
 
   const fetchRecentEntries = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/time-entries?limit=10`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/time-entries?limit=10`
+      );
 
       if (response.ok) {
         const data = await response.json();

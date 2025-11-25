@@ -55,7 +55,7 @@ interface User {
 }
 
 export default function TimeEntriesPage() {
-  const { getAuthHeaders, user } = useAuth();
+  const { fetchWithAuth, user } = useAuth();
   const router = useRouter();
   const { showToast } = useToast();
   const { t } = useTranslation();
@@ -127,10 +127,7 @@ export default function TimeEntriesPage() {
 
   const fetchTenants = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`);
 
       if (response.ok) {
         const data = await response.json();
@@ -148,10 +145,9 @@ export default function TimeEntriesPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users?limit=1000`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users?limit=1000`
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -180,10 +176,7 @@ export default function TimeEntriesPage() {
           ? `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries`
           : `${process.env.NEXT_PUBLIC_API_URL}/time-entries`;
 
-      const response = await fetch(`${endpoint}?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${endpoint}?${params}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -284,9 +277,8 @@ export default function TimeEntriesPage() {
           ? `${process.env.NEXT_PUBLIC_API_URL}/admin/time-entries/${entryId}/stop`
           : `${process.env.NEXT_PUBLIC_API_URL}/time-entries/${entryId}/stop`;
 
-      const response = await fetch(endpoint, {
+      const response = await fetchWithAuth(endpoint, {
         method: 'POST',
-        headers: getAuthHeaders(),
       });
 
       if (response.ok) {

@@ -45,7 +45,7 @@ interface Client {
 }
 
 export default function NewTimeEntryPage() {
-  const { getAuthHeaders, user } = useAuth();
+  const { fetchWithAuth, user } = useAuth();
   const router = useRouter();
   const { showToast } = useToast();
 
@@ -124,10 +124,7 @@ export default function NewTimeEntryPage() {
 
   const fetchTenants = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`);
 
       if (response.ok) {
         const data = await response.json();
@@ -145,10 +142,9 @@ export default function NewTimeEntryPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users?limit=1000`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users?limit=1000`
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -172,10 +168,7 @@ export default function NewTimeEntryPage() {
           ? `${process.env.NEXT_PUBLIC_API_URL}/admin/clients?take=1000`
           : `${process.env.NEXT_PUBLIC_API_URL}/clients?limit=1000`;
 
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(endpoint);
 
       if (response.ok) {
         const data = await response.json();
@@ -210,10 +203,7 @@ export default function NewTimeEntryPage() {
         userRoles: user?.roles,
       });
 
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await fetchWithAuth(endpoint);
 
       console.log('Projects response:', {
         status: response.status,
@@ -326,10 +316,9 @@ export default function NewTimeEntryPage() {
         userRoles: user?.roles,
       });
 
-      const response = await fetch(endpoint, {
+      const response = await fetchWithAuth(endpoint, {
         method: 'POST',
         headers: {
-          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
