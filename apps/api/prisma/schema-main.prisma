@@ -42,6 +42,8 @@ model User {
   compensationType           CompensationType? @map("compensation_type")
   hourlyRate                 Decimal?          @map("hourly_rate") @db.Decimal(10, 2)
   trackingMode               TrackingMode      @default(CLOCK) @map("tracking_mode") // clock or time (manual entry)
+  naturalHoursPerWeek        Decimal           @default(10) @map("natural_hours_per_week") @db.Decimal(5, 2)
+  highlyCompensated          Int               @default(0) @map("highly_compensated") // 0 = no, 1 = yes
   dashboardConfig            Json?             @map("dashboard_config") // User's dashboard KPI configuration
   createdAt                  DateTime          @default(now()) @map("created_at")
   updatedAt                  DateTime          @updatedAt @map("updated_at")

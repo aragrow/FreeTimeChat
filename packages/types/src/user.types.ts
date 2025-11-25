@@ -18,6 +18,11 @@ export interface User {
   googleId?: string;
   isActive: boolean;
   lastLoginAt?: Date;
+  compensationType?: 'HOURLY' | 'SALARY';
+  hourlyRate?: number;
+  trackingMode?: 'CLOCK' | 'MANUAL';
+  naturalHoursPerWeek?: number; // Default 10
+  highlyCompensated?: number; // 0 = no, 1 = yes
   createdAt: Date;
   updatedAt: Date;
   roles?: UserRole[];

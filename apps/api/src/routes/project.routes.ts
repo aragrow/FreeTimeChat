@@ -79,57 +79,101 @@ router.get('/', async (req: Request, res: Response) => {
     const userId = req.user.sub; // User ID from JWT
     const tenantDb = req.tenantDb as ClientPrismaClient;
 
-    // Get projects where user is a member
-    const projectMembers = await tenantDb.projectMember.findMany({
+    // Get time entries for user to determine which projects they have access to
+    const userTimeEntries = await tenantDb.timeEntry.findMany({
       where: {
         userId,
+        deletedAt: null,
       },
-      include: {
-        project: {
-          include: {
-            client: true,
-            timeEntries: {
-              where: {
-                userId, // Only count this user's time entries
-                deletedAt: null,
-              },
-            },
-          },
-        },
+      select: {
+        projectId: true,
+        duration: true,
+        regularHours: true,
+        overtimeHours: true,
       },
     });
 
-    // Map to projects with total hours
-    const projectsWithTime = projectMembers
-      .filter((pm) => pm.project.deletedAt === null) // Filter out deleted projects
-      .map((pm) => {
-        const project = pm.project;
-        // Calculate total hours from time entries
-        const totalMinutes = project.timeEntries.reduce((sum, entry) => {
-          return sum + (entry.duration || 0);
-        }, 0);
+    // Extract unique project IDs from time entries
+    const projectIds = [...new Set(userTimeEntries.map((entry) => entry.projectId))];
 
-        const totalHours = totalMinutes / 60;
+    console.log(`[Projects] User ${userId} - Found ${userTimeEntries.length} time entries`);
+    console.log(`[Projects] Unique project IDs: ${projectIds.length}`, projectIds);
 
-        return {
-          id: project.id,
-          name: project.name,
-          description: project.description,
-          clientId: project.clientId,
-          client: project.client,
-          isActive: project.isActive,
-          startDate: project.startDate,
-          endDate: project.endDate,
-          isBillable: project.isBillableProject,
-          hourlyRate: project.hourlyRate,
-          allocatedHours: project.allocatedHours,
-          createdAt: project.createdAt,
-          updatedAt: project.updatedAt,
-          // Add time tracking data
-          totalHours: Math.round(totalHours * 100) / 100, // Round to 2 decimals
-          totalTimeEntries: project.timeEntries.length,
-        };
+    if (projectIds.length === 0) {
+      res.json({
+        status: 'success',
+        data: [],
       });
+      return;
+    }
+
+    // Get projects with their data
+    const projects = await tenantDb.project.findMany({
+      where: {
+        id: {
+          in: projectIds,
+        },
+        deletedAt: null,
+      },
+      include: {
+        client: true,
+      },
+    });
+
+    // Group time entries by project
+    const timeByProject = userTimeEntries.reduce(
+      (acc, entry) => {
+        if (!acc[entry.projectId]) {
+          acc[entry.projectId] = { totalHours: 0, count: 0 };
+        }
+
+        // Use regularHours + overtimeHours if available (manual entries)
+        // Otherwise fall back to duration in minutes (clock entries)
+        const regularHrs = entry.regularHours ? Number(entry.regularHours) : 0;
+        const overtimeHrs = entry.overtimeHours ? Number(entry.overtimeHours) : 0;
+        const hours =
+          entry.regularHours !== null || entry.overtimeHours !== null
+            ? regularHrs + overtimeHrs
+            : (entry.duration || 0) / 60;
+
+        acc[entry.projectId].totalHours += hours;
+        acc[entry.projectId].count += 1;
+        return acc;
+      },
+      {} as Record<string, { totalHours: number; count: number }>
+    );
+
+    console.log(`[Projects] Found ${userTimeEntries.length} time entries for user`);
+    Object.entries(timeByProject).forEach(([projectId, data]) => {
+      console.log(
+        `[Projects] Project ${projectId}: ${data.totalHours.toFixed(2)}h from ${data.count} entries`
+      );
+    });
+
+    // Map to projects with total hours
+    const projectsWithTime = projects.map((project) => {
+      const timeData = timeByProject[project.id] || { totalHours: 0, count: 0 };
+      const totalHours = timeData.totalHours;
+
+      return {
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        clientId: project.clientId,
+        client: project.client,
+        isActive: project.isActive,
+        startDate: project.startDate,
+        endDate: project.endDate,
+        isBillable: project.isBillableProject,
+        hourlyRate: project.hourlyRate,
+        allocatedHours: project.allocatedHours,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+        // Add time tracking data
+        totalHours: Math.round(totalHours * 100) / 100, // Round to 2 decimals
+        totalTimeEntries: timeData.count,
+      };
+    });
 
     res.json({
       status: 'success',
