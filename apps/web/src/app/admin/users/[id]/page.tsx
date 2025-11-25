@@ -23,6 +23,8 @@ interface UserDetail {
   isActive: boolean;
   isTwoFactorEnabled: boolean;
   trackingMode?: string;
+  naturalHoursPerWeek?: number;
+  highlyCompensated?: number;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
@@ -81,6 +83,8 @@ export default function UserDetailPage() {
     email: '',
     isActive: true,
     trackingMode: 'CLOCK' as 'CLOCK' | 'TIME',
+    naturalHoursPerWeek: 10,
+    highlyCompensated: 0,
     roleIds: [] as string[],
     projectIds: [] as string[],
   });
@@ -122,6 +126,8 @@ export default function UserDetailPage() {
           email: data.data.email || '',
           isActive: data.data.isActive,
           trackingMode: data.data.trackingMode || 'CLOCK',
+          naturalHoursPerWeek: data.data.naturalHoursPerWeek || 10,
+          highlyCompensated: data.data.highlyCompensated || 0,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           roleIds: data.data.roles.map((ur: any) => ur.role.id),
           projectIds: [], // Will be set by fetchUserProjects
@@ -223,6 +229,8 @@ export default function UserDetailPage() {
             email: formData.email,
             isActive: formData.isActive,
             trackingMode: formData.trackingMode,
+            naturalHoursPerWeek: formData.naturalHoursPerWeek,
+            highlyCompensated: formData.highlyCompensated,
             roleIds: formData.roleIds,
           }),
         }
@@ -517,6 +525,58 @@ export default function UserDetailPage() {
               ) : (
                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                   {user.trackingMode === 'CLOCK' ? 'Clock Only' : 'Manual Entry Only'}
+                </span>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Natural Hours Per Week
+              </label>
+              {isEditing ? (
+                <Input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  max="168"
+                  value={formData.naturalHoursPerWeek}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      naturalHoursPerWeek: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  placeholder="10"
+                />
+              ) : (
+                <p className="text-gray-900">{user.naturalHoursPerWeek || 10} hours</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Highly Compensated
+              </label>
+              {isEditing ? (
+                <select
+                  value={formData.highlyCompensated}
+                  onChange={(e) =>
+                    setFormData({ ...formData, highlyCompensated: parseInt(e.target.value) })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              ) : (
+                <span
+                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    user.highlyCompensated === 1
+                      ? 'bg-purple-100 text-purple-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {user.highlyCompensated === 1 ? 'Yes' : 'No'}
                 </span>
               )}
             </div>

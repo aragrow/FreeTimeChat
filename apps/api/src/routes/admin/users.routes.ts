@@ -306,7 +306,16 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, password, isActive, twoFactorEnabled, trackingMode, roleIds } = req.body;
+    const {
+      name,
+      password,
+      isActive,
+      twoFactorEnabled,
+      trackingMode,
+      naturalHoursPerWeek,
+      highlyCompensated,
+      roleIds,
+    } = req.body;
 
     // Check if user exists
     const existingUser = await userService.findById(id);
@@ -324,6 +333,8 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (isActive !== undefined) updateData.isActive = isActive;
     if (twoFactorEnabled !== undefined) updateData.twoFactorEnabled = twoFactorEnabled;
     if (trackingMode !== undefined) updateData.trackingMode = trackingMode;
+    if (naturalHoursPerWeek !== undefined) updateData.naturalHoursPerWeek = naturalHoursPerWeek;
+    if (highlyCompensated !== undefined) updateData.highlyCompensated = highlyCompensated;
 
     // Hash password if provided
     if (password) {
